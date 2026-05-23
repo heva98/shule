@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -135,6 +136,31 @@ class AttendanceSummaryView(APIView):
                 'attendance_percent': str(attendance_percent),
             }
         )
+
+
+class AttendanceDailySummaryView(APIView):
+    """
+    GET /api/attendance/daily-summary/?date=YYYY-MM-DD
+    School-wide attendance rate for a single day (defaults to today).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        date_str = request.query_params.get('date') or str(timezone.localdate())
+        qs = AttendanceRecord.objects.filter(date=date_str)
+        total = qs.count()
+        present = qs.filter(status__in=[AttendanceStatus.PRESENT, AttendanceStatus.LATE]).count()
+        absent = qs.filter(status=AttendanceStatus.ABSENT).count()
+        excused = qs.filter(status=AttendanceStatus.EXCUSED).count()
+        rate = round(present / total * 100, 1) if total > 0 else 0
+        return Response({
+            'date': date_str,
+            'total_records': total,
+            'present': present,
+            'absent': absent,
+            'excused': excused,
+            'rate_percent': str(rate),
+        })
 
 
 class AbsenteesView(APIView):

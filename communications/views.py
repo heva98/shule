@@ -49,6 +49,49 @@ class BroadcastView(APIView):
         )
 
 
+class FeeReminderView(APIView):
+    """
+    POST /api/communications/fee-reminders/
+    Send a WhatsApp/email fee reminder for one student's oldest outstanding invoice.
+    Body: {"student_id": "SHULE-2024-0001"}
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from fees.models import Invoice, InvoiceStatus
+        from students.models import Student
+
+        student_id = request.data.get('student_id')
+        if not student_id:
+            return Response({'detail': 'student_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = Student.objects.prefetch_related('guardians').get(student_id=student_id)
+        except Student.DoesNotExist:
+            return Response({'detail': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        invoice = (
+            Invoice.objects
+            .filter(student=student, status__in=[
+                InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE
+            ])
+            .order_by('due_date')
+            .first()
+        )
+        if not invoice:
+            return Response(
+                {'detail': 'No outstanding invoice for this student.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        result = NotificationService.send_fee_reminder(invoice)
+        return Response({
+            'success': result.get('success', False),
+            'wa_url': result.get('wa_url'),
+            'student_id': student_id,
+        }, status=status.HTTP_200_OK)
+
+
 class SendAbsenceAlertsView(APIView):
     """
     POST /api/communications/send-absence-alerts/

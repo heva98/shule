@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
@@ -175,7 +176,35 @@ class DefaultersView(APIView):
             }
             for inv in qs.order_by('student__last_name')
         ]
+        limit = request.query_params.get('limit')
+        if limit:
+            try:
+                data = data[:int(limit)]
+            except (ValueError, TypeError):
+                pass
         return Response(data)
+
+
+class FeeMonthlyView(APIView):
+    """GET /api/fees/summary/monthly/?year=YYYY — revenue bar chart data."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        year = request.query_params.get('year') or timezone.now().year
+        MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        rows = (
+            Payment.objects
+            .filter(paid_at__year=year)
+            .annotate(m=TruncMonth('paid_at'))
+            .values('m')
+            .annotate(total=Sum('amount'))
+            .order_by('m')
+        )
+        return Response([
+            {'month': MONTHS[row['m'].month - 1], 'collected': str(row['total'])}
+            for row in rows
+        ])
 
 
 class FeeSummaryView(APIView):
@@ -186,7 +215,13 @@ class FeeSummaryView(APIView):
         year = request.query_params.get('year')
 
         qs = Invoice.objects.all()
-        if term:
+        if term == 'current':
+            try:
+                current_year = AcademicYear.objects.get(is_current=True)
+                qs = qs.filter(academic_year=current_year)
+            except AcademicYear.DoesNotExist:
+                pass
+        elif term:
             qs = qs.filter(term=term)
         if year:
             qs = qs.filter(academic_year__year=year)
