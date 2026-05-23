@@ -58,12 +58,15 @@ class InvoiceViewSet(ModelViewSet):
         student = self.request.query_params.get('student')
         term = self.request.query_params.get('term')
         inv_status = self.request.query_params.get('status')
+        level = self.request.query_params.get('level')
         if student:
             qs = qs.filter(student__pk=student)
         if term:
             qs = qs.filter(term=term)
         if inv_status:
             qs = qs.filter(status=inv_status)
+        if level:
+            qs = qs.filter(student__level=level)
         return qs
 
     @action(detail=False, methods=['post'], url_path='generate')

@@ -13,11 +13,12 @@ class FeeStructureSerializer(serializers.ModelSerializer):
     total_fee = serializers.DecimalField(
         max_digits=10, decimal_places=2, read_only=True
     )
+    academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
 
     class Meta:
         model = FeeStructure
         fields = [
-            'id', 'academic_year', 'level', 'term',
+            'id', 'academic_year', 'academic_year_label', 'level', 'term',
             'tuition_fee', 'lunch_fee', 'transport_fee',
             'uniform_fee', 'activity_fee', 'total_fee',
         ]
@@ -34,12 +35,14 @@ class InvoiceSerializer(serializers.ModelSerializer):
     payments = PaymentInlineSerializer(many=True, read_only=True)
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_id_display = serializers.CharField(source='student.student_id', read_only=True)
+    student_level = serializers.CharField(source='student.level', read_only=True)
+    academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
 
     class Meta:
         model = Invoice
         fields = [
-            'id', 'student', 'student_id_display', 'student_name',
-            'academic_year', 'term',
+            'id', 'student', 'student_id_display', 'student_name', 'student_level',
+            'academic_year', 'academic_year_label', 'term',
             'amount_due', 'amount_paid', 'balance',
             'due_date', 'status', 'notes',
             'payments', 'created_at',
