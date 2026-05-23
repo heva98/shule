@@ -21,6 +21,7 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_celery_beat',
 ]
 
 LOCAL_APPS = [
@@ -136,7 +137,32 @@ CACHES = {
     }
 }
 
-# Africa's Talking SMS gateway
+# ── Email ─────────────────────────────────────────────────────────────────────
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@shule.ac.tz')
+
+# ── WhatsApp (Meta Cloud API — to be wired in a later phase) ──────────────────
+WHATSAPP_API_TOKEN = config('WHATSAPP_API_TOKEN', default='')
+WHATSAPP_PHONE_ID = config('WHATSAPP_PHONE_ID', default='')
+
+# ── Celery ────────────────────────────────────────────────────────────────────
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Africa/Dar_es_Salaam'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# ── Africa's Talking (future SMS integration) ─────────────────────────────────
 AFRICASTALKING_USERNAME = config('AFRICASTALKING_USERNAME', default='')
 AFRICASTALKING_API_KEY = config('AFRICASTALKING_API_KEY', default='')
 
