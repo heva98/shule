@@ -96,8 +96,14 @@ export default function DashboardPage() {
   const defaultersQ = useQuery({ queryKey: ['dash-defaulters'], queryFn: fetchDefaulters })
   const monthlyQ = useQuery({ queryKey: ['dash-monthly'], queryFn: fetchMonthly })
 
-  const anyError =
-    studentsQ.isError || feeQ.isError || attQ.isError || defaultersQ.isError
+  const failedEndpoints = [
+    studentsQ.isError && 'Students (/api/students/)',
+    feeQ.isError && 'Fee Summary (/api/fees/summary/)',
+    attQ.isError && 'Attendance (/api/attendance/daily-summary/)',
+    defaultersQ.isError && 'Defaulters (/api/fees/defaulters/)',
+  ].filter(Boolean)
+
+  const anyError = failedEndpoints.length > 0
 
   async function sendReminder(studentId) {
     setSendingId(studentId)
@@ -137,7 +143,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {anyError && (
-        <ErrorBanner message="Some dashboard data could not be loaded. The figures below may be incomplete." />
+        <ErrorBanner
+          message={`Failed to load: ${failedEndpoints.join(' · ')}. Check that the Django server is running and restart it if you recently changed backend code.`}
+        />
       )}
 
       {/* ── Stat cards ── */}
