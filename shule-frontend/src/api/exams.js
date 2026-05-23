@@ -9,14 +9,23 @@ export const getExam = (id) =>
 export const createExam = (data) =>
   api.post('/exams/', data).then((r) => r.data)
 
-export const getExamResults = (examId) =>
-  api.get(`/exams/${examId}/results/`).then((r) => r.data)
-
-export const getExamRanking = (examId) =>
-  api.get(`/exams/${examId}/ranking/`).then((r) => r.data)
-
-export const submitBulkMarks = (examId, data) =>
-  api.post(`/exams/${examId}/marks/bulk/`, data).then((r) => r.data)
-
 export const getSubjects = (params = {}) =>
   api.get('/exams/subjects/', { params }).then((r) => r.data)
+
+// Spec-named aliases
+export const bulkEnterMarks = (examId, data) =>
+  api.post(`/exams/${examId}/marks/bulk/`, data).then((r) => r.data)
+
+export const getResults = (examId) =>
+  api.get(`/exams/${examId}/results/`).then((r) => r.data)
+
+export const getRanking = (examId) =>
+  api.get(`/exams/${examId}/ranking/`).then((r) => r.data)
+
+export const getReportCard = (studentId, examId) =>
+  api.get(`/students/${studentId}/report-card/`, { params: { exam: examId } }).then((r) => r.data)
+
+// Kept for backward compatibility
+export const getExamResults = getResults
+export const getExamRanking = getRanking
+export const submitBulkMarks = bulkEnterMarks

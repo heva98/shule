@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -36,12 +37,33 @@ class StudentViewSet(ModelViewSet):
             return StudentWriteSerializer
         return StudentSerializer
 
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get('all') == 'true':
+            return None
+        return super().paginate_queryset(queryset)
+
     def destroy(self, request, *args, **kwargs):
         """Soft delete: mark as EXPELLED instead of removing the row."""
         student = self.get_object()
         student.status = StudentStatus.EXPELLED
         student.save(update_fields=['status', 'updated_at'])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['get'], url_path='my-children')
+    def my_children(self, request):
+        """Return active students whose guardian phone or email matches the logged-in user."""
+        user = request.user
+        filters = Q(guardians__phone=user.phone)
+        if user.email:
+            filters |= Q(guardians__email=user.email)
+        children = (
+            Student.objects
+            .filter(filters, status=StudentStatus.ACTIVE)
+            .distinct()
+            .prefetch_related('guardians')
+        )
+        serializer = StudentSerializer(children, many=True, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=['get', 'post'], url_path='guardians')
     def guardians(self, request, pk=None):

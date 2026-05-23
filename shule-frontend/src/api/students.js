@@ -24,3 +24,6 @@ export const addGuardian = (studentId, data) =>
 
 export const getStudentReportCard = (studentId, examId) =>
   api.get(`/students/${studentId}/report-card/`, { params: { exam: examId } }).then((r) => r.data)
+
+export const getMyChildren = () =>
+  api.get('/students/my-children/').then((r) => r.data)

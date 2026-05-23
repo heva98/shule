@@ -36,7 +36,18 @@ class AttendanceViewSet(ReadOnlyModelViewSet):
             qs = qs.filter(student__level=p['level'])
         if p.get('stream'):
             qs = qs.filter(student__stream__iexact=p['stream'])
+        if p.get('month'):
+            qs = qs.filter(date__month=p['month'])
+        if p.get('year'):
+            qs = qs.filter(date__year=p['year'])
+        if p.get('status'):
+            qs = qs.filter(status=p['status'])
         return qs
+
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get('all') == 'true':
+            return None
+        return super().paginate_queryset(queryset)
 
 
 class BulkAttendanceView(APIView):

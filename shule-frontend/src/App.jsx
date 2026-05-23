@@ -9,6 +9,7 @@ import CommunicationsPage from './pages/communications/CommunicationsPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ExamsPage from './pages/exams/ExamsPage'
 import MarkEntryPage from './pages/exams/MarkEntryPage'
+import ResultsPage from './pages/exams/ResultsPage'
 import FeesPage from './pages/fees/FeesPage'
 import InvoicesPage from './pages/fees/InvoicesPage'
 import RecordPaymentPage from './pages/fees/RecordPaymentPage'
@@ -121,6 +122,14 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/exams/:id/results"
+                  element={
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER']}>
+                      <ResultsPage />
+                    </ProtectedRoute>
+                  }
+                />
 
                 <Route
                   path="/staff"
@@ -140,16 +149,18 @@ export default function App() {
                   }
                 />
 
-                <Route
-                  path="/parent"
-                  element={
-                    <ProtectedRoute allowedRoles={['PARENT']}>
-                      <ParentPortalPage />
-                    </ProtectedRoute>
-                  }
-                />
               </Route>
             </Route>
+
+            {/* Parent portal — standalone layout, no sidebar */}
+            <Route
+              path="/parent"
+              element={
+                <ProtectedRoute allowedRoles={['PARENT']}>
+                  <ParentPortalPage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
 
           <Toaster

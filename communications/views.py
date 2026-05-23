@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -7,9 +8,37 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from attendance.models import AbsenceAlert
 
-from .models import Message
+from .models import Audience, Message
 from .serializers import BroadcastSerializer, MessageSerializer
 from .services import NotificationService
+
+
+class AnnouncementsView(APIView):
+    """
+    GET /api/communications/announcements/?level=FORM1
+    School-wide and level broadcasts visible to parents.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        level = request.query_params.get('level')
+        qs = Message.objects.filter(audience__in=[Audience.SCHOOL, Audience.LEVEL])
+        if level:
+            qs = qs.filter(Q(audience=Audience.SCHOOL) | Q(target_level=level))
+        qs = qs.select_related('sent_by').order_by('-sent_at')[:50]
+        data = [
+            {
+                'id': m.pk,
+                'subject': m.subject,
+                'body': m.body,
+                'audience': m.audience,
+                'target_level': m.target_level,
+                'sent_at': m.sent_at.isoformat(),
+                'sent_by_name': m.sent_by.full_name if m.sent_by else '',
+            }
+            for m in qs
+        ]
+        return Response(data)
 
 
 class MessageHistoryViewSet(ReadOnlyModelViewSet):

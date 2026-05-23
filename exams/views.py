@@ -23,9 +23,20 @@ from .utils import get_form4_division, get_psle_aggregate
 
 
 class SubjectViewSet(ModelViewSet):
-    queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Subject.objects.all()
+        lg = self.request.query_params.get('level_group')
+        if lg:
+            qs = qs.filter(level_group=lg)
+        return qs
+
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get('all') == 'true':
+            return None
+        return super().paginate_queryset(queryset)
 
 
 class ExamViewSet(ModelViewSet):
@@ -119,6 +130,7 @@ class ExamViewSet(ModelViewSet):
             average = round(total / len(marks), 2) if marks else Decimal('0')
             rows.append(
                 {
+                    'student_pk': student.pk,
                     'student_id': student.student_id,
                     'student_name': student.full_name,
                     'total_score': str(total),

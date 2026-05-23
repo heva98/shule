@@ -221,7 +221,7 @@ function FeesTab({ studentId }) {
 function AttendanceTab({ studentId }) {
   const { data: summary, isLoading: sumLoading } = useQuery({
     queryKey: ['att-summary', studentId],
-    queryFn: () => getAttendanceSummary({ student: studentId }),
+    queryFn: () => getAttendanceSummary(studentId),
   })
 
   const { data: records, isLoading: recLoading } = useQuery({
