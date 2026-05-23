@@ -9,11 +9,11 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'attendance', AttendanceViewSet, basename='attendance')
+router.register(r'', AttendanceViewSet, basename='attendance')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('attendance/bulk/', BulkAttendanceView.as_view(), name='attendance-bulk'),
-    path('attendance/summary/', AttendanceSummaryView.as_view(), name='attendance-summary'),
-    path('attendance/absentees/', AbsenteesView.as_view(), name='attendance-absentees'),
+    path('bulk/', BulkAttendanceView.as_view(), name='attendance-bulk'),
+    path('summary/', AttendanceSummaryView.as_view(), name='attendance-summary'),
+    path('absentees/', AbsenteesView.as_view(), name='attendance-absentees'),
 ]

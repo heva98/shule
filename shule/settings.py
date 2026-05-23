@@ -121,10 +121,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default=config('FRONTEND_URL', default='http://localhost:5173'),
-).split(',')
+_cors_extra = config('CORS_ALLOWED_ORIGINS', default='').split(',')
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',   # React dev server
+    *[o for o in _cors_extra if o],
+]
 
 CORS_ALLOW_CREDENTIALS = True
 

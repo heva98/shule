@@ -1,11 +1,12 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
 from .views import LeaveRequestViewSet, StaffViewSet
 
-router = DefaultRouter()
-router.register(r'staff', StaffViewSet, basename='staff')
-router.register(r'staff/leave', LeaveRequestViewSet, basename='leave')
+# SimpleRouter avoids the api-root collision when registering r'' prefix
+router = SimpleRouter()
+router.register(r'', StaffViewSet, basename='staff')
+router.register(r'leave', LeaveRequestViewSet, basename='leave')
 
 urlpatterns = [
     path('', include(router.urls)),
