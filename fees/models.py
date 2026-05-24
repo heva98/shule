@@ -1,16 +1,24 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from students.models import Level
+from shule.utils import validate_term_quarter
 
 
 class Term(models.TextChoices):
     TERM1 = 'TERM1', 'Term 1'
     TERM2 = 'TERM2', 'Term 2'
-    TERM3 = 'TERM3', 'Term 3'
+
+
+class Quarter(models.TextChoices):
+    Q1 = 'Q1', 'Quarter 1'
+    Q2 = 'Q2', 'Quarter 2'
+    Q3 = 'Q3', 'Quarter 3'
+    Q4 = 'Q4', 'Quarter 4'
 
 
 class InvoiceStatus(models.TextChoices):
@@ -31,12 +39,14 @@ class AcademicYear(models.Model):
     year = models.IntegerField(unique=True)
     is_current = models.BooleanField(default=False)
 
-    term1_start = models.DateField(null=True, blank=True)
-    term1_end = models.DateField(null=True, blank=True)
-    term2_start = models.DateField(null=True, blank=True)
-    term2_end = models.DateField(null=True, blank=True)
-    term3_start = models.DateField(null=True, blank=True)
-    term3_end = models.DateField(null=True, blank=True)
+    q1_start = models.DateField(null=True, blank=True)
+    q1_end = models.DateField(null=True, blank=True)
+    q2_start = models.DateField(null=True, blank=True)
+    q2_end = models.DateField(null=True, blank=True)
+    q3_start = models.DateField(null=True, blank=True)
+    q3_end = models.DateField(null=True, blank=True)
+    q4_start = models.DateField(null=True, blank=True)
+    q4_end = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ['-year']
@@ -45,10 +55,14 @@ class AcademicYear(models.Model):
         return str(self.year)
 
     def save(self, *args, **kwargs):
-        # Enforce only one current year at a time
         if self.is_current:
             AcademicYear.objects.exclude(pk=self.pk).update(is_current=False)
         super().save(*args, **kwargs)
+
+    def get_term_for_quarter(self, quarter):
+        """Return 'TERM1' or 'TERM2' for the given quarter string."""
+        from shule.utils import TERM_QUARTER_MAP
+        return TERM_QUARTER_MAP.get(quarter)
 
 
 class FeeStructure(models.Model):
@@ -57,6 +71,7 @@ class FeeStructure(models.Model):
     )
     level = models.CharField(max_length=10, choices=Level.choices)
     term = models.CharField(max_length=10, choices=Term.choices)
+    quarter = models.CharField(max_length=5, choices=Quarter.choices)
 
     tuition_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     lunch_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -65,11 +80,20 @@ class FeeStructure(models.Model):
     activity_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
-        unique_together = ('academic_year', 'level', 'term')
-        ordering = ['academic_year', 'level', 'term']
+        unique_together = ('academic_year', 'level', 'term', 'quarter')
+        ordering = ['academic_year', 'level', 'term', 'quarter']
 
     def __str__(self):
-        return f'{self.academic_year} | {self.level} | {self.term}'
+        return f'{self.academic_year} | {self.level} | {self.term} | {self.quarter}'
+
+    def clean(self):
+        validate_term_quarter(self.term, self.quarter)
+
+    @property
+    def period_label(self):
+        term_label = dict(Term.choices).get(self.term, self.term)
+        quarter_label = dict(Quarter.choices).get(self.quarter, self.quarter)
+        return f'{term_label} — {quarter_label}'
 
     @property
     def total_fee(self):
@@ -90,6 +114,7 @@ class Invoice(models.Model):
         AcademicYear, on_delete=models.PROTECT, related_name='invoices'
     )
     term = models.CharField(max_length=10, choices=Term.choices)
+    quarter = models.CharField(max_length=5, choices=Quarter.choices)
     amount_due = models.DecimalField(max_digits=10, decimal_places=2)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     due_date = models.DateField()
@@ -100,11 +125,14 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('student', 'academic_year', 'term')
-        ordering = ['-academic_year__year', 'term', 'student__last_name']
+        unique_together = ('student', 'academic_year', 'term', 'quarter')
+        ordering = ['-academic_year__year', 'term', 'quarter', 'student__last_name']
 
     def __str__(self):
-        return f'{self.student.student_id} | {self.academic_year} | {self.term}'
+        return f'{self.student.student_id} | {self.academic_year} | {self.term} | {self.quarter}'
+
+    def clean(self):
+        validate_term_quarter(self.term, self.quarter)
 
     @property
     def balance(self):
@@ -149,7 +177,6 @@ def update_invoice_on_payment(sender, instance, created, **kwargs):
     invoice.amount_paid = total_paid
     invoice.refresh_status()
 
-    # Generate receipt number if not already set
     if not instance.receipt_number:
         year = instance.paid_at.year
         seq = str(instance.pk).zfill(5)

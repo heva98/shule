@@ -50,6 +50,8 @@ class ExamViewSet(ModelViewSet):
             qs = qs.filter(level=p['level'])
         if p.get('term'):
             qs = qs.filter(term=p['term'])
+        if p.get('quarter'):
+            qs = qs.filter(quarter=p['quarter'])
         return qs
 
     def perform_create(self, serializer):

@@ -20,8 +20,18 @@ import { LEVEL_LABEL, LEVEL_OPTIONS } from '../../lib/constants'
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
   { value: 'TERM2', label: 'Term 2' },
-  { value: 'TERM3', label: 'Term 3' },
 ]
+
+const QUARTER_MAP = {
+  TERM1: [
+    { value: 'Q1', label: 'Quarter 1' },
+    { value: 'Q2', label: 'Quarter 2' },
+  ],
+  TERM2: [
+    { value: 'Q3', label: 'Quarter 3' },
+    { value: 'Q4', label: 'Quarter 4' },
+  ],
+}
 
 const EXAM_TYPES = [
   { value: 'CA1',      label: 'Continuous Assessment 1' },
@@ -59,13 +69,17 @@ function CreateExamModal({ onClose }) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      name: '', academic_year: '', term: '', level: '',
+      name: '', academic_year: '', term: '', quarter: '', level: '',
       stream: '', exam_type: '', start_date: '', end_date: '',
     },
   })
+
+  const selectedTerm = watch('term')
+  const quarterOptions = QUARTER_MAP[selectedTerm] ?? []
 
   const mutation = useMutation({
     mutationFn: createExam,
@@ -142,6 +156,17 @@ function CreateExamModal({ onClose }) {
             </Field>
           </div>
 
+          <Field label="Quarter" required error={errors.quarter?.message}>
+            <select
+              {...register('quarter', { required: 'Required' })}
+              className={selectCls}
+              disabled={!selectedTerm}
+            >
+              <option value="">{selectedTerm ? 'Select quarter…' : 'Pick a term first'}</option>
+              {quarterOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+
           <div className="grid grid-cols-2 gap-4">
             <Field label="Level" required error={errors.level?.message}>
               <select {...register('level', { required: 'Required' })} className={selectCls}>
@@ -194,15 +219,17 @@ function CreateExamModal({ onClose }) {
 
 export default function ExamsPage() {
   const navigate = useNavigate()
-  const [showCreate, setShowCreate] = useState(false)
-  const [levelFilter, setLevelFilter] = useState('')
-  const [termFilter,  setTermFilter]  = useState('')
+  const [showCreate,    setShowCreate]    = useState(false)
+  const [levelFilter,   setLevelFilter]   = useState('')
+  const [termFilter,    setTermFilter]    = useState('')
+  const [quarterFilter, setQuarterFilter] = useState('')
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['exams', levelFilter, termFilter],
+    queryKey: ['exams', levelFilter, termFilter, quarterFilter],
     queryFn: () => getExams({
-      level: levelFilter || undefined,
-      term:  termFilter  || undefined,
+      level:   levelFilter   || undefined,
+      term:    termFilter    || undefined,
+      quarter: quarterFilter || undefined,
     }),
   })
 
@@ -210,6 +237,11 @@ export default function ExamsPage() {
 
   const filterSelectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
     focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+
+  const availableQuarters = termFilter ? (QUARTER_MAP[termFilter] ?? []) : [
+    { value: 'Q1', label: 'Q1' }, { value: 'Q2', label: 'Q2' },
+    { value: 'Q3', label: 'Q3' }, { value: 'Q4', label: 'Q4' },
+  ]
 
   return (
     <div className="space-y-5">
@@ -220,9 +252,18 @@ export default function ExamsPage() {
           {LEVEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
 
-        <select value={termFilter} onChange={(e) => setTermFilter(e.target.value)} className={filterSelectCls}>
+        <select
+          value={termFilter}
+          onChange={(e) => { setTermFilter(e.target.value); setQuarterFilter('') }}
+          className={filterSelectCls}
+        >
           <option value="">All Terms</option>
           {TERM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+
+        <select value={quarterFilter} onChange={(e) => setQuarterFilter(e.target.value)} className={filterSelectCls}>
+          <option value="">All Quarters</option>
+          {availableQuarters.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
 
         <button
@@ -272,7 +313,7 @@ export default function ExamsPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
                     <span>{LEVEL_LABEL[exam.level] ?? exam.level}{exam.stream ? ` · Stream ${exam.stream}` : ''}</span>
-                    <span>{exam.term?.replace('TERM', 'Term ')}</span>
+                    <span>{exam.term?.replace('TERM', 'Term ')}{exam.quarter ? ` · ${exam.quarter}` : ''}</span>
                     <span>{exam.start_date} → {exam.end_date}</span>
                     {exam.created_by_name && <span>by {exam.created_by_name}</span>}
                   </div>

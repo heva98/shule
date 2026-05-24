@@ -78,16 +78,17 @@ class InvoiceViewSet(ModelViewSet):
 
         academic_year = data['academic_year']
         term = data['term']
+        quarter = data['quarter']
         level = data['level']
         due_date = data['due_date']
 
         try:
             structure = FeeStructure.objects.get(
-                academic_year=academic_year, level=level, term=term
+                academic_year=academic_year, level=level, term=term, quarter=quarter
             )
         except FeeStructure.DoesNotExist:
             return Response(
-                {'detail': f'No fee structure found for {level} / {term} / {academic_year}.'},
+                {'detail': f'No fee structure found for {level} / {term} / {quarter} / {academic_year}.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -105,6 +106,7 @@ class InvoiceViewSet(ModelViewSet):
                 student=student,
                 academic_year=academic_year,
                 term=term,
+                quarter=quarter,
                 defaults={'amount_due': amount_due, 'due_date': due_date},
             )
             if was_created:
@@ -171,6 +173,7 @@ class DefaultersView(APIView):
                 'student_name': inv.student.full_name,
                 'level': inv.student.level,
                 'term': inv.term,
+                'quarter': inv.quarter,
                 'amount_due': str(inv.amount_due),
                 'amount_paid': str(inv.amount_paid),
                 'balance': str(inv.balance),

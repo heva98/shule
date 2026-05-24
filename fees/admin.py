@@ -6,7 +6,7 @@ from .models import AcademicYear, FeeStructure, Invoice, Payment
 
 @admin.register(AcademicYear)
 class AcademicYearAdmin(admin.ModelAdmin):
-    list_display = ('year', 'is_current', 'term1_start', 'term2_start', 'term3_start')
+    list_display = ('year', 'is_current', 'q1_start', 'q2_start', 'q3_start', 'q4_start')
     list_filter = ('is_current',)
     ordering = ('-year',)
 
@@ -14,12 +14,12 @@ class AcademicYearAdmin(admin.ModelAdmin):
 @admin.register(FeeStructure)
 class FeeStructureAdmin(admin.ModelAdmin):
     list_display = (
-        'academic_year', 'level', 'term',
+        'academic_year', 'level', 'term', 'quarter',
         'tuition_fee', 'lunch_fee', 'transport_fee',
         'uniform_fee', 'activity_fee', 'display_total',
     )
-    list_filter = ('academic_year', 'level', 'term')
-    ordering = ('-academic_year__year', 'level', 'term')
+    list_filter = ('academic_year', 'level', 'term', 'quarter')
+    ordering = ('-academic_year__year', 'level', 'term', 'quarter')
 
     def display_total(self, obj):
         return f'TZS {obj.total_fee:,.2f}'
@@ -38,22 +38,22 @@ class PaymentInline(admin.TabularInline):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = (
         'student_id_col', 'student_name_col',
-        'academic_year', 'term',
+        'academic_year', 'term', 'quarter',
         'amount_due_col', 'amount_paid_col', 'balance_col',
         'due_date', 'status',
     )
-    list_filter = ('status', 'term', 'academic_year', 'student__level')
+    list_filter = ('status', 'term', 'quarter', 'academic_year', 'student__level')
     search_fields = (
         'student__student_id', 'student__first_name', 'student__last_name'
     )
     date_hierarchy = 'created_at'
     readonly_fields = ('amount_paid', 'status', 'created_at', 'balance_display')
-    ordering = ('-academic_year__year', 'term', 'student__last_name')
+    ordering = ('-academic_year__year', 'term', 'quarter', 'student__last_name')
     inlines = [PaymentInline]
 
     fieldsets = (
         ('Student', {'fields': ('student',)}),
-        ('Period', {'fields': ('academic_year', 'term')}),
+        ('Period', {'fields': ('academic_year', 'term', 'quarter')}),
         ('Amounts (TZS)', {'fields': ('amount_due', 'amount_paid', 'balance_display')}),
         ('Status', {'fields': ('status', 'due_date', 'notes')}),
         ('Timestamps', {'fields': ('created_at',), 'classes': ('collapse',)}),

@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from fees.models import Quarter
+
 
 class Session(models.TextChoices):
     MORNING = 'MORNING', 'Morning'
@@ -23,6 +25,9 @@ class AttendanceRecord(models.Model):
     date = models.DateField(db_index=True)
     session = models.CharField(max_length=10, choices=Session.choices)
     status = models.CharField(max_length=10, choices=AttendanceStatus.choices)
+    quarter = models.CharField(
+        max_length=5, choices=Quarter.choices, null=True, blank=True, db_index=True
+    )
     reason = models.TextField(blank=True)
     marked_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -1,8 +1,10 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
-from fees.models import AcademicYear, Term
+from fees.models import AcademicYear, Term, Quarter
 from students.models import Level
+from shule.utils import validate_term_quarter
 
 from .utils import get_grade
 
@@ -40,6 +42,7 @@ class Exam(models.Model):
         AcademicYear, on_delete=models.PROTECT, related_name='exams'
     )
     term = models.CharField(max_length=10, choices=Term.choices)
+    quarter = models.CharField(max_length=5, choices=Quarter.choices)
     level = models.CharField(max_length=10, choices=Level.choices)
     stream = models.CharField(max_length=10, blank=True)
     exam_type = models.CharField(max_length=10, choices=ExamType.choices)
@@ -52,11 +55,14 @@ class Exam(models.Model):
     )
 
     class Meta:
-        ordering = ['-academic_year__year', 'term', 'level']
+        ordering = ['-academic_year__year', 'term', 'quarter', 'level']
 
     def __str__(self):
         stream_part = f' {self.stream}' if self.stream else ''
         return f'{self.name} | {self.level}{stream_part} | {self.academic_year}'
+
+    def clean(self):
+        validate_term_quarter(self.term, self.quarter)
 
 
 class MarkEntry(models.Model):

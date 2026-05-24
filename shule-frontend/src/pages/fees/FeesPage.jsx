@@ -22,7 +22,7 @@ import {
   createFeeStructure,
   updateFeeStructure,
 } from '../../api/fees'
-import api from '../../lib/axios'
+import { sendFeeReminder } from '../../api/communications'
 import RecordPaymentModal from '../../components/fees/RecordPaymentModal'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
@@ -37,7 +37,24 @@ import { formatTZS } from '../../lib/format'
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
   { value: 'TERM2', label: 'Term 2' },
-  { value: 'TERM3', label: 'Term 3' },
+]
+
+const QUARTER_MAP = {
+  TERM1: [
+    { value: 'Q1', label: 'Quarter 1' },
+    { value: 'Q2', label: 'Quarter 2' },
+  ],
+  TERM2: [
+    { value: 'Q3', label: 'Quarter 3' },
+    { value: 'Q4', label: 'Quarter 4' },
+  ],
+}
+
+const ALL_QUARTERS = [
+  { value: 'Q1', label: 'Q1' },
+  { value: 'Q2', label: 'Q2' },
+  { value: 'Q3', label: 'Q3' },
+  { value: 'Q4', label: 'Q4' },
 ]
 
 const STATUS_OPTIONS = [
@@ -53,14 +70,15 @@ const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray
 const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
   focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
 
+function fmtPeriod(term, quarter) {
+  const t = term?.replace('TERM', 'T') ?? ''
+  const q = quarter ?? ''
+  return t && q ? `${t} · ${q}` : t || q || '—'
+}
+
 function daysOverdue(due_date) {
   const diff = Math.floor((Date.now() - new Date(due_date).getTime()) / 86400000)
   return Math.max(0, diff)
-}
-
-function waUrl(phone) {
-  if (!phone) return null
-  return `https://wa.me/${phone.replace(/\D/g, '')}`
 }
 
 // ── Generate Invoices Modal ────────────────────────────────────────────────
@@ -77,15 +95,20 @@ function GenerateInvoicesModal({ onClose }) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
       academic_year: '',
       term: '',
+      quarter: '',
       level: '',
       due_date: '',
     },
   })
+
+  const selectedTerm = watch('term')
+  const quarterOptions = QUARTER_MAP[selectedTerm] ?? []
 
   const [result, setResult] = useState(null)
 
@@ -96,8 +119,10 @@ function GenerateInvoicesModal({ onClose }) {
       queryClient.invalidateQueries({ queryKey: ['invoices'] })
     },
     onError: (err) => {
-      const detail = err.response?.data?.detail || 'Generation failed.'
-      toast.error(detail)
+      const detail = err.response?.data?.detail
+        || Object.values(err.response?.data ?? {}).flat()[0]
+        || 'Generation failed.'
+      toast.error(String(detail))
     },
   })
 
@@ -105,6 +130,7 @@ function GenerateInvoicesModal({ onClose }) {
     mutation.mutate({
       academic_year: Number(data.academic_year),
       term: data.term,
+      quarter: data.quarter,
       level: data.level,
       due_date: data.due_date,
     })
@@ -184,21 +210,40 @@ function GenerateInvoicesModal({ onClose }) {
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Level <span className="text-danger">*</span>
+                  Quarter <span className="text-danger">*</span>
                 </label>
                 <select
-                  {...register('level', { required: 'Required' })}
+                  {...register('quarter', { required: 'Required' })}
                   className={`${selectCls} w-full`}
+                  disabled={!selectedTerm}
                 >
-                  <option value="">Select level…</option>
-                  {LEVEL_OPTIONS.map((o) => (
+                  <option value="">{selectedTerm ? 'Select quarter…' : 'Pick term first'}</option>
+                  {quarterOptions.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
-                {errors.level && (
-                  <p className="mt-1 text-xs text-danger">{errors.level.message}</p>
+                {errors.quarter && (
+                  <p className="mt-1 text-xs text-danger">{errors.quarter.message}</p>
                 )}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Level <span className="text-danger">*</span>
+              </label>
+              <select
+                {...register('level', { required: 'Required' })}
+                className={`${selectCls} w-full`}
+              >
+                <option value="">Select level…</option>
+                {LEVEL_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              {errors.level && (
+                <p className="mt-1 text-xs text-danger">{errors.level.message}</p>
+              )}
             </div>
 
             <div>
@@ -208,7 +253,7 @@ function GenerateInvoicesModal({ onClose }) {
               <input
                 type="date"
                 {...register('due_date', { required: 'Required' })}
-                className={`${inputCls}`}
+                className={inputCls}
               />
               {errors.due_date && (
                 <p className="mt-1 text-xs text-danger">{errors.due_date.message}</p>
@@ -249,24 +294,26 @@ function GenerateInvoicesModal({ onClose }) {
 // ── Invoices Tab ───────────────────────────────────────────────────────────
 
 function InvoicesTab() {
-  const [termFilter,   setTermFilter]   = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [levelFilter,  setLevelFilter]  = useState('')
-  const [page,         setPage]         = useState(1)
-  const [showGenerate, setShowGenerate] = useState(false)
-  const [payInvoice,   setPayInvoice]   = useState(null)
+  const [termFilter,    setTermFilter]    = useState('')
+  const [quarterFilter, setQuarterFilter] = useState('')
+  const [statusFilter,  setStatusFilter]  = useState('')
+  const [levelFilter,   setLevelFilter]   = useState('')
+  const [page,          setPage]          = useState(1)
+  const [showGenerate,  setShowGenerate]  = useState(false)
+  const [payInvoice,    setPayInvoice]    = useState(null)
 
-  useEffect(() => setPage(1), [termFilter, statusFilter, levelFilter])
+  useEffect(() => setPage(1), [termFilter, quarterFilter, statusFilter, levelFilter])
 
   const queryClient = useQueryClient()
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['invoices', termFilter, statusFilter, levelFilter, page],
+    queryKey: ['invoices', termFilter, quarterFilter, statusFilter, levelFilter, page],
     queryFn: () =>
       getInvoices({
-        term:   termFilter   || undefined,
-        status: statusFilter || undefined,
-        level:  levelFilter  || undefined,
+        term:    termFilter    || undefined,
+        quarter: quarterFilter || undefined,
+        status:  statusFilter  || undefined,
+        level:   levelFilter   || undefined,
         page,
       }),
     placeholderData: (prev) => prev,
@@ -276,13 +323,29 @@ function InvoicesTab() {
   const count      = data?.count   ?? 0
   const totalPages = Math.max(1, Math.ceil(count / 20))
 
+  const availableQuarters = termFilter ? (QUARTER_MAP[termFilter] ?? []) : ALL_QUARTERS
+
   return (
     <>
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <select value={termFilter} onChange={(e) => setTermFilter(e.target.value)} className={selectCls}>
+        <select
+          value={termFilter}
+          onChange={(e) => { setTermFilter(e.target.value); setQuarterFilter('') }}
+          className={selectCls}
+        >
           <option value="">All Terms</option>
           {TERM_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+
+        <select
+          value={quarterFilter}
+          onChange={(e) => setQuarterFilter(e.target.value)}
+          className={selectCls}
+        >
+          <option value="">All Quarters</option>
+          {availableQuarters.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
@@ -311,13 +374,12 @@ function InvoicesTab() {
         </button>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
-                {['Student', 'Level', 'Term', 'Invoiced', 'Paid', 'Balance', 'Status'].map((h) => (
+                {['Student', 'Level', 'Period', 'Invoiced', 'Paid', 'Balance', 'Status'].map((h) => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap"
@@ -367,7 +429,7 @@ function InvoicesTab() {
                         {LEVEL_LABEL[inv.student_level] ?? inv.student_level ?? '—'}
                       </td>
                       <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                        {inv.academic_year_label} · {inv.term?.replace('TERM', 'T')}
+                        {inv.academic_year_label} · {fmtPeriod(inv.term, inv.quarter)}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                         {formatTZS(inv.amount_due)}
@@ -391,7 +453,6 @@ function InvoicesTab() {
           </table>
         </div>
 
-        {/* Pagination */}
         {count > 20 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
             <p className="text-xs text-gray-500">{count} invoices</p>
@@ -420,7 +481,6 @@ function InvoicesTab() {
         )}
       </div>
 
-      {/* Modals */}
       {showGenerate && <GenerateInvoicesModal onClose={() => setShowGenerate(false)} />}
       {payInvoice && (
         <RecordPaymentModal
@@ -454,10 +514,11 @@ function DefaultersTab() {
 
   const defaulters = Array.isArray(data) ? data : data?.results ?? []
 
-  async function sendReminder(d) {
+  async function handleSendReminder(d) {
     try {
-      const res = await api.post('/communications/fee-reminders/', { student_id: d.student_id })
-      if (res.data.wa_url) window.open(res.data.wa_url, '_blank', 'noopener')
+      const res = await sendFeeReminder(d.student_id)
+      if (res.wa_url) window.open(res.wa_url, '_blank', 'noopener')
+      else toast.success(`Reminder sent for ${d.student_name}`)
     } catch {
       toast.error(`Could not send reminder for ${d.student_name}`)
     }
@@ -469,9 +530,7 @@ function DefaultersTab() {
     let ok = 0
     await Promise.allSettled(
       defaulters.map((d) =>
-        api
-          .post('/communications/fee-reminders/', { student_id: d.student_id })
-          .then(() => ok++)
+        sendFeeReminder(d.student_id).then(() => ok++)
       )
     )
     toast.success(`Reminders queued for ${ok} student${ok !== 1 ? 's' : ''}.`)
@@ -480,7 +539,6 @@ function DefaultersTab() {
 
   return (
     <>
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select value={termFilter} onChange={(e) => setTermFilter(e.target.value)} className={selectCls}>
           <option value="">All Terms</option>
@@ -513,13 +571,12 @@ function DefaultersTab() {
         )}
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
-                {['Student', 'Level', 'Term', 'Balance (TZS)', 'Days Overdue', 'Action'].map((h) => (
+                {['Student', 'Level', 'Period', 'Balance (TZS)', 'Days Overdue', 'Action'].map((h) => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap"
@@ -554,7 +611,7 @@ function DefaultersTab() {
                 defaulters.map((d) => {
                   const overdue = daysOverdue(d.due_date)
                   return (
-                    <tr key={`${d.student_id}-${d.term}`} className="hover:bg-gray-50/40 transition-colors">
+                    <tr key={`${d.student_id}-${d.term}-${d.quarter}`} className="hover:bg-gray-50/40 transition-colors">
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">{d.student_name}</div>
                         <div className="text-xs text-gray-400 font-mono">{d.student_id}</div>
@@ -563,7 +620,7 @@ function DefaultersTab() {
                         {LEVEL_LABEL[d.level] ?? d.level}
                       </td>
                       <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                        {d.term?.replace('TERM', 'Term ')}
+                        {fmtPeriod(d.term, d.quarter)}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs font-semibold text-danger whitespace-nowrap">
                         {formatTZS(d.balance)}
@@ -577,7 +634,7 @@ function DefaultersTab() {
                       </td>
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => sendReminder(d)}
+                          onClick={() => handleSendReminder(d)}
                           className="flex items-center gap-1 text-xs text-white bg-[#25D366]
                             rounded-lg px-2.5 py-1.5 hover:bg-[#1ebe5d] transition-colors"
                         >
@@ -656,7 +713,7 @@ function StructureRow({ structure, onSaved }) {
         {LEVEL_LABEL[structure.level] ?? structure.level}
       </td>
       <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-        {structure.term?.replace('TERM', 'Term ')}
+        {structure.period_label ?? fmtPeriod(structure.term, structure.quarter)}
       </td>
       {FEE_FIELDS.map((f) => (
         <td key={f.key} className="px-3 py-3 whitespace-nowrap">
@@ -693,13 +750,16 @@ function StructureRow({ structure, onSaved }) {
               Save
             </button>
             <button
-              onClick={() => { setEditing(false); setVals({
-                tuition_fee:   structure.tuition_fee,
-                lunch_fee:     structure.lunch_fee,
-                transport_fee: structure.transport_fee,
-                uniform_fee:   structure.uniform_fee,
-                activity_fee:  structure.activity_fee,
-              }) }}
+              onClick={() => {
+                setEditing(false)
+                setVals({
+                  tuition_fee:   structure.tuition_fee,
+                  lunch_fee:     structure.lunch_fee,
+                  transport_fee: structure.transport_fee,
+                  uniform_fee:   structure.uniform_fee,
+                  activity_fee:  structure.activity_fee,
+                })
+              }}
               className="px-2.5 py-1.5 border border-gray-200 text-gray-500 rounded-lg
                 text-xs hover:bg-gray-50 transition-colors"
             >
@@ -729,12 +789,15 @@ function AddStructureForm({ onDone }) {
   })
   const years = yearsData?.results ?? yearsData ?? []
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: {
-      academic_year: '', level: '', term: '',
+      academic_year: '', level: '', term: '', quarter: '',
       tuition_fee: 0, lunch_fee: 0, transport_fee: 0, uniform_fee: 0, activity_fee: 0,
     },
   })
+
+  const selectedTerm = watch('term')
+  const quarterOptions = QUARTER_MAP[selectedTerm] ?? []
 
   const mutation = useMutation({
     mutationFn: createFeeStructure,
@@ -759,6 +822,7 @@ function AddStructureForm({ onDone }) {
       academic_year: Number(data.academic_year),
       level: data.level,
       term: data.term,
+      quarter: data.quarter,
       tuition_fee:   Number(data.tuition_fee)   || 0,
       lunch_fee:     Number(data.lunch_fee)     || 0,
       transport_fee: Number(data.transport_fee) || 0,
@@ -767,26 +831,35 @@ function AddStructureForm({ onDone }) {
     })
   }
 
+  const smSel = 'w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary/30'
   const numCls = 'w-20 border border-gray-300 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30'
 
   return (
     <tr className="bg-primary/5 border-b border-primary/20">
       <td className="px-3 py-2">
-        <select {...register('academic_year', { required: true })} className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs bg-white">
+        <select {...register('academic_year', { required: true })} className={smSel}>
           <option value="">Year…</option>
           {years.map((y) => <option key={y.id} value={y.id}>{y.year}</option>)}
         </select>
       </td>
       <td className="px-3 py-2">
-        <select {...register('level', { required: true })} className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs bg-white">
+        <select {...register('level', { required: true })} className={smSel}>
           <option value="">Level…</option>
           {LEVEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </td>
-      <td className="px-3 py-2">
-        <select {...register('term', { required: true })} className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs bg-white">
+      <td className="px-3 py-2 space-y-1">
+        <select {...register('term', { required: true })} className={smSel}>
           <option value="">Term…</option>
           {TERM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select
+          {...register('quarter', { required: true })}
+          className={smSel}
+          disabled={!selectedTerm}
+        >
+          <option value="">{selectedTerm ? 'Quarter…' : '—'}</option>
+          {quarterOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </td>
       {FEE_FIELDS.map((f) => (
@@ -859,7 +932,7 @@ function FeeStructuresTab() {
               <tr className="border-b border-gray-100 bg-gray-50/60">
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Year</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Level</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Term</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Period</th>
                 {FEE_FIELDS.map((f) => (
                   <th key={f.key} className="text-left px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
                     {f.label}
@@ -1059,10 +1132,10 @@ export default function FeesPage() {
   return (
     <div className="space-y-5">
       <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
-      {activeTab === 'invoices'   && <InvoicesTab />}
-      {activeTab === 'defaulters' && <DefaultersTab />}
-      {activeTab === 'structures' && <FeeStructuresTab />}
-      {activeTab === 'years'      && <AcademicYearsTab />}
+      {activeTab === 'invoices'    && <InvoicesTab />}
+      {activeTab === 'defaulters'  && <DefaultersTab />}
+      {activeTab === 'structures'  && <FeeStructuresTab />}
+      {activeTab === 'years'       && <AcademicYearsTab />}
     </div>
   )
 }

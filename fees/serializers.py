@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import AcademicYear, FeeStructure, Invoice, Payment
+from .models import AcademicYear, FeeStructure, Invoice, Payment, Quarter, Term
 
 
 class AcademicYearSerializer(serializers.ModelSerializer):
@@ -13,13 +13,14 @@ class FeeStructureSerializer(serializers.ModelSerializer):
     total_fee = serializers.DecimalField(
         max_digits=10, decimal_places=2, read_only=True
     )
+    period_label = serializers.CharField(read_only=True)
     academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
 
     class Meta:
         model = FeeStructure
         fields = [
-            'id', 'academic_year', 'academic_year_label', 'level', 'term',
-            'tuition_fee', 'lunch_fee', 'transport_fee',
+            'id', 'academic_year', 'academic_year_label', 'level', 'term', 'quarter',
+            'period_label', 'tuition_fee', 'lunch_fee', 'transport_fee',
             'uniform_fee', 'activity_fee', 'total_fee',
         ]
 
@@ -42,7 +43,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = [
             'id', 'student', 'student_id_display', 'student_name', 'student_level',
-            'academic_year', 'academic_year_label', 'term',
+            'academic_year', 'academic_year_label', 'term', 'quarter',
             'amount_due', 'amount_paid', 'balance',
             'due_date', 'status', 'notes',
             'payments', 'created_at',
@@ -54,9 +55,18 @@ class InvoiceGenerateSerializer(serializers.Serializer):
     academic_year = serializers.PrimaryKeyRelatedField(
         queryset=AcademicYear.objects.all()
     )
-    term = serializers.ChoiceField(choices=[('TERM1', 'Term 1'), ('TERM2', 'Term 2'), ('TERM3', 'Term 3')])
+    term = serializers.ChoiceField(choices=Term.choices)
+    quarter = serializers.ChoiceField(choices=Quarter.choices)
     level = serializers.CharField(max_length=10)
     due_date = serializers.DateField()
+
+    def validate(self, attrs):
+        from shule.utils import validate_term_quarter
+        try:
+            validate_term_quarter(attrs['term'], attrs['quarter'])
+        except Exception as e:
+            raise serializers.ValidationError({'quarter': str(e)})
+        return attrs
 
 
 class PaymentSerializer(serializers.ModelSerializer):
