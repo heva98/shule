@@ -201,6 +201,54 @@ class NotificationService:
         return result
 
     @staticmethod
+    def notify_staff(staff_profile, title: str, body: str, category: str = 'GENERAL') -> dict:
+        """
+        Create an in-app UserNotification for a staff member and optionally
+        send WhatsApp + email if contact details are available.
+        """
+        from accounts.models import UserNotification
+
+        UserNotification.objects.create(
+            user=staff_profile.user,
+            title=title,
+            message=body,
+            category=category,
+        )
+
+        result = {'success': True, 'wa_url': None}
+        user   = staff_profile.user
+
+        if user.phone:
+            msg = Message.objects.create(
+                subject=title,
+                body=body,
+                message_type='WHATSAPP',
+                audience='INDIVIDUAL',
+                sent_by=None,
+                total_recipients=1,
+            )
+            wa_url = _send_whatsapp(msg, user.phone, user.full_name)
+            msg.delivered_count = 1
+            msg.save(update_fields=['delivered_count'])
+            result['wa_url'] = wa_url
+
+        if user.email:
+            email_msg = Message.objects.create(
+                subject=title,
+                body=body,
+                message_type='EMAIL',
+                audience='INDIVIDUAL',
+                sent_by=None,
+                total_recipients=1,
+            )
+            ok = _send_email(email_msg, user.email, user.full_name)
+            if ok:
+                email_msg.delivered_count = 1
+                email_msg.save(update_fields=['delivered_count'])
+
+        return result
+
+    @staticmethod
     def broadcast(message_obj: Message, sent_by_user) -> dict:
         """
         Resolve recipients by audience field, send WhatsApp URL or email
