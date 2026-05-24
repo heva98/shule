@@ -3,6 +3,15 @@ from rest_framework.permissions import BasePermission
 from .models import Role
 
 
+class IsSystemAdmin(BasePermission):
+    """SYSTEM_ADMIN or OWNER — full admin panel access."""
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.role in (Role.SYSTEM_ADMIN, Role.OWNER)
+        )
+
+
 class IsOwner(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == Role.OWNER

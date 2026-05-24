@@ -28,6 +28,7 @@ class Subject(models.Model):
     code = models.CharField(max_length=10, unique=True)
     level_group = models.CharField(max_length=10, choices=LevelGroup.choices)
     is_compulsory = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['level_group', 'name']

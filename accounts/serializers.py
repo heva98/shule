@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
-from .models import User
+from .models import AuditLog, Role, SchoolSettings, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -43,3 +43,80 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('This account has been deactivated.')
         attrs['user'] = user
         return attrs
+
+
+# ── Admin serializers ─────────────────────────────────────────────────────────
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'full_name', 'phone', 'role', 'role_display',
+            'profile_photo', 'is_active', 'date_joined', 'last_login',
+        ]
+        read_only_fields = ['id', 'date_joined', 'last_login']
+
+
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ['email', 'password', 'full_name', 'phone', 'role']
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('A user with this email already exists.')
+        return value.lower()
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['full_name', 'phone', 'is_active']
+
+
+class AdminRoleChangeSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=Role.choices)
+    reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class AdminPasswordResetSerializer(serializers.Serializer):
+    new_password = serializers.CharField(min_length=8, write_only=True)
+    notify = serializers.BooleanField(default=True)
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    performed_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id', 'performed_by', 'performed_by_name', 'action',
+            'target_model', 'target_id', 'description',
+            'ip_address', 'timestamp', 'extra_data',
+        ]
+        read_only_fields = fields
+
+    def get_performed_by_name(self, obj):
+        return obj.performed_by.full_name if obj.performed_by else 'System'
+
+
+class SchoolSettingsSerializer(serializers.ModelSerializer):
+    email_configured = serializers.BooleanField(read_only=True)
+    sms_configured = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = SchoolSettings
+        fields = [
+            'id', 'school_name', 'school_motto', 'school_logo',
+            'school_address', 'school_phone', 'school_email', 'school_website',
+            'region', 'district', 'registration_number', 'school_type',
+            'established_year', 'email_configured', 'sms_configured',
+        ]
+        read_only_fields = ['id', 'email_configured', 'sms_configured']
