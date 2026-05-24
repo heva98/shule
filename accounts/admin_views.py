@@ -12,7 +12,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import connection
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -318,7 +318,7 @@ class AdminAuditLogView(APIView):
 
 class AdminSettingsView(APIView):
     permission_classes = [IsAuthenticated, IsSystemAdmin]
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, JSONParser]
 
     def get(self, request):
         settings_obj = SchoolSettings.get_settings()

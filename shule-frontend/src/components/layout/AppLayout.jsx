@@ -16,6 +16,14 @@ const PATH_TITLES = {
   '/staff': 'Staff',
   '/communications': 'Communications',
   '/parent': 'Parent Portal',
+  '/admin-panel': 'System Dashboard',
+  '/admin-panel/users': 'User Management',
+  '/admin-panel/roles': 'Role Assignment',
+  '/admin-panel/subjects': 'Subjects & Classes',
+  '/admin-panel/academic-years': 'Academic Year Setup',
+  '/admin-panel/settings': 'School Settings',
+  '/admin-panel/audit-logs': 'Audit Logs',
+  '/admin-panel/system-health': 'System Health',
 }
 
 function resolveTitle(pathname) {

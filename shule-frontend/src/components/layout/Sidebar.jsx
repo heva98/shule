@@ -1,5 +1,8 @@
 import {
+  Activity,
+  BookOpen,
   CalendarCheck,
+  CalendarDays,
   ClipboardList,
   CreditCard,
   GraduationCap,
@@ -7,25 +10,33 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
+  Monitor,
+  ScrollText,
+  Settings,
+  Shield,
+  UserCog,
   Users,
   X,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
+const ADMIN_ROLES = ['OWNER', 'SYSTEM_ADMIN']
+
 const NAV_ITEMS = [
   {
     label: 'Dashboard',
     path: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['OWNER', 'HEADTEACHER', 'BURSAR', 'TEACHER'],
+    roles: ['OWNER', 'HEADTEACHER', 'BURSAR', 'TEACHER', 'ACADEMIC_TEACHER',
+            'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER'],
   },
   {
     label: 'Students',
     path: '/students',
     icon: GraduationCap,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR'],
-    readOnly: ['TEACHER', 'BURSAR'],
+    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR', 'ACADEMIC_TEACHER',
+            'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER'],
   },
   {
     label: 'Fees',
@@ -37,25 +48,27 @@ const NAV_ITEMS = [
     label: 'Attendance',
     path: '/attendance',
     icon: CalendarCheck,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER'],
+    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
+            'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER'],
   },
   {
     label: 'Exams',
     path: '/exams',
     icon: ClipboardList,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER'],
+    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
+            'CLASS_TEACHER', 'SUBJECT_TEACHER'],
   },
   {
     label: 'Staff',
     path: '/staff',
     icon: Users,
-    roles: ['OWNER', 'HEADTEACHER'],
+    roles: ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'],
   },
   {
     label: 'Communications',
     path: '/communications',
     icon: MessageSquare,
-    roles: ['OWNER', 'HEADTEACHER'],
+    roles: ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'],
   },
   {
     label: 'My Children',
@@ -65,19 +78,60 @@ const NAV_ITEMS = [
   },
 ]
 
+const ADMIN_NAV_ITEMS = [
+  { label: 'System Dashboard',    path: '/admin-panel',                icon: Monitor },
+  { label: 'User Management',     path: '/admin-panel/users',          icon: UserCog },
+  { label: 'Role Assignment',     path: '/admin-panel/roles',          icon: Shield },
+  { label: 'Subjects & Classes',  path: '/admin-panel/subjects',       icon: BookOpen },
+  { label: 'Academic Year Setup', path: '/admin-panel/academic-years', icon: CalendarDays },
+  { label: 'School Settings',     path: '/admin-panel/settings',       icon: Settings },
+  { label: 'Audit Logs',          path: '/admin-panel/audit-logs',     icon: ScrollText },
+  { label: 'System Health',       path: '/admin-panel/system-health',  icon: Activity },
+]
+
 const ROLE_LABELS = {
-  OWNER: 'Owner',
-  HEADTEACHER: 'Head Teacher',
-  TEACHER: 'Teacher',
-  BURSAR: 'Bursar',
-  PARENT: 'Parent',
-  STUDENT: 'Student',
+  OWNER:              'Owner',
+  SYSTEM_ADMIN:       'System Admin',
+  HEADTEACHER:        'Head Teacher',
+  ACADEMIC_TEACHER:   'Academic Teacher',
+  DISCIPLINE_TEACHER: 'Discipline Teacher',
+  CLASS_TEACHER:      'Class Teacher',
+  SUBJECT_TEACHER:    'Subject Teacher',
+  TEACHER:            'Teacher',
+  BURSAR:             'Bursar',
+  PARENT:             'Parent',
+  STUDENT:            'Student',
+}
+
+function NavItem({ item, role, onClose }) {
+  const Icon = item.icon
+  return (
+    <NavLink
+      key={item.path}
+      to={item.path}
+      end={item.path === '/admin-panel' || item.path === '/dashboard'}
+      onClick={onClose}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+          isActive
+            ? 'bg-white/20 text-white font-medium'
+            : 'text-white/70 hover:bg-white/10 hover:text-white'
+        }`
+      }
+    >
+      <Icon size={17} className="shrink-0" />
+      <span className="flex-1">{item.label}</span>
+    </NavLink>
+  )
 }
 
 export default function Sidebar({ onClose }) {
   const { user, logout } = useAuth()
   const role = user?.role ?? ''
-  const navItems = NAV_ITEMS.filter((item) => item.roles.includes(role))
+  const isAdmin = ADMIN_ROLES.includes(role)
+
+  const regularItems = NAV_ITEMS.filter(item => item.roles.includes(role))
+  const showAdmin = isAdmin
 
   return (
     <aside className="flex flex-col h-full bg-primary text-white w-64 shrink-0">
@@ -104,32 +158,27 @@ export default function Sidebar({ onClose }) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const isReadOnly = item.readOnly?.includes(role)
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? 'bg-white/20 text-white font-medium'
-                    : 'text-white/70 hover:bg-white/10 hover:text-white'
-                }`
-              }
-            >
-              <Icon size={18} className="shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {isReadOnly && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded text-white/60">
-                  view
-                </span>
-              )}
-            </NavLink>
-          )
-        })}
+        {/* Regular nav */}
+        {regularItems.map(item => (
+          <NavItem key={item.path} item={item} role={role} onClose={onClose} />
+        ))}
+
+        {/* Admin nav section */}
+        {showAdmin && (
+          <>
+            {regularItems.length > 0 && (
+              <div className="pt-3 pb-1">
+                <div className="h-px bg-white/10 mb-3" />
+                <p className="px-3 text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-1">
+                  Admin Panel
+                </p>
+              </div>
+            )}
+            {ADMIN_NAV_ITEMS.map(item => (
+              <NavItem key={item.path} item={item} role={role} onClose={onClose} />
+            ))}
+          </>
+        )}
       </nav>
 
       {/* Footer */}

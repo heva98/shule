@@ -20,8 +20,18 @@ import StudentFormPage from './pages/students/StudentFormPage'
 import StudentsListPage from './pages/students/StudentsListPage'
 import LoginPage from './pages/auth/LoginPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
+import SysAdminDashboard from './pages/sysadmin/SysAdminDashboard'
+import UserManagementPage from './pages/sysadmin/UserManagementPage'
+import RoleAssignmentPage from './pages/sysadmin/RoleAssignmentPage'
+import SubjectsPage from './pages/sysadmin/SubjectsPage'
+import AcademicYearPage from './pages/sysadmin/AcademicYearPage'
+import SchoolSettingsPage from './pages/sysadmin/SchoolSettingsPage'
+import AuditLogPage from './pages/sysadmin/AuditLogPage'
+import SystemHealthPage from './pages/sysadmin/SystemHealthPage'
 
 const queryClient = new QueryClient()
+
+const ADMIN_ROLES = ['OWNER', 'SYSTEM_ADMIN']
 
 export default function App() {
   return (
@@ -41,7 +51,8 @@ export default function App() {
                 <Route
                   path="/dashboard"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR', 'TEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR', 'TEACHER',
+                      'ACADEMIC_TEACHER', 'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
                       <DashboardPage />
                     </ProtectedRoute>
                   }
@@ -50,7 +61,8 @@ export default function App() {
                 <Route
                   path="/students"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR',
+                      'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
                       <StudentsListPage />
                     </ProtectedRoute>
                   }
@@ -66,7 +78,8 @@ export default function App() {
                 <Route
                   path="/students/:id"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR',
+                      'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
                       <StudentDetailPage />
                     </ProtectedRoute>
                   }
@@ -100,7 +113,8 @@ export default function App() {
                 <Route
                   path="/attendance"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
+                      'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
                       <AttendancePage />
                     </ProtectedRoute>
                   }
@@ -109,7 +123,8 @@ export default function App() {
                 <Route
                   path="/exams"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
+                      'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
                       <ExamsPage />
                     </ProtectedRoute>
                   }
@@ -117,7 +132,8 @@ export default function App() {
                 <Route
                   path="/exams/:id/marks"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
+                      'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
                       <MarkEntryPage />
                     </ProtectedRoute>
                   }
@@ -125,7 +141,8 @@ export default function App() {
                 <Route
                   path="/exams/:id/results"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
+                      'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
                       <ResultsPage />
                     </ProtectedRoute>
                   }
@@ -134,7 +151,7 @@ export default function App() {
                 <Route
                   path="/staff"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']}>
                       <StaffPage />
                     </ProtectedRoute>
                   }
@@ -143,8 +160,74 @@ export default function App() {
                 <Route
                   path="/communications"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']}>
                       <CommunicationsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* ── Admin Panel ─────────────────────────────────────── */}
+                <Route
+                  path="/admin-panel"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <SysAdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/users"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <UserManagementPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/roles"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <RoleAssignmentPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/subjects"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <SubjectsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/academic-years"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <AcademicYearPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/settings"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <SchoolSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/audit-logs"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <AuditLogPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/system-health"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <SystemHealthPage />
                     </ProtectedRoute>
                   }
                 />
