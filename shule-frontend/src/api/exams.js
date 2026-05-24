@@ -22,8 +22,8 @@ export const getResults = (examId) =>
 export const getRanking = (examId) =>
   api.get(`/exams/${examId}/ranking/`).then((r) => r.data)
 
-export const getReportCard = (studentId, examId) =>
-  api.get(`/students/${studentId}/report-card/`, { params: { exam: examId } }).then((r) => r.data)
+// Report card lives at the students endpoint — single source of truth in students.js
+export { getStudentReportCard as getReportCard } from './students'
 
 // Kept for backward compatibility
 export const getExamResults = getResults

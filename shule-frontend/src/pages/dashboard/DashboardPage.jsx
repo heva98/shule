@@ -18,25 +18,11 @@ import {
   Users,
 } from 'lucide-react'
 import StatCard from '../../components/ui/StatCard'
-import api from '../../lib/axios'
+import { getStudents } from '../../api/students'
+import { getFeeSummary, getMonthlyRevenue, getDefaulters } from '../../api/fees'
+import { getDailySummary } from '../../api/attendance'
+import { sendFeeReminder } from '../../api/communications'
 import { formatTZS } from '../../lib/format'
-
-// ── Data fetchers ─────────────────────────────────────────────────────────────
-
-const fetchStudentCount = () =>
-  api.get('/students/?status=ACTIVE').then((r) => r.data)
-
-const fetchFeeSummary = () =>
-  api.get('/fees/summary/?term=current').then((r) => r.data)
-
-const fetchAttendance = () =>
-  api.get('/attendance/daily-summary/').then((r) => r.data)
-
-const fetchDefaulters = () =>
-  api.get('/fees/defaulters/?limit=5').then((r) => r.data)
-
-const fetchMonthly = () =>
-  api.get('/fees/summary/monthly/').then((r) => r.data)
 
 // ── Skeleton helpers ──────────────────────────────────────────────────────────
 
@@ -90,11 +76,11 @@ function ErrorBanner({ message }) {
 export default function DashboardPage() {
   const [sendingId, setSendingId] = useState(null)
 
-  const studentsQ = useQuery({ queryKey: ['dash-students'], queryFn: fetchStudentCount })
-  const feeQ = useQuery({ queryKey: ['dash-fees'], queryFn: fetchFeeSummary })
-  const attQ = useQuery({ queryKey: ['dash-attendance'], queryFn: fetchAttendance })
-  const defaultersQ = useQuery({ queryKey: ['dash-defaulters'], queryFn: fetchDefaulters })
-  const monthlyQ = useQuery({ queryKey: ['dash-monthly'], queryFn: fetchMonthly })
+  const studentsQ = useQuery({ queryKey: ['dash-students'], queryFn: () => getStudents({ status: 'ACTIVE' }) })
+  const feeQ = useQuery({ queryKey: ['dash-fees'], queryFn: () => getFeeSummary({ term: 'current' }) })
+  const attQ = useQuery({ queryKey: ['dash-attendance'], queryFn: () => getDailySummary() })
+  const defaultersQ = useQuery({ queryKey: ['dash-defaulters'], queryFn: () => getDefaulters({ limit: 5 }) })
+  const monthlyQ = useQuery({ queryKey: ['dash-monthly'], queryFn: () => getMonthlyRevenue() })
 
   const failedEndpoints = [
     studentsQ.isError && 'Students (/api/students/)',
@@ -108,9 +94,7 @@ export default function DashboardPage() {
   async function sendReminder(studentId) {
     setSendingId(studentId)
     try {
-      const { data } = await api.post('/communications/fee-reminders/', {
-        student_id: studentId,
-      })
+      const data = await sendFeeReminder(studentId)
       if (data.wa_url) {
         window.open(data.wa_url, '_blank', 'noopener,noreferrer')
         toast.success('WhatsApp opened with pre-filled reminder.')
@@ -118,9 +102,7 @@ export default function DashboardPage() {
         toast.success('Reminder sent via email.')
       }
     } catch (err) {
-      const msg =
-        err.response?.data?.detail ?? 'Failed to send reminder. Try again.'
-      toast.error(msg)
+      toast.error(err.response?.data?.detail ?? 'Failed to send reminder. Try again.')
     } finally {
       setSendingId(null)
     }

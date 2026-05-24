@@ -9,6 +9,9 @@ export const getHistory = (params = {}) =>
 export const sendAbsenceAlerts = () =>
   api.post('/communications/send-absence-alerts/').then((r) => r.data)
 
+export const sendFeeReminder = (studentId) =>
+  api.post('/communications/fee-reminders/', { student_id: studentId }).then((r) => r.data)
+
 export const sendBulkFeeReminders = () =>
   api.post('/communications/bulk-fee-reminders/').then((r) => r.data)
 

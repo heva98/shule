@@ -41,3 +41,9 @@ export const deleteFeeStructure = (id) =>
 
 export const getAcademicYears = () =>
   api.get('/fees/academic-years/').then((r) => r.data)
+
+export const createAcademicYear = (data) =>
+  api.post('/fees/academic-years/', data).then((r) => r.data)
+
+export const updateAcademicYear = (id, data) =>
+  api.patch(`/fees/academic-years/${id}/`, data).then((r) => r.data)

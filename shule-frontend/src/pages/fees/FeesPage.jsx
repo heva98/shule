@@ -14,6 +14,8 @@ import toast from 'react-hot-toast'
 import {
   generateInvoices,
   getAcademicYears,
+  createAcademicYear,
+  updateAcademicYear,
   getDefaulters,
   getFeeStructures,
   getInvoices,
@@ -902,12 +904,153 @@ function FeeStructuresTab() {
   )
 }
 
+// ── Academic Years Tab ─────────────────────────────────────────────────────
+
+function AcademicYearsTab() {
+  const qc = useQueryClient()
+  const [showForm, setShowForm] = useState(false)
+  const [newYear, setNewYear] = useState(new Date().getFullYear())
+
+  const { data: yearsData, isLoading } = useQuery({
+    queryKey: ['academic-years'],
+    queryFn: getAcademicYears,
+  })
+  const years = (yearsData?.results ?? yearsData ?? [])
+    .slice()
+    .sort((a, b) => b.year - a.year)
+
+  const createMut = useMutation({
+    mutationFn: (year) => createAcademicYear({ year, is_current: years.length === 0 }),
+    onSuccess: () => {
+      toast.success('Academic year created')
+      qc.invalidateQueries({ queryKey: ['academic-years'] })
+      setShowForm(false)
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.year?.[0] || err.response?.data?.detail || 'Failed to create year'
+      toast.error(msg)
+    },
+  })
+
+  const markCurrentMut = useMutation({
+    mutationFn: async (id) => {
+      const current = years.find(y => y.is_current)
+      if (current) await updateAcademicYear(current.id, { is_current: false })
+      return updateAcademicYear(id, { is_current: true })
+    },
+    onSuccess: () => {
+      toast.success('Current year updated')
+      qc.invalidateQueries({ queryKey: ['academic-years'] })
+    },
+    onError: () => toast.error('Failed to update'),
+  })
+
+  function handleCreate(e) {
+    e.preventDefault()
+    if (!newYear) return
+    createMut.mutate(Number(newYear))
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          Academic years are used across exams, fees, and reports. Mark one as <strong>Current</strong> to set the active school year.
+        </p>
+        <button
+          onClick={() => setShowForm(s => !s)}
+          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary shrink-0 ml-4"
+        >
+          <Plus size={15} /> New Year
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleCreate} className="flex items-end gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Year</label>
+            <input
+              type="number"
+              className={inputCls + ' w-32'}
+              value={newYear}
+              onChange={e => setNewYear(e.target.value)}
+              min={2000}
+              max={2100}
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={createMut.isPending}
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary disabled:opacity-60"
+          >
+            {createMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+            {createMut.isPending ? 'Creating…' : 'Create'}
+          </button>
+          <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+            Cancel
+          </button>
+        </form>
+      )}
+
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
+        ) : years.length === 0 ? (
+          <div className="p-10 text-center">
+            <p className="text-sm text-gray-400 mb-1">No academic years yet.</p>
+            <p className="text-xs text-gray-400">Click <strong>New Year</strong> to add one, or run <code className="bg-gray-100 px-1 rounded">python manage.py seed_academic_year</code></p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Year</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {years.map(y => (
+                <tr key={y.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{y.year}</td>
+                  <td className="px-4 py-3">
+                    {y.is_current ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                        <CheckCircle size={11} /> Current
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {!y.is_current && (
+                      <button
+                        onClick={() => markCurrentMut.mutate(y.id)}
+                        disabled={markCurrentMut.isPending}
+                        className="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Set as Current
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 const TABS = [
   { id: 'invoices',    label: 'Invoices' },
   { id: 'defaulters',  label: 'Defaulters' },
   { id: 'structures',  label: 'Fee Structures' },
+  { id: 'years',       label: 'Academic Years' },
 ]
 
 export default function FeesPage() {
@@ -919,6 +1062,7 @@ export default function FeesPage() {
       {activeTab === 'invoices'   && <InvoicesTab />}
       {activeTab === 'defaulters' && <DefaultersTab />}
       {activeTab === 'structures' && <FeeStructuresTab />}
+      {activeTab === 'years'      && <AcademicYearsTab />}
     </div>
   )
 }
