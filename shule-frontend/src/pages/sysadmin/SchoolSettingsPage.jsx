@@ -104,6 +104,7 @@ export default function SchoolSettingsPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-settings'] })
+      qc.invalidateQueries({ queryKey: ['school-config'] })
       toast.success('Settings saved.')
       setLogoFile(null)
     },
