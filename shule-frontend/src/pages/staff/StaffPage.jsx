@@ -180,8 +180,24 @@ function SubjectsDropdown({ value, onChange, subjects }) {
 
 // ─── QualificationsBuilder ────────────────────────────────────────────────────
 
+const DEGREE_OPTIONS = [
+  'Masters Degree',
+  'Bachelor Degree',
+  'Diploma',
+  'Certificate',
+  'Form Six',
+  'Form Four',
+]
+
+const YEAR_OPTIONS = (() => {
+  const current = new Date().getFullYear()
+  const years = []
+  for (let y = current; y >= 1970; y--) years.push(y)
+  return years
+})()
+
 function QualificationsBuilder({ value, onChange }) {
-  const add = () => onChange([...value, { degree: '', institution: '', year_completed: '' }])
+  const add = () => onChange([...value, { degree: '', program: '', institution: '', year_completed: '' }])
   const remove = i => onChange(value.filter((_, j) => j !== i))
   const upd = (i, k, v) => {
     const n = [...value]
@@ -190,28 +206,41 @@ function QualificationsBuilder({ value, onChange }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {value.map((q, i) => (
         <div key={i} className="flex gap-2 items-start">
-          <div className="flex-1 grid grid-cols-3 gap-2">
-            <input
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            <select
               className={inputCls}
-              placeholder="Degree / Certificate"
               value={q.degree}
               onChange={e => upd(i, 'degree', e.target.value)}
+            >
+              <option value="">— Select qualification —</option>
+              {DEGREE_OPTIONS.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <select
+              className={inputCls}
+              value={q.year_completed}
+              onChange={e => upd(i, 'year_completed', e.target.value)}
+            >
+              <option value="">— Year completed —</option>
+              {YEAR_OPTIONS.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <input
+              className={inputCls}
+              placeholder="Program / Course name"
+              value={q.program}
+              onChange={e => upd(i, 'program', e.target.value)}
             />
             <input
               className={inputCls}
               placeholder="Institution"
               value={q.institution}
               onChange={e => upd(i, 'institution', e.target.value)}
-            />
-            <input
-              className={inputCls}
-              type="number"
-              placeholder="Year"
-              value={q.year_completed}
-              onChange={e => upd(i, 'year_completed', e.target.value)}
             />
           </div>
           <button
@@ -437,7 +466,7 @@ function AddStaffModal({ onClose }) {
     e.preventDefault()
     setLoading(true)
     try {
-      const qualifications = profile.qualifications.filter(q => q.degree && q.institution)
+      const qualifications = profile.qualifications.filter(q => q.degree && q.institution && q.year_completed)
       await createStaff({
         user: createdUserId,
         ...profile,
@@ -583,7 +612,7 @@ function StaffModal({ staff, canEdit, onClose }) {
 
   function handleSave(e) {
     e.preventDefault()
-    const qualifications = form.qualifications.filter(q => q.degree && q.institution)
+    const qualifications = form.qualifications.filter(q => q.degree && q.institution && q.year_completed)
     mutation.mutate({ ...form, basic_salary: form.basic_salary || 0, qualifications })
   }
 
@@ -691,7 +720,9 @@ function StaffModal({ staff, canEdit, onClose }) {
                   {staff.qualifications.map((q, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                       <GraduationCap size={14} className="mt-0.5 shrink-0 text-gray-400" />
-                      <span>{q.degree} — {q.institution} ({q.year_completed})</span>
+                      <span>
+                        {q.degree}{q.program ? ` — ${q.program}` : ''} · {q.institution} ({q.year_completed})
+                      </span>
                     </li>
                   ))}
                 </ul>

@@ -69,11 +69,17 @@ class StaffProfileWriteSerializer(serializers.ModelSerializer):
         if not isinstance(value, list):
             raise serializers.ValidationError('Qualifications must be a list.')
         required_keys = {'degree', 'institution', 'year_completed'}
+        allowed_keys  = required_keys | {'program'}
         for i, item in enumerate(value):
             missing = required_keys - set(item.keys())
             if missing:
                 raise serializers.ValidationError(
                     f'Item {i}: missing keys {missing}.'
+                )
+            extra = set(item.keys()) - allowed_keys
+            if extra:
+                raise serializers.ValidationError(
+                    f'Item {i}: unexpected keys {extra}.'
                 )
         return value
 
