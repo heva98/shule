@@ -6,7 +6,8 @@ import { getStudents } from '../../api/students'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
-import { LEVEL_LABEL, LEVEL_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from '../../lib/constants'
+import { LEVEL_LABEL, STATUS_BADGE, STATUS_OPTIONS } from '../../lib/constants'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 const READ_ONLY_ROLES = ['TEACHER', 'BURSAR']
 
@@ -124,6 +125,7 @@ export default function StudentsListPage() {
   const { user }  = useAuth()
   const navigate  = useNavigate()
   const readOnly  = READ_ONLY_ROLES.includes(user?.role)
+  const { levelOptions } = useSchoolLevels()
 
   const [search,         setSearch]         = useState('')
   const [debouncedSearch, setDebounced]     = useState('')
@@ -175,7 +177,7 @@ export default function StudentsListPage() {
 
         <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={selectCls}>
           <option value="">All Levels</option>
-          {LEVEL_OPTIONS.map((o) => (
+          {levelOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>

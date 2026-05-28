@@ -29,7 +29,7 @@ import {
 } from '../../api/communications'
 import { getStudents } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
-import { LEVEL_OPTIONS } from '../../lib/constants'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -234,6 +234,7 @@ const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
 
 function ComposeTab() {
   const queryClient = useQueryClient()
+  const { levelOptions } = useSchoolLevels()
 
   const [channel,           setChannel]           = useState('WHATSAPP')
   const [audience,          setAudience]          = useState('SCHOOL')
@@ -424,7 +425,7 @@ function ComposeTab() {
               <label className="block text-xs text-gray-500 mb-1">Level <span className="text-danger">*</span></label>
               <select value={targetLevel} onChange={(e) => setTargetLevel(e.target.value)} className={selectCls}>
                 <option value="">Select level…</option>
-                {LEVEL_OPTIONS.map((o) => (
+                {levelOptions.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>

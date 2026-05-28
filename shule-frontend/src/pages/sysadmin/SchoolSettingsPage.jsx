@@ -38,9 +38,12 @@ function Section({ title, icon: Icon, children }) {
 }
 
 function Field({ label, error, children }) {
+  const parts = label.split('*')
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-gray-700 mb-1">
+        {parts[0]}{parts.length > 1 && <span className="text-red-500">*</span>}
+      </label>
       {children}
       {error && <p className="text-xs text-danger mt-1">{error}</p>}
     </div>
@@ -104,7 +107,16 @@ export default function SchoolSettingsPage() {
       toast.success('Settings saved.')
       setLogoFile(null)
     },
-    onError: (err) => toast.error(err.response?.data?.detail ?? 'Failed to save settings.'),
+    onError: (err) => {
+      const d = err.response?.data
+      if (!d) { toast.error('Failed to save settings.'); return }
+      if (d.detail) { toast.error(d.detail); return }
+      // DRF field-level errors: { field: ["msg"] }
+      const msgs = Object.entries(d)
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`)
+        .join(' | ')
+      toast.error(msgs || 'Failed to save settings.')
+    },
   })
 
   function handleLogoChange(e) {
@@ -160,8 +172,8 @@ export default function SchoolSettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="School Name" error={errors.school_name?.message}>
-            <Input {...register('school_name', { required: 'Required' })} placeholder="e.g. Kilimanjaro Secondary School" />
+          <Field label="School Name *" error={errors.school_name?.message}>
+            <Input {...register('school_name', { required: 'School name is required' })} placeholder="e.g. Kilimanjaro Secondary School" />
           </Field>
           <Field label="School Motto">
             <Input {...register('school_motto')} placeholder="e.g. Excellence Through Discipline" />

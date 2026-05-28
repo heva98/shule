@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import api from '../../lib/axios'
 import { useAuth } from '../../context/AuthContext'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import {
   approveLeave, createLeaveRequest, createStaff,
   getLeaveRequests, getStaff, rejectLeave, updateStaff,
@@ -60,10 +61,7 @@ const LEAVE_STATUS_CLR = {
   REJECTED: 'bg-red-100 text-red-700',
 }
 
-const LEVELS = [
-  '', 'STD1', 'STD2', 'STD3', 'STD4', 'STD5', 'STD6', 'STD7',
-  'FORM1', 'FORM2', 'FORM3', 'FORM4', 'FORM5', 'FORM6',
-]
+// Individual levels — filtered at runtime by useSchoolLevels() inside ProfileFields
 
 const ROLES = [
   { value: 'TEACHER', label: 'Teacher' },
@@ -239,6 +237,8 @@ function QualificationsBuilder({ value, onChange }) {
 // ─── ProfileFields ────────────────────────────────────────────────────────────
 
 function ProfileFields({ form, set, subjects }) {
+  const { levelGroups, levelOptions } = useSchoolLevels()
+  const levels = ['', ...levelOptions.map(o => o.value)]
   const [ecPhoneErr, setEcPhoneErr] = useState('')
 
   function handleEcPhone(v) {
@@ -304,7 +304,7 @@ function ProfileFields({ form, set, subjects }) {
           <F label="Level">
             <select className={selectCls} value={form.class_teacher_of_level}
               onChange={e => set('class_teacher_of_level', e.target.value)}>
-              {LEVELS.map(l => <option key={l} value={l}>{l || '— None —'}</option>)}
+              {levels.map(l => <option key={l} value={l}>{l || '— None —'}</option>)}
             </select>
           </F>
           <F label="Stream">
@@ -319,7 +319,7 @@ function ProfileFields({ form, set, subjects }) {
         <SecHdr>School Levels</SecHdr>
         <p className="text-xs text-gray-400 mb-3">Select the level groups this staff member works with. Leave all unchecked if they work across all levels.</p>
         <div className="flex flex-wrap gap-2">
-          {LEVEL_GROUPS.map(lg => {
+          {levelGroups.map(lg => {
             const checked = (form.taught_levels || []).includes(lg.value)
             return (
               <button
@@ -383,12 +383,6 @@ const BLANK_PROFILE = {
   basic_salary: '', national_id: '', class_teacher_of_level: '', class_teacher_of_stream: '',
   subjects: [], taught_levels: [], qualifications: [], emergency_contact_name: '', emergency_contact_phone: '',
 }
-
-const LEVEL_GROUPS = [
-  { value: 'PRIMARY', label: 'Standard 1 – 7' },
-  { value: 'OLEVEL',  label: 'O-Level (Form 1 – 4)' },
-  { value: 'ALEVEL',  label: 'A-Level (Form 5 – 6)' },
-]
 
 function AddStaffModal({ onClose }) {
   const qc = useQueryClient()

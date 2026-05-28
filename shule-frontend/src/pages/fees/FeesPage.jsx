@@ -30,9 +30,9 @@ import Tabs from '../../components/ui/Tabs'
 import {
   INVOICE_BADGE,
   LEVEL_LABEL,
-  LEVEL_OPTIONS,
 } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
@@ -85,6 +85,7 @@ function daysOverdue(due_date) {
 
 function GenerateInvoicesModal({ onClose }) {
   const queryClient = useQueryClient()
+  const { levelOptions } = useSchoolLevels()
 
   const { data: yearsData } = useQuery({
     queryKey: ['academic-years'],
@@ -237,7 +238,7 @@ function GenerateInvoicesModal({ onClose }) {
                 className={`${selectCls} w-full`}
               >
                 <option value="">Select level…</option>
-                {LEVEL_OPTIONS.map((o) => (
+                {levelOptions.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
@@ -294,6 +295,7 @@ function GenerateInvoicesModal({ onClose }) {
 // ── Invoices Tab ───────────────────────────────────────────────────────────
 
 function InvoicesTab() {
+  const { levelOptions } = useSchoolLevels()
   const [termFilter,    setTermFilter]    = useState('')
   const [quarterFilter, setQuarterFilter] = useState('')
   const [statusFilter,  setStatusFilter]  = useState('')
@@ -352,7 +354,7 @@ function InvoicesTab() {
 
         <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={selectCls}>
           <option value="">All Levels</option>
-          {LEVEL_OPTIONS.map((o) => (
+          {levelOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
@@ -499,6 +501,7 @@ function InvoicesTab() {
 // ── Defaulters Tab ─────────────────────────────────────────────────────────
 
 function DefaultersTab() {
+  const { levelOptions } = useSchoolLevels()
   const [termFilter,  setTermFilter]  = useState('')
   const [levelFilter, setLevelFilter] = useState('')
   const [sending,     setSending]     = useState(false)
@@ -549,7 +552,7 @@ function DefaultersTab() {
 
         <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={selectCls}>
           <option value="">All Levels</option>
-          {LEVEL_OPTIONS.map((o) => (
+          {levelOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
@@ -783,6 +786,7 @@ function StructureRow({ structure, onSaved }) {
 
 function AddStructureForm({ onDone }) {
   const queryClient = useQueryClient()
+  const { levelOptions } = useSchoolLevels()
   const { data: yearsData } = useQuery({
     queryKey: ['academic-years'],
     queryFn: getAcademicYears,
@@ -845,7 +849,7 @@ function AddStructureForm({ onDone }) {
       <td className="px-3 py-2">
         <select {...register('level', { required: true })} className={smSel}>
           <option value="">Level…</option>
-          {LEVEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </td>
       <td className="px-3 py-2 space-y-1">

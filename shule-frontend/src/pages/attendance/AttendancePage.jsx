@@ -12,7 +12,8 @@ import { getStudents } from '../../api/students'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
 import Tabs from '../../components/ui/Tabs'
-import { ATT_BADGE, LEVEL_LABEL, LEVEL_OPTIONS } from '../../lib/constants'
+import { ATT_BADGE, LEVEL_LABEL } from '../../lib/constants'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 // ── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ function StatusButtons({ studentId, value, onChange }) {
 }
 
 function RegisterTab() {
+  const { levelOptions } = useSchoolLevels()
   const [date,     setDate]     = useState(today)
   const [session,  setSession]  = useState('MORNING')
   const [level,    setLevel]    = useState('')
@@ -187,7 +189,7 @@ function RegisterTab() {
               className={selectCls}
             >
               <option value="">Select level…</option>
-              {LEVEL_OPTIONS.map((o) => (
+              {levelOptions.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
@@ -611,6 +613,7 @@ function ReportsTab() {
 // ── Absentees Tab ──────────────────────────────────────────────────────────
 
 function AbsenteesTab() {
+  const { levelOptions } = useSchoolLevels()
   const [date,  setDate]  = useState(today)
   const [level, setLevel] = useState('')
 
@@ -648,7 +651,7 @@ function AbsenteesTab() {
             <label className="block text-xs font-medium text-gray-500 mb-1">Level</label>
             <select value={level} onChange={(e) => setLevel(e.target.value)} className={selectCls}>
               <option value="">All Levels</option>
-              {LEVEL_OPTIONS.map((o) => (
+              {levelOptions.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>

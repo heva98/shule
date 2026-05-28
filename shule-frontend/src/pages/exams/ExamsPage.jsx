@@ -15,7 +15,8 @@ import toast from 'react-hot-toast'
 import { createExam, getExams } from '../../api/exams'
 import { getAcademicYears } from '../../api/fees'
 import Skeleton from '../../components/ui/Skeleton'
-import { LEVEL_LABEL, LEVEL_OPTIONS } from '../../lib/constants'
+import { LEVEL_LABEL } from '../../lib/constants'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
@@ -59,6 +60,7 @@ const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
 
 function CreateExamModal({ onClose }) {
   const queryClient = useQueryClient()
+  const { levelOptions } = useSchoolLevels()
 
   const { data: yearsData } = useQuery({
     queryKey: ['academic-years'],
@@ -171,7 +173,7 @@ function CreateExamModal({ onClose }) {
             <Field label="Level" required error={errors.level?.message}>
               <select {...register('level', { required: 'Required' })} className={selectCls}>
                 <option value="">Select level…</option>
-                {LEVEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </Field>
 
@@ -219,6 +221,7 @@ function CreateExamModal({ onClose }) {
 
 export default function ExamsPage() {
   const navigate = useNavigate()
+  const { levelOptions } = useSchoolLevels()
   const [showCreate,    setShowCreate]    = useState(false)
   const [levelFilter,   setLevelFilter]   = useState('')
   const [termFilter,    setTermFilter]    = useState('')
@@ -249,7 +252,7 @@ export default function ExamsPage() {
       <div className="flex flex-wrap items-center gap-3">
         <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={filterSelectCls}>
           <option value="">All Levels</option>
-          {LEVEL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
 
         <select

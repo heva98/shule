@@ -6,10 +6,10 @@ import toast from 'react-hot-toast'
 import { addGuardian, createStudent } from '../../api/students'
 import {
   GENDER_OPTIONS,
-  LEVEL_OPTIONS,
   RELATIONSHIP_OPTIONS,
   STATUS_OPTIONS,
 } from '../../lib/constants'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -44,6 +44,7 @@ const selectCls = `${inputCls} bg-white`
 
 export default function StudentFormPage() {
   const navigate = useNavigate()
+  const { levelOptions } = useSchoolLevels()
 
   const [photoFile,    setPhotoFile]    = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
@@ -268,7 +269,7 @@ export default function StudentFormPage() {
                 className={selectCls}
               >
                 <option value="">Select level…</option>
-                {LEVEL_OPTIONS.map((o) => (
+                {levelOptions.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>

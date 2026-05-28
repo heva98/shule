@@ -146,3 +146,19 @@ class SchoolSettingsSerializer(serializers.ModelSerializer):
             'active_levels', 'established_year', 'email_configured', 'sms_configured',
         ]
         read_only_fields = ['id', 'email_configured', 'sms_configured']
+
+    def validate_active_levels(self, value):
+        import json as _json
+        # FormData sends arrays as JSON strings; parse them here
+        if isinstance(value, str):
+            try:
+                value = _json.loads(value)
+            except (ValueError, TypeError):
+                raise serializers.ValidationError('Invalid format for active_levels.')
+        if not isinstance(value, list):
+            raise serializers.ValidationError('active_levels must be a list.')
+        valid = {'PRIMARY', 'OLEVEL', 'ALEVEL'}
+        for item in value:
+            if item not in valid:
+                raise serializers.ValidationError(f'Invalid level: {item}. Must be PRIMARY, OLEVEL, or ALEVEL.')
+        return value

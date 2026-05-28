@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import UserNotification
+from .models import SchoolSettings, UserNotification
 from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
 
 
@@ -92,3 +92,16 @@ class NotificationsView(APIView):
             qs = qs.filter(id__in=ids)
         updated = qs.update(is_read=True)
         return Response({'marked_read': updated})
+
+
+class SchoolConfigView(APIView):
+    """Public school configuration — accessible to all authenticated users."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        s = SchoolSettings.get_settings()
+        return Response({
+            'school_name':   s.school_name,
+            'school_logo':   request.build_absolute_uri(s.school_logo.url) if s.school_logo else None,
+            'active_levels': s.active_levels or [],
+        })

@@ -8,12 +8,7 @@ import {
 } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
 import Modal from '../../components/ui/Modal'
-
-const LEVEL_GROUPS = [
-  { value: 'PRIMARY', label: 'Primary (Std 1–7)' },
-  { value: 'OLEVEL',  label: 'O-Level (Form 1–4)' },
-  { value: 'ALEVEL',  label: 'A-Level (Form 5–6)' },
-]
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 const LG_BADGE = {
   PRIMARY: 'bg-blue-100 text-blue-700',
@@ -26,6 +21,7 @@ const LG_BADGE = {
 function SubjectModal({ subject, onClose }) {
   const qc = useQueryClient()
   const isEdit = !!subject
+  const { levelGroups } = useSchoolLevels()
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: subject
       ? { name: subject.name, code: subject.code, level_group: subject.level_group, is_compulsory: subject.is_compulsory }
@@ -61,7 +57,7 @@ function SubjectModal({ subject, onClose }) {
           <label className="block text-xs font-medium text-gray-700 mb-1">Level Group *</label>
           <select {...register('level_group')}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
-            {LEVEL_GROUPS.map(lg => <option key={lg.value} value={lg.value}>{lg.label}</option>)}
+            {levelGroups.map(lg => <option key={lg.value} value={lg.value}>{lg.label}</option>)}
           </select>
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -128,6 +124,7 @@ function SubjectsTab() {
   const [toggleSubj, setToggleSubj] = useState(null)
   const [showInactive, setShowInactive] = useState(false)
   const [lgFilter, setLgFilter] = useState('')
+  const { levelGroups } = useSchoolLevels()
 
   const q = useQuery({
     queryKey: ['admin-subjects', { include_inactive: showInactive }],
@@ -142,7 +139,7 @@ function SubjectsTab() {
         <select value={lgFilter} onChange={e => setLgFilter(e.target.value)}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none">
           <option value="">All levels</option>
-          {LEVEL_GROUPS.map(lg => <option key={lg.value} value={lg.value}>{lg.label}</option>)}
+          {levelGroups.map(lg => <option key={lg.value} value={lg.value}>{lg.label}</option>)}
         </select>
         <label className="flex items-center gap-2 text-sm text-gray-600 ml-auto">
           <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} className="rounded" />
