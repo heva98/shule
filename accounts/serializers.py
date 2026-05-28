@@ -1,7 +1,24 @@
+import re
+
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
 from .models import AuditLog, Role, SchoolSettings, User
+
+
+def validate_tz_phone(value: str) -> str:
+    """Validate and normalise a Tanzanian phone number to +255XXXXXXXXX."""
+    if not value:
+        return value
+    v = value.strip().replace(' ', '').replace('-', '')
+    # Accept local format 07XXXXXXXX → normalise
+    if re.match(r'^0\d{9}$', v):
+        v = '+255' + v[1:]
+    if not re.match(r'^\+255\d{9}$', v):
+        raise serializers.ValidationError(
+            'Enter a valid Tanzanian number: +255 followed by 9 digits (e.g. +255712345678).'
+        )
+    return v
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,6 +43,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError('A user with this email already exists.')
         return value
+
+    def validate_phone(self, value):
+        return validate_tz_phone(value)
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
@@ -71,6 +91,9 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('A user with this email already exists.')
         return value.lower()
 
+    def validate_phone(self, value):
+        return validate_tz_phone(value)
+
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
@@ -79,6 +102,9 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['full_name', 'phone', 'is_active']
+
+    def validate_phone(self, value):
+        return validate_tz_phone(value)
 
 
 class AdminRoleChangeSerializer(serializers.Serializer):

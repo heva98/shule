@@ -239,6 +239,24 @@ function QualificationsBuilder({ value, onChange }) {
 // ─── ProfileFields ────────────────────────────────────────────────────────────
 
 function ProfileFields({ form, set, subjects }) {
+  const [ecPhoneErr, setEcPhoneErr] = useState('')
+
+  function handleEcPhone(v) {
+    setEcPhoneErr('')
+    set('emergency_contact_phone', v)
+  }
+
+  function validateEcPhone() {
+    if (!form.emergency_contact_phone) return
+    const n = form.emergency_contact_phone.trim().replace(/[\s-]/g, '')
+    const norm = /^0\d{9}$/.test(n) ? '+255' + n.slice(1) : n
+    if (!/^\+255\d{9}$/.test(norm)) {
+      setEcPhoneErr('Use +255 followed by 9 digits (e.g. +255712345678)')
+    } else {
+      set('emergency_contact_phone', norm)
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div>
@@ -305,8 +323,15 @@ function ProfileFields({ form, set, subjects }) {
               onChange={e => set('emergency_contact_name', e.target.value)} />
           </F>
           <F label="Phone">
-            <input className={inputCls} value={form.emergency_contact_phone}
-              onChange={e => set('emergency_contact_phone', e.target.value)} />
+            <input
+              className={`${inputCls} ${ecPhoneErr ? 'border-red-400 focus:ring-red-200 focus:border-red-400' : ''}`}
+              value={form.emergency_contact_phone}
+              onChange={e => handleEcPhone(e.target.value)}
+              onBlur={validateEcPhone}
+              placeholder="+255712345678"
+              maxLength={13}
+            />
+            {ecPhoneErr && <p className="text-xs text-red-500 mt-1">{ecPhoneErr}</p>}
           </F>
         </div>
       </div>
@@ -342,15 +367,29 @@ function AddStaffModal({ onClose }) {
   })
   const [profile, setProfile] = useState(BLANK_PROFILE)
   const [loading, setLoading] = useState(false)
+  const [phoneError, setPhoneError] = useState('')
 
   const setA = (k, v) => setAccount(a => ({ ...a, [k]: v }))
   const setP = (k, v) => setProfile(p => ({ ...p, [k]: v }))
 
+  function normalizePhone(v) {
+    const n = v.trim().replace(/[\s-]/g, '')
+    return /^0\d{9}$/.test(n) ? '+255' + n.slice(1) : n
+  }
+
   async function handleStep1(e) {
     e.preventDefault()
+    if (account.phone) {
+      const normalized = normalizePhone(account.phone)
+      if (!/^\+255\d{9}$/.test(normalized)) {
+        setPhoneError('Use +255 followed by 9 digits (e.g. +255712345678)')
+        return
+      }
+      setAccount(a => ({ ...a, phone: normalized }))
+    }
     setLoading(true)
     try {
-      const res = await api.post('/auth/register/', account)
+      const res = await api.post('/auth/register/', { ...account, phone: account.phone ? normalizePhone(account.phone) : '' })
       setCreatedUserId(res.data.user.id)
       setStep(2)
     } catch (err) {
@@ -422,8 +461,14 @@ function AddStaffModal({ onClose }) {
                   onChange={e => setA('email', e.target.value)} placeholder="jane@shule.ac.tz" />
               </F>
               <F label="Phone Number">
-                <input className={inputCls} value={account.phone}
-                  onChange={e => setA('phone', e.target.value)} placeholder="+255 7XX XXX XXX" />
+                <input
+                  className={`${inputCls} ${phoneError ? 'border-red-400 focus:ring-red-200 focus:border-red-400' : ''}`}
+                  value={account.phone}
+                  onChange={e => { setPhoneError(''); setA('phone', e.target.value) }}
+                  placeholder="+255712345678"
+                  maxLength={13}
+                />
+                {phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}
               </F>
               <div className="col-span-2">
                 <F label="Temporary Password" req>
