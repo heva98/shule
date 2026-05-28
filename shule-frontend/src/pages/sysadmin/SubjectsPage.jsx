@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, CheckCircle, Edit2, Plus, Trash2, XCircle } from 'lucide-react'
+import { BookOpen, CheckCircle, Edit2, Plus, RotateCcw, Trash2, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
-  createAdminSubject, deactivateSubject, getAdminSubjects, updateAdminSubject,
+  activateSubject, createAdminSubject, deactivateSubject, getAdminSubjects, updateAdminSubject,
 } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
 import Modal from '../../components/ui/Modal'
@@ -81,31 +81,38 @@ function SubjectModal({ subject, onClose }) {
   )
 }
 
-// ── Deactivate confirm ────────────────────────────────────────────────────────
+// ── Toggle active/inactive confirm ────────────────────────────────────────────
 
-function DeactivateModal({ subject, onClose }) {
+function ToggleStatusModal({ subject, onClose }) {
   const qc = useQueryClient()
+  const activating = !subject.is_active
   const mut = useMutation({
-    mutationFn: () => deactivateSubject(subject.id),
+    mutationFn: () => activating ? activateSubject(subject.id) : deactivateSubject(subject.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-subjects'] })
-      toast.success('Subject deactivated.')
+      toast.success(activating ? 'Subject activated.' : 'Subject deactivated.')
       onClose()
     },
     onError: (err) => toast.error(err.response?.data?.detail ?? 'Failed.'),
   })
   return (
-    <Modal isOpen title="Deactivate Subject" onClose={onClose} size="sm">
+    <Modal isOpen title={activating ? 'Activate Subject' : 'Deactivate Subject'} onClose={onClose} size="sm">
       <div className="p-6 space-y-4">
         <p className="text-sm text-gray-600">
-          Deactivate <strong>{subject.code} — {subject.name}</strong>? It will be hidden from new exams but historical data is preserved.
+          {activating
+            ? <>Activate <strong>{subject.code} — {subject.name}</strong>? It will become available for new exams.</>
+            : <>Deactivate <strong>{subject.code} — {subject.name}</strong>? It will be hidden from new exams but historical data is preserved.</>
+          }
         </p>
         <div className="flex gap-3">
           <button onClick={onClose}
             className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
           <button onClick={() => mut.mutate()} disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
-            {mut.isPending ? 'Deactivating…' : 'Deactivate'}
+            className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50 ${activating ? 'bg-green-600 hover:bg-green-700' : 'bg-danger hover:bg-danger/90'}`}>
+            {mut.isPending
+              ? (activating ? 'Activating…' : 'Deactivating…')
+              : (activating ? 'Activate' : 'Deactivate')
+            }
           </button>
         </div>
       </div>
@@ -118,7 +125,7 @@ function DeactivateModal({ subject, onClose }) {
 function SubjectsTab() {
   const [showAdd, setShowAdd] = useState(false)
   const [editSubj, setEditSubj] = useState(null)
-  const [deactivateSubj, setDeactivateSubj] = useState(null)
+  const [toggleSubj, setToggleSubj] = useState(null)
   const [showInactive, setShowInactive] = useState(false)
   const [lgFilter, setLgFilter] = useState('')
 
@@ -199,10 +206,17 @@ function SubjectsTab() {
                         className="p-1.5 rounded hover:bg-gray-100 text-gray-400 transition-colors">
                         <Edit2 size={13} />
                       </button>
-                      {s.is_active && (
-                        <button onClick={() => setDeactivateSubj(s)}
+                      {s.is_active ? (
+                        <button onClick={() => setToggleSubj(s)}
+                          title="Deactivate"
                           className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-danger transition-colors">
                           <Trash2 size={13} />
+                        </button>
+                      ) : (
+                        <button onClick={() => setToggleSubj(s)}
+                          title="Activate"
+                          className="p-1.5 rounded hover:bg-green-50 text-gray-400 hover:text-green-600 transition-colors">
+                          <RotateCcw size={13} />
                         </button>
                       )}
                     </div>
@@ -216,7 +230,7 @@ function SubjectsTab() {
 
       {showAdd && <SubjectModal onClose={() => setShowAdd(false)} />}
       {editSubj && <SubjectModal subject={editSubj} onClose={() => setEditSubj(null)} />}
-      {deactivateSubj && <DeactivateModal subject={deactivateSubj} onClose={() => setDeactivateSubj(null)} />}
+      {toggleSubj && <ToggleStatusModal subject={toggleSubj} onClose={() => setToggleSubj(null)} />}
     </div>
   )
 }

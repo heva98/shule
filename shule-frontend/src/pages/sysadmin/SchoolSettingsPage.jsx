@@ -19,6 +19,12 @@ const SCHOOL_TYPES = [
   { value: 'COMBINED',  label: 'Combined (Primary + Secondary)' },
 ]
 
+const LEVEL_GROUPS = [
+  { value: 'PRIMARY', label: 'Standard 1 – 7', desc: 'Primary school levels' },
+  { value: 'OLEVEL',  label: 'O-Level (Form 1 – 4)', desc: 'Ordinary level secondary' },
+  { value: 'ALEVEL',  label: 'A-Level (Form 5 – 6)', desc: 'Advanced level secondary' },
+]
+
 function Section({ title, icon: Icon, children }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
@@ -55,6 +61,7 @@ export default function SchoolSettingsPage() {
   const fileRef = useRef()
   const [logoPreview, setLogoPreview] = useState(null)
   const [logoFile, setLogoFile] = useState(null)
+  const [activeLevels, setActiveLevels] = useState([])
 
   const q = useQuery({ queryKey: ['admin-settings'], queryFn: getSettings })
   const settings = q.data
@@ -76,12 +83,19 @@ export default function SchoolSettingsPage() {
         region: settings.region ?? '',
         district: settings.district ?? '',
       })
+      setActiveLevels(Array.isArray(settings.active_levels) ? settings.active_levels : [])
     }
   }, [settings, reset])
 
+  function toggleLevel(val) {
+    setActiveLevels(prev =>
+      prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
+    )
+  }
+
   const mut = useMutation({
     mutationFn: (data) => {
-      const payload = { ...data }
+      const payload = { ...data, active_levels: activeLevels }
       if (logoFile) payload.school_logo = logoFile
       return updateSettings(payload)
     },
@@ -164,6 +178,45 @@ export default function SchoolSettingsPage() {
           <Field label="Registration Number">
             <Input {...register('registration_number')} placeholder="Government registration no." />
           </Field>
+        </div>
+
+        {/* Active Level Groups */}
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            School Level Groups <span className="font-normal text-gray-400">(select all that apply)</span>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {LEVEL_GROUPS.map(lg => {
+              const checked = activeLevels.includes(lg.value)
+              return (
+                <button
+                  key={lg.value}
+                  type="button"
+                  onClick={() => toggleLevel(lg.value)}
+                  className={`text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+                    checked
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
+                      checked ? 'border-primary bg-primary' : 'border-gray-300'
+                    }`}>
+                      {checked && <svg viewBox="0 0 10 8" className="w-2.5 h-2 fill-white"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold">{lg.label}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{lg.desc}</p>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          {activeLevels.length === 0 && (
+            <p className="text-xs text-amber-600 mt-2">Select at least one level group.</p>
+          )}
         </div>
       </Section>
 

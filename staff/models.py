@@ -51,6 +51,11 @@ class StaffProfile(models.Model):
     class_teacher_of_level  = models.CharField(max_length=10, choices=Level.choices, blank=True)
     class_teacher_of_stream = models.CharField(max_length=10, blank=True)
 
+    # Level groups this staff member is associated with — [] means all levels
+    taught_levels  = models.JSONField(
+        default=list, blank=True,
+        help_text='Level groups: PRIMARY, OLEVEL, ALEVEL. Empty = all levels.',
+    )
     hire_date      = models.DateField()
     contract_type  = models.CharField(max_length=10, choices=ContractType.choices)
     basic_salary   = models.DecimalField(max_digits=12, decimal_places=2, default=0)

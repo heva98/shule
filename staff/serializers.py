@@ -29,6 +29,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             'subjects', 'subjects_display',
             'class_teacher_of_level', 'class_teacher_of_stream',
             'current_class',
+            'taught_levels',
             'hire_date', 'contract_type', 'basic_salary',
             'national_id', 'qualifications',
             'emergency_contact_name', 'emergency_contact_phone',
@@ -58,6 +59,7 @@ class StaffProfileWriteSerializer(serializers.ModelSerializer):
         fields = [
             'user', 'tsc_number', 'designation', 'subjects',
             'class_teacher_of_level', 'class_teacher_of_stream',
+            'taught_levels',
             'hire_date', 'contract_type', 'basic_salary',
             'national_id', 'qualifications',
             'emergency_contact_name', 'emergency_contact_phone',

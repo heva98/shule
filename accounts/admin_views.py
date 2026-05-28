@@ -325,9 +325,17 @@ class AdminSettingsView(APIView):
         return Response(SchoolSettingsSerializer(settings_obj, context={'request': request}).data)
 
     def put(self, request):
+        import json as _json
         settings_obj = SchoolSettings.get_settings()
+        data = request.data.copy()
+        # active_levels may arrive as a JSON-encoded string from FormData
+        if 'active_levels' in data and isinstance(data.get('active_levels'), str):
+            try:
+                data['active_levels'] = _json.loads(data['active_levels'])
+            except (ValueError, TypeError):
+                pass
         serializer = SchoolSettingsSerializer(
-            settings_obj, data=request.data, partial=True, context={'request': request}
+            settings_obj, data=data, partial=True, context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()

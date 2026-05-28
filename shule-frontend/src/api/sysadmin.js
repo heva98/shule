@@ -32,7 +32,12 @@ export const getSettings = () =>
 export const updateSettings = (data) => {
   const fd = new FormData()
   Object.entries(data).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== '') fd.append(k, v)
+    if (v === undefined || v === null) return
+    if (Array.isArray(v)) {
+      fd.append(k, JSON.stringify(v))   // arrays sent as JSON string
+    } else if (v !== '') {
+      fd.append(k, v)
+    }
   })
   return api.put('/admin/settings/', fd).then(r => r.data)
 }
@@ -48,6 +53,9 @@ export const updateAdminSubject = (id, data) =>
 
 export const deactivateSubject = (id) =>
   api.delete(`/admin/subjects/${id}/`).then(r => r.data)
+
+export const activateSubject = (id) =>
+  api.put(`/admin/subjects/${id}/`, { is_active: true }).then(r => r.data)
 
 export const getAcademicYears = () =>
   api.get('/admin/academic-years/').then(r => r.data)

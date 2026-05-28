@@ -143,6 +143,6 @@ class SchoolSettingsSerializer(serializers.ModelSerializer):
             'id', 'school_name', 'school_motto', 'school_logo',
             'school_address', 'school_phone', 'school_email', 'school_website',
             'region', 'district', 'registration_number', 'school_type',
-            'established_year', 'email_configured', 'sms_configured',
+            'active_levels', 'established_year', 'email_configured', 'sms_configured',
         ]
         read_only_fields = ['id', 'email_configured', 'sms_configured']

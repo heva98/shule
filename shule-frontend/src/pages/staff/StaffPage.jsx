@@ -316,6 +316,38 @@ function ProfileFields({ form, set, subjects }) {
       </div>
 
       <div>
+        <SecHdr>School Levels</SecHdr>
+        <p className="text-xs text-gray-400 mb-3">Select the level groups this staff member works with. Leave all unchecked if they work across all levels.</p>
+        <div className="flex flex-wrap gap-2">
+          {LEVEL_GROUPS.map(lg => {
+            const checked = (form.taught_levels || []).includes(lg.value)
+            return (
+              <button
+                key={lg.value}
+                type="button"
+                onClick={() => {
+                  const current = form.taught_levels || []
+                  set('taught_levels', checked ? current.filter(v => v !== lg.value) : [...current, lg.value])
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
+                  checked
+                    ? 'border-[#1B4F72] bg-[#1B4F72]/5 text-[#1B4F72] font-medium'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
+                  checked ? 'border-[#1B4F72] bg-[#1B4F72]' : 'border-gray-300'
+                }`}>
+                  {checked && <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </div>
+                {lg.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
         <SecHdr>Emergency Contact</SecHdr>
         <div className="grid grid-cols-2 gap-4">
           <F label="Name">
@@ -349,8 +381,14 @@ function ProfileFields({ form, set, subjects }) {
 const BLANK_PROFILE = {
   designation: 'TEACHER', tsc_number: '', hire_date: '', contract_type: 'PERMANENT',
   basic_salary: '', national_id: '', class_teacher_of_level: '', class_teacher_of_stream: '',
-  subjects: [], qualifications: [], emergency_contact_name: '', emergency_contact_phone: '',
+  subjects: [], taught_levels: [], qualifications: [], emergency_contact_name: '', emergency_contact_phone: '',
 }
+
+const LEVEL_GROUPS = [
+  { value: 'PRIMARY', label: 'Standard 1 – 7' },
+  { value: 'OLEVEL',  label: 'O-Level (Form 1 – 4)' },
+  { value: 'ALEVEL',  label: 'A-Level (Form 5 – 6)' },
+]
 
 function AddStaffModal({ onClose }) {
   const qc = useQueryClient()
@@ -532,6 +570,7 @@ function StaffModal({ staff, canEdit, onClose }) {
     class_teacher_of_level: staff.class_teacher_of_level || '',
     class_teacher_of_stream: staff.class_teacher_of_stream || '',
     subjects: (staff.subjects_display || []).map(s => s.id),
+    taught_levels: staff.taught_levels || [],
     qualifications: staff.qualifications || [],
     emergency_contact_name: staff.emergency_contact_name || '',
     emergency_contact_phone: staff.emergency_contact_phone || '',

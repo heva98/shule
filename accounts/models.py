@@ -160,6 +160,11 @@ class SchoolSettings(models.Model):
     school_type         = models.CharField(
         max_length=10, choices=SchoolType.choices, default=SchoolType.COMBINED
     )
+    # Which level groups this school operates — e.g. ["PRIMARY","OLEVEL","ALEVEL"]
+    active_levels       = models.JSONField(
+        default=list, blank=True,
+        help_text='Level groups the school runs: PRIMARY, OLEVEL, ALEVEL',
+    )
     established_year    = models.IntegerField(null=True, blank=True)
 
     class Meta:
