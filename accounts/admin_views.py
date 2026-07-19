@@ -18,10 +18,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from exams.models import Subject, LevelGroup
-from fees.models import AcademicYear
+from fees.models import AcademicYear, SchoolCalendarEvent
+from fees.serializers import SchoolCalendarEventSerializer
 
 from .models import AuditLog, Role, SchoolSettings, User
-from .permissions import IsSystemAdmin
+from .permissions import IsCalendarManager, IsCalendarManagerOrReadOnly, IsSystemAdmin
 from .serializers import (
     AdminPasswordResetSerializer,
     AdminRoleChangeSerializer,
@@ -500,7 +501,7 @@ class AdminAcademicYearListView(APIView):
 
 
 class AdminAcademicYearDetailView(APIView):
-    permission_classes = [IsAuthenticated, IsSystemAdmin]
+    permission_classes = [IsAuthenticated, IsCalendarManager]
 
     def _get(self, pk):
         try:
@@ -548,6 +549,59 @@ class AdminAcademicYearSetCurrentView(APIView):
             request=request,
         )
         return Response({'detail': f'{ay.year} is now the current academic year.'})
+
+
+# ── School calendar events ────────────────────────────────────────────────────
+
+class SchoolCalendarEventListView(APIView):
+    permission_classes = [IsAuthenticated, IsCalendarManagerOrReadOnly]
+
+    def get(self, request):
+        year_id = request.query_params.get('year_id')
+        qs = SchoolCalendarEvent.objects.select_related('created_by', 'academic_year').all()
+        if year_id:
+            qs = qs.filter(academic_year_id=year_id)
+        return Response(SchoolCalendarEventSerializer(qs, many=True).data)
+
+    def post(self, request):
+        ser = SchoolCalendarEventSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        event = ser.save(created_by=request.user)
+        log_action(
+            user=request.user,
+            action=AuditLog.Action.YEAR_UPDATED,
+            target_model='SchoolCalendarEvent',
+            target_id=event.pk,
+            description=f'Created calendar event: {event.title}',
+            request=request,
+        )
+        return Response(SchoolCalendarEventSerializer(event).data, status=status.HTTP_201_CREATED)
+
+
+class SchoolCalendarEventDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsCalendarManager]
+
+    def _get(self, pk):
+        try:
+            return SchoolCalendarEvent.objects.get(pk=pk)
+        except SchoolCalendarEvent.DoesNotExist:
+            return None
+
+    def put(self, request, pk):
+        event = self._get(pk)
+        if not event:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        ser = SchoolCalendarEventSerializer(event, data=request.data, partial=True)
+        ser.is_valid(raise_exception=True)
+        ser.save()
+        return Response(ser.data)
+
+    def delete(self, request, pk):
+        event = self._get(pk)
+        if not event:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        event.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ── System health ─────────────────────────────────────────────────────────────

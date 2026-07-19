@@ -3,6 +3,7 @@ import {
   BookOpen,
   CalendarCheck,
   CalendarDays,
+  CalendarRange,
   ClipboardList,
   CreditCard,
   GraduationCap,
@@ -69,6 +70,13 @@ const NAV_ITEMS = [
     path: '/communications',
     icon: MessageSquare,
     roles: ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'],
+  },
+  {
+    label: 'School Calendar',
+    path: '/school-calendar',
+    icon: CalendarRange,
+    roles: ['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER',
+            'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER', 'BURSAR'],
   },
   {
     label: 'My Children',

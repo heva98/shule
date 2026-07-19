@@ -1,0 +1,14 @@
+[Unit]
+Description=Celery worker for Shule SMS
+After=network.target redis-server.service
+
+[Service]
+User=deployuser
+Group=deployuser
+WorkingDirectory=/home/deployuser/shule
+ExecStart=/home/deployuser/shule/venv/bin/celery -A shule worker -l info --logfile=/home/deployuser/shule/logs/celery-worker.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

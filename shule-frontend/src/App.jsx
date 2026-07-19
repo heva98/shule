@@ -25,6 +25,7 @@ import UserManagementPage from './pages/sysadmin/UserManagementPage'
 import RoleAssignmentPage from './pages/sysadmin/RoleAssignmentPage'
 import SubjectsPage from './pages/sysadmin/SubjectsPage'
 import AcademicYearPage from './pages/sysadmin/AcademicYearPage'
+import SchoolCalendarPage from './pages/calendar/SchoolCalendarPage'
 import SchoolSettingsPage from './pages/sysadmin/SchoolSettingsPage'
 import AuditLogPage from './pages/sysadmin/AuditLogPage'
 import SystemHealthPage from './pages/sysadmin/SystemHealthPage'
@@ -162,6 +163,16 @@ export default function App() {
                   element={
                     <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']}>
                       <CommunicationsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/school-calendar"
+                  element={
+                    <ProtectedRoute allowedRoles={['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER',
+                      'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER', 'BURSAR']}>
+                      <SchoolCalendarPage />
                     </ProtectedRoute>
                   }
                 />

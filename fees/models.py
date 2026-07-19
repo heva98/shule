@@ -65,6 +65,36 @@ class AcademicYear(models.Model):
         return TERM_QUARTER_MAP.get(quarter)
 
 
+class SchoolCalendarEvent(models.Model):
+    class EventType(models.TextChoices):
+        HOLIDAY   = 'HOLIDAY',   'Public Holiday'
+        EXAM      = 'EXAM',      'Examination'
+        SPORTS    = 'SPORTS',    'Sports & Games'
+        MEETING   = 'MEETING',   'Meeting'
+        TRIP      = 'TRIP',      'School Trip'
+        CEREMONY  = 'CEREMONY',  'Ceremony'
+        OTHER     = 'OTHER',     'Other'
+
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='events')
+    title         = models.CharField(max_length=200)
+    event_type    = models.CharField(max_length=20, choices=EventType.choices, default=EventType.OTHER)
+    start_date    = models.DateField()
+    end_date      = models.DateField(null=True, blank=True)
+    description   = models.TextField(blank=True)
+    created_by    = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, related_name='created_calendar_events',
+    )
+    created_at    = models.DateTimeField(auto_now_add=True)
+    updated_at    = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['start_date']
+
+    def __str__(self):
+        return f'{self.title} ({self.start_date})'
+
+
 class FeeStructure(models.Model):
     academic_year = models.ForeignKey(
         AcademicYear, on_delete=models.PROTECT, related_name='fee_structures'

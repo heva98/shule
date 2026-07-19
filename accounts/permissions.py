@@ -82,3 +82,26 @@ class IsSeniorStaff(BasePermission):
             request.user.is_authenticated
             and request.user.role in self.SENIOR_ROLES
         )
+
+
+class IsCalendarManager(BasePermission):
+    """Owner, System Admin, Headteacher, or Academic Teacher — can manage school calendar."""
+    MANAGER_ROLES = {Role.OWNER, Role.SYSTEM_ADMIN, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.role in self.MANAGER_ROLES
+        )
+
+
+class IsCalendarManagerOrReadOnly(BasePermission):
+    """Calendar managers can write; any authenticated user can read."""
+    MANAGER_ROLES = {Role.OWNER, Role.SYSTEM_ADMIN, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return True
+        return request.user.role in self.MANAGER_ROLES

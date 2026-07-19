@@ -1,0 +1,31 @@
+Option 2 — register via the API directly (any role)
+
+With Django running, POST to http://localhost:8000/api/auth/register/:
+
+
+{
+  "email": "owner@shule.ac.tz",
+  "password": "Test1234!",
+  "full_name": "Test Owner",
+  "role": "OWNER"
+}
+
+{
+  "email": "teacher@shule.ac.tz",
+  "password": "Test1234!",
+  "full_name": "Test Teacher",
+  "role": "TEACHER"
+}
+
+{
+  "email": "bursar@shule.ac.tz",
+  "password": "Test1234!",
+  "full_name": "Test Bursar",
+  "role": "BURSAR"
+}
+
+
+TEACHERS
+- teacher2@shule.ac.tz
+12345678
+

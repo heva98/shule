@@ -15,6 +15,8 @@ from .admin_views import (
     AdminUserPasswordResetView,
     AdminUserRoleView,
     AdminUserToggleActiveView,
+    SchoolCalendarEventDetailView,
+    SchoolCalendarEventListView,
 )
 
 urlpatterns = [
@@ -40,6 +42,10 @@ urlpatterns = [
     path('academic-years/',                AdminAcademicYearListView.as_view(),   name='admin-academic-years'),
     path('academic-years/<int:pk>/',       AdminAcademicYearDetailView.as_view(), name='admin-academic-year-detail'),
     path('academic-years/<int:pk>/set-current/', AdminAcademicYearSetCurrentView.as_view(), name='admin-year-set-current'),
+
+    # School calendar events
+    path('school-calendar/',              SchoolCalendarEventListView.as_view(),   name='school-calendar-events'),
+    path('school-calendar/<int:pk>/',     SchoolCalendarEventDetailView.as_view(), name='school-calendar-event-detail'),
 
     # System health
     path('system-health/',                 AdminSystemHealthView.as_view(),       name='admin-system-health'),

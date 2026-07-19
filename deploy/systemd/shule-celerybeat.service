@@ -1,0 +1,14 @@
+[Unit]
+Description=Celery beat scheduler for Shule SMS
+After=network.target redis-server.service
+
+[Service]
+User=deployuser
+Group=deployuser
+WorkingDirectory=/home/deployuser/shule
+ExecStart=/home/deployuser/shule/venv/bin/celery -A shule beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler --logfile=/home/deployuser/shule/logs/celery-beat.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

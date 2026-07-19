@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn daemon for Shule SMS
+After=network.target postgresql.service redis-server.service
+
+[Service]
+User=deployuser
+Group=deployuser
+WorkingDirectory=/home/deployuser/shule
+ExecStart=/home/deployuser/shule/venv/bin/gunicorn shule.wsgi:application -c /home/deployuser/shule/deploy/gunicorn.conf.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

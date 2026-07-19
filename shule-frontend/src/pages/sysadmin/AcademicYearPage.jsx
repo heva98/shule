@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, CheckCircle, Plus } from 'lucide-react'
+import { CalendarDays, CheckCircle, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { createAcademicYear, getAcademicYears, setCurrentYear } from '../../api/sysadmin'
+import { createAcademicYear, getAcademicYears, setCurrentYear, updateAcademicYear } from '../../api/sysadmin'
 import Modal from '../../components/ui/Modal'
 
 function fmtRange(start, end) {
@@ -103,6 +103,80 @@ function CreateYearModal({ onClose }) {
   )
 }
 
+// ── Edit quarters modal ───────────────────────────────────────────────────────
+
+function EditQuartersModal({ year, onClose }) {
+  const qc = useQueryClient()
+  const { register, handleSubmit } = useForm({
+    defaultValues: {
+      q1_start: year.q1_start ?? '', q1_end: year.q1_end ?? '',
+      q2_start: year.q2_start ?? '', q2_end: year.q2_end ?? '',
+      q3_start: year.q3_start ?? '', q3_end: year.q3_end ?? '',
+      q4_start: year.q4_start ?? '', q4_end: year.q4_end ?? '',
+    },
+  })
+  const mut = useMutation({
+    mutationFn: (data) => updateAcademicYear(year.id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-academic-years'] })
+      toast.success('Quarter dates updated.')
+      onClose()
+    },
+    onError: (err) => toast.error(err.response?.data?.detail ?? 'Failed.'),
+  })
+
+  function onSubmit(data) {
+    for (const q of QUARTERS) {
+      const s = data[`${q.key}_start`], e = data[`${q.key}_end`]
+      if (s && e && s > e) {
+        toast.error(`${q.label}: start date must be before end date.`)
+        return
+      }
+    }
+    mut.mutate(data)
+  }
+
+  return (
+    <Modal isOpen title={`Edit Quarters — ${year.year}`} onClose={onClose} size="lg">
+      <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {QUARTERS.map(q => (
+            <div key={q.key} className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <span className="text-sm font-semibold text-gray-800">{q.label}</span>
+                  <span className="ml-2 text-xs text-gray-400">{q.term}</span>
+                </div>
+                <span className="text-xs text-gray-400">{q.hint}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1">Start</label>
+                  <input type="date" {...register(`${q.key}_start`)}
+                    className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1">End</label>
+                  <input type="date" {...register(`${q.key}_end`)}
+                    className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onClose}
+            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button type="submit" disabled={mut.isPending}
+            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+            {mut.isPending ? 'Saving…' : 'Save Quarters'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
 // ── Set current confirm ───────────────────────────────────────────────────────
 
 function SetCurrentModal({ year, onClose }) {
@@ -138,8 +212,9 @@ function SetCurrentModal({ year, onClose }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AcademicYearPage() {
-  const [showCreate, setShowCreate] = useState(false)
-  const [setCurrent, setSetCurrent] = useState(null)
+  const [showCreate, setShowCreate]     = useState(false)
+  const [setCurrent, setSetCurrent]     = useState(null)
+  const [editQuarters, setEditQuarters] = useState(null)
 
   const q = useQuery({ queryKey: ['admin-academic-years'], queryFn: getAcademicYears })
   const years = q.data ?? []
@@ -207,21 +282,30 @@ export default function AcademicYearPage() {
               </div>
 
               {/* Actions */}
-              {!y.is_current && (
+              <div className="flex gap-2">
                 <button
-                  onClick={() => setSetCurrent(y)}
-                  className="w-full py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-primary/40 hover:text-primary transition-colors"
+                  onClick={() => setEditQuarters(y)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-primary/40 hover:text-primary transition-colors"
                 >
-                  Set as Current Year
+                  <Pencil size={13} /> Edit Quarters
                 </button>
-              )}
+                {!y.is_current && (
+                  <button
+                    onClick={() => setSetCurrent(y)}
+                    className="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-primary/40 hover:text-primary transition-colors"
+                  >
+                    Set as Current
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {showCreate && <CreateYearModal onClose={() => setShowCreate(false)} />}
-      {setCurrent && <SetCurrentModal year={setCurrent} onClose={() => setSetCurrent(null)} />}
+      {showCreate    && <CreateYearModal onClose={() => setShowCreate(false)} />}
+      {setCurrent    && <SetCurrentModal year={setCurrent} onClose={() => setSetCurrent(null)} />}
+      {editQuarters  && <EditQuartersModal year={editQuarters} onClose={() => setEditQuarters(null)} />}
     </div>
   )
 }

@@ -69,6 +69,18 @@ export const updateAcademicYear = (id, data) =>
 export const setCurrentYear = (id) =>
   api.put(`/admin/academic-years/${id}/set-current/`).then(r => r.data)
 
+export const getCalendarEvents = (yearId) =>
+  api.get('/admin/school-calendar/', { params: yearId ? { year_id: yearId } : {} }).then(r => r.data)
+
+export const createCalendarEvent = (data) =>
+  api.post('/admin/school-calendar/', data).then(r => r.data)
+
+export const updateCalendarEvent = (id, data) =>
+  api.put(`/admin/school-calendar/${id}/`, data).then(r => r.data)
+
+export const deleteCalendarEvent = (id) =>
+  api.delete(`/admin/school-calendar/${id}/`).then(r => r.data)
+
 export const getAuditLogs = (params = {}) =>
   api.get('/admin/audit-logs/', { params }).then(r => r.data)
 
