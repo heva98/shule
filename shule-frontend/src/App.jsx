@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
@@ -19,6 +19,7 @@ import StudentDetailPage from './pages/students/StudentDetailPage'
 import StudentFormPage from './pages/students/StudentFormPage'
 import StudentsListPage from './pages/students/StudentsListPage'
 import LoginPage from './pages/auth/LoginPage'
+import LandingPage from './pages/LandingPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 import SysAdminDashboard from './pages/sysadmin/SysAdminDashboard'
 import UserManagementPage from './pages/sysadmin/UserManagementPage'
@@ -41,14 +42,13 @@ export default function App() {
         <AuthProvider>
           <Routes>
             {/* Public */}
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Protected shell */}
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-
                 <Route
                   path="/dashboard"
                   element={

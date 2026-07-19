@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import DeliveryStatus, Message, MessageLog
+from .models import DemoRequest, DeliveryStatus, Message, MessageLog
 
 
 class MessageLogInline(admin.TabularInline):
@@ -87,3 +87,13 @@ class MessageLogAdmin(admin.ModelAdmin):
     date_hierarchy = 'sent_at'
     readonly_fields = ('sent_at', 'provider_response', 'whatsapp_url')
     ordering = ('-sent_at',)
+
+
+@admin.register(DemoRequest)
+class DemoRequestAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'email', 'phone', 'school_name', 'contacted', 'created_at')
+    list_filter = ('contacted', 'created_at')
+    search_fields = ('full_name', 'email', 'phone', 'school_name')
+    date_hierarchy = 'created_at'
+    readonly_fields = ('full_name', 'email', 'phone', 'school_name', 'message', 'created_at')
+    ordering = ('-created_at',)

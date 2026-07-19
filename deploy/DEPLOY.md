@@ -30,8 +30,8 @@ Pick a real password and remember it — it goes in `.env` in step 5.
 
 ```bash
 cd /home/deployuser/shule
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv eva
+source eva/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
@@ -66,7 +66,7 @@ Edit `.env` and fill in:
 
 ```bash
 cd /home/deployuser/shule
-source venv/bin/activate
+source eva/bin/activate
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py collectstatic --noinput

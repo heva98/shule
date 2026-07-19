@@ -18,6 +18,9 @@ export const sendBulkFeeReminders = () =>
 export const getAnnouncements = (level) =>
   api.get('/communications/announcements/', { params: level ? { level } : {} }).then((r) => r.data)
 
+export const submitDemoRequest = (data) =>
+  api.post('/communications/demo-requests/', data).then((r) => r.data)
+
 // Legacy aliases
 export const broadcastMessage = broadcast
 export const getMessageHistory = getHistory

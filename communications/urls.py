@@ -5,6 +5,7 @@ from .views import (
     AnnouncementsView,
     BroadcastView,
     BulkFeeReminderView,
+    DemoRequestView,
     FeeReminderView,
     MessageHistoryViewSet,
     SendAbsenceAlertsView,
@@ -20,4 +21,5 @@ urlpatterns = [
     path('fee-reminders/', FeeReminderView.as_view(), name='comm-fee-reminders'),
     path('bulk-fee-reminders/', BulkFeeReminderView.as_view(), name='comm-bulk-fee-reminders'),
     path('send-absence-alerts/', SendAbsenceAlertsView.as_view(), name='comm-absence-alerts'),
+    path('demo-requests/', DemoRequestView.as_view(), name='comm-demo-requests'),
 ]

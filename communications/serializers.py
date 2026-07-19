@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Message, MessageLog
+from .models import DemoRequest, Message, MessageLog
 
 
 class MessageLogSerializer(serializers.ModelSerializer):
@@ -57,3 +57,10 @@ class BroadcastSerializer(serializers.ModelSerializer):
                 {'target_student': 'Required when audience is INDIVIDUAL.'}
             )
         return attrs
+
+
+class DemoRequestSerializer(serializers.ModelSerializer):
+    """Write serializer for the public POST /api/communications/demo-requests/."""
+    class Meta:
+        model = DemoRequest
+        fields = ['full_name', 'email', 'phone', 'school_name', 'message']

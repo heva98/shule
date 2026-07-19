@@ -82,3 +82,20 @@ class MessageLog(models.Model):
 
     def __str__(self):
         return f'{self.recipient_name} | {self.status} | {self.sent_at:%Y-%m-%d %H:%M}'
+
+
+class DemoRequest(models.Model):
+    """A prospective user asking to be shown the system, submitted from the public landing page."""
+    full_name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True)
+    school_name = models.CharField(max_length=255, blank=True)
+    message = models.TextField(blank=True)
+    contacted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.full_name} ({self.email}) — {self.created_at:%Y-%m-%d %H:%M}'
