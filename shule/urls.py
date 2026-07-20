@@ -18,6 +18,7 @@ def api_root(request):
             "exams":          "/api/exams/",
             "staff":          "/api/staff/",
             "communications": "/api/communications/",
+            "timetable":      "/api/timetable/",
             "admin":          "/api/admin/",
         },
     })
@@ -37,6 +38,7 @@ urlpatterns = [
     path('api/exams/',          include('exams.urls')),
     path('api/staff/',          include('staff.urls')),
     path('api/communications/', include('communications.urls')),
+    path('api/timetable/',      include('timetable.urls')),
     path('api/admin/',          include('accounts.admin_urls')),
 ]
 
