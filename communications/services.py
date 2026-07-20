@@ -13,7 +13,7 @@ import urllib.parse
 from urllib.parse import quote as url_quote
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage, send_mail
 
 from .models import DeliveryStatus, Message, MessageLog
 
@@ -30,6 +30,36 @@ def build_whatsapp_url(phone: str, text: str) -> str:
     clean_phone = phone.lstrip('+').replace(' ', '').replace('-', '')
     encoded_text = url_quote(text)
     return f'https://wa.me/{clean_phone}?text={encoded_text}'
+
+
+def notify_demo_request(demo_request) -> bool:
+    """
+    Email the configured owner inbox with the details of a public
+    "Request a demo" submission. Never raises — a delivery failure
+    shouldn't turn into a 500 for the visitor who just submitted the form.
+    """
+    body = (
+        f'New demo request from the Shule SMS landing page.\n\n'
+        f'Name: {demo_request.full_name}\n'
+        f'Email: {demo_request.email}\n'
+        f'Phone: {demo_request.phone or "—"}\n'
+        f'School: {demo_request.school_name or "—"}\n'
+        f'Message: {demo_request.message or "—"}\n'
+        f'Submitted: {demo_request.created_at:%Y-%m-%d %H:%M}\n'
+    )
+    try:
+        email = EmailMessage(
+            subject=f'New demo request — {demo_request.full_name}',
+            body=body,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@shule.ac.tz'),
+            to=[settings.DEMO_REQUEST_NOTIFY_EMAIL],
+            reply_to=[demo_request.email],
+        )
+        email.send(fail_silently=False)
+        return True
+    except Exception as exc:
+        logger.error('Demo request notification email failed: %s', exc)
+        return False
 
 
 # ── Core send helpers ─────────────────────────────────────────────────────────

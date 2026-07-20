@@ -10,7 +10,7 @@ from attendance.models import AbsenceAlert
 
 from .models import Audience, Message
 from .serializers import BroadcastSerializer, DemoRequestSerializer, MessageSerializer
-from .services import NotificationService
+from .services import NotificationService, notify_demo_request
 
 
 class DemoRequestView(APIView):
@@ -23,7 +23,8 @@ class DemoRequestView(APIView):
     def post(self, request):
         serializer = DemoRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        demo_request = serializer.save()
+        notify_demo_request(demo_request)
         return Response(
             {'detail': 'Thanks — we will be in touch shortly.'},
             status=status.HTTP_201_CREATED,

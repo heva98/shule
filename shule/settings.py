@@ -157,6 +157,9 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@shule.ac.tz')
 
+# Where public "Request a demo" submissions are emailed to.
+DEMO_REQUEST_NOTIFY_EMAIL = config('DEMO_REQUEST_NOTIFY_EMAIL', default='henrymkama@gmail.com')
+
 # ── WhatsApp (Meta Cloud API — to be wired in a later phase) ──────────────────
 WHATSAPP_API_TOKEN = config('WHATSAPP_API_TOKEN', default='')
 WHATSAPP_PHONE_ID = config('WHATSAPP_PHONE_ID', default='')
