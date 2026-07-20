@@ -37,6 +37,8 @@ class HomePackageViewSet(ModelViewSet):
             qs = qs.filter(stream=p['stream'])
         if p.get('subject'):
             qs = qs.filter(subject_id=p['subject'])
+        if p.get('posted_by') == 'me':
+            qs = qs.filter(posted_by=self.request.user)
         return qs
 
     def check_permissions(self, request):

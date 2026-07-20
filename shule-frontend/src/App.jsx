@@ -6,7 +6,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
 import AttendancePage from './pages/attendance/AttendancePage'
 import CommunicationsPage from './pages/communications/CommunicationsPage'
-import DashboardPage from './pages/dashboard/DashboardPage'
+import DashboardRouter from './pages/dashboard/DashboardRouter'
 import ExamsPage from './pages/exams/ExamsPage'
 import MarkEntryPage from './pages/exams/MarkEntryPage'
 import ResultsPage from './pages/exams/ResultsPage'
@@ -56,7 +56,7 @@ export default function App() {
                   element={
                     <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR', 'TEACHER',
                       'ACADEMIC_TEACHER', 'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
-                      <DashboardPage />
+                      <DashboardRouter />
                     </ProtectedRoute>
                   }
                 />

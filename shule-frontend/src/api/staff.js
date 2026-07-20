@@ -23,3 +23,9 @@ export const approveLeave = (id) =>
 
 export const rejectLeave = (id) =>
   api.put(`/staff/leave/${id}/reject/`).then(r => r.data)
+
+export const getMyClass = () =>
+  api.get('/staff/my-class/').then(r => r.data)
+
+export const getDisciplinaryIncidents = (params = {}) =>
+  api.get('/staff/discipline/', { params }).then(r => r.data)
