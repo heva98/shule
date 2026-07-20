@@ -216,7 +216,11 @@ function GridTab({ canEdit }) {
 
   const { data: yearsData } = useQuery({ queryKey: ['tt-academic-years'], queryFn: getAcademicYears })
   const years = yearsData?.results ?? yearsData ?? []
-  const effectiveYear = academicYear || years.find((y) => y.is_current)?.id || ''
+  const currentYearId = years.find((y) => y.is_current)?.id ?? ''
+  const effectiveYear = academicYear || currentYearId
+  // Reflect the current year's own option as selected in the dropdown, rather
+  // than leaving it on the generic "Current year" placeholder.
+  const selectedYearValue = academicYear || String(currentYearId)
 
   const { data: periodsData } = useQuery({ queryKey: ['periods'], queryFn: getPeriods })
   const periods = periodsData?.results ?? periodsData ?? []
@@ -319,7 +323,7 @@ function GridTab({ canEdit }) {
           </button>
         </div>
 
-        <select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} className={selectCls}>
+        <select value={selectedYearValue} onChange={(e) => setAcademicYear(e.target.value)} className={selectCls}>
           <option value="">Current year</option>
           {years.map((y) => <option key={y.id} value={y.id}>{y.year}</option>)}
         </select>
