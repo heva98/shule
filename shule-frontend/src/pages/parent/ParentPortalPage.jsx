@@ -8,6 +8,7 @@ import {
   GraduationCap,
   LogOut,
   MessageCircle,
+  Package,
   Smartphone,
   Wallet,
   XCircle,
@@ -18,6 +19,7 @@ import { getAnnouncements } from '../../api/communications'
 import { getReportCard, getExams } from '../../api/exams'
 import { getInvoices } from '../../api/fees'
 import { getAttendanceSummary, getAttendance } from '../../api/attendance'
+import { getHomePackages } from '../../api/homepackages'
 import { getMyChildren } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
@@ -477,6 +479,48 @@ function AttendanceTab({ child }) {
   )
 }
 
+function PackagesTab({ child }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['parent-home-packages', child.id, child.level, child.stream],
+    queryFn: () => getHomePackages({ level: child.level, stream: child.stream || undefined }),
+  })
+  const packages = data?.results ?? data ?? []
+
+  if (isLoading) return <TabSkeleton />
+
+  if (packages.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <Package size={32} className="mx-auto text-gray-300 mb-2" />
+        <p className="text-sm text-gray-500">No home packages yet.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {packages.map((pkg) => (
+        <div key={pkg.id} className="bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-gray-900">{pkg.title}</p>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium shrink-0">
+              {pkg.quarter}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-0.5">{pkg.subject_code} &middot; Due {fmtDate(pkg.due_date)}</p>
+          {pkg.instructions && <p className="text-xs text-gray-600 mt-2">{pkg.instructions}</p>}
+          {pkg.attachment && (
+            <a href={pkg.attachment} target="_blank" rel="noreferrer"
+              className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+              <Download size={12} /> Download attachment
+            </a>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Tab skeleton ──────────────────────────────────────────────────────────────
 
 function TabSkeleton() {
@@ -584,6 +628,7 @@ const TABS = [
   { key: 'fees',       label: 'Fees',       Icon: Wallet },
   { key: 'results',    label: 'Results',    Icon: BookOpen },
   { key: 'attendance', label: 'Attendance', Icon: Calendar },
+  { key: 'packages',   label: 'Packages',   Icon: Package },
 ]
 
 export default function ParentPortalPage() {
@@ -713,6 +758,7 @@ export default function ParentPortalPage() {
                 {activeTab === 'fees'       && <FeesTab       child={selectedChild} />}
                 {activeTab === 'results'    && <ResultsTab    child={selectedChild} />}
                 {activeTab === 'attendance' && <AttendanceTab child={selectedChild} />}
+                {activeTab === 'packages'   && <PackagesTab   child={selectedChild} />}
               </div>
             </div>
           </section>
