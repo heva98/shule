@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Menu as MenuIcon,
   MessageCircle,
+  Phone,
   ShieldCheck,
   Sparkles,
   Users,
@@ -688,8 +689,15 @@ function Footer() {
           </ul>
         </div>
         <div>
-          <p className="text-xs font-semibold text-white uppercase tracking-widest mb-3">About</p>
+          <p className="text-xs font-semibold text-white uppercase tracking-widest mb-3">Contact</p>
           <p className="text-sm text-white/70">Private School Management &middot; Tanzania</p>
+          <a
+            href="tel:+255654389616"
+            className="mt-2 inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            +255 654 389 616
+          </a>
         </div>
       </div>
       <div className="border-t border-white/10">
