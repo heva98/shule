@@ -33,6 +33,7 @@ LOCAL_APPS = [
     'staff',
     'communications',
     'timetable',
+    'homepackages',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
