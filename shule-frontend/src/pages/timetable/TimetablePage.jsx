@@ -41,7 +41,7 @@ const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white 
 // by report cards / receipts elsewhere in the app: user saves via the browser's
 // print-to-PDF destination) ────────────────────────────────────────────────────
 
-function buildTimetablePrintHtml({ heading, subheading, periods, grid, viewMode }) {
+function buildTimetablePrintHtml({ heading, subheading, periods, grid, mineKeys, onlyMine }) {
   const rows = periods.map((p) => {
     const timeLabel = `${p.start_time?.slice(0, 5)}–${p.end_time?.slice(0, 5)}`
     if (p.is_break) {
@@ -49,13 +49,13 @@ function buildTimetablePrintHtml({ heading, subheading, periods, grid, viewMode 
         <td colspan="${DAYS.length}" class="break">Break</td></tr>`
     }
     const cells = DAYS.map((d) => {
-      const e = grid[`${d.value}-${p.id}`]
+      const key = `${d.value}-${p.id}`
+      const e = grid[key]
       if (!e) return '<td></td>'
-      const line1 = viewMode === 'mine'
-        ? `${LEVEL_LABEL[e.level] ?? e.level}${e.stream ? ' ' + e.stream : ''}`
-        : (e.subject_code ?? 'Free')
-      const line2 = viewMode === 'mine' ? (e.subject_code ?? 'Free') : (e.teacher_name ?? '—')
-      return `<td><div class="l1">${line1}</div><div class="l2">${line2}</div>${e.room ? `<div class="l3">${e.room}</div>` : ''}</td>`
+      if (onlyMine && !mineKeys.has(key)) return '<td class="occupied"></td>'
+      const line1 = e.subject_code ?? 'Free'
+      const line2 = e.teacher_name ?? '—'
+      return `<td class="${mineKeys.has(key) ? 'mine' : ''}"><div class="l1">${line1}</div><div class="l2">${line2}</div>${e.room ? `<div class="l3">${e.room}</div>` : ''}</td>`
     }).join('')
     return `<tr><td class="ptime"><strong>${p.name}</strong><br><span class="time">${timeLabel}</span></td>${cells}</tr>`
   }).join('')
@@ -82,6 +82,8 @@ function buildTimetablePrintHtml({ heading, subheading, periods, grid, viewMode 
   .l1 { font-weight: 600; }
   .l2 { color: #444; }
   .l3 { color: #888; font-size: 10px; }
+  .mine { border-left: 3px solid #27AE60; }
+  .occupied { background: #f2f2f2; }
   @media print { body { padding: 12px; } }
 </style>
 </head>
@@ -208,6 +210,8 @@ function GridTab({ canEdit }) {
   const [academicYear, setAcademicYear] = useState('')
   const [level, setLevel] = useState('')
   const [stream, setStream] = useState('')
+  const [myClassKey, setMyClassKey] = useState('')
+  const [onlyMine, setOnlyMine] = useState(false)
   const [cell, setCell] = useState(null) // { context, entry } | null
 
   const { data: yearsData } = useQuery({ queryKey: ['tt-academic-years'], queryFn: getAcademicYears })
@@ -217,14 +221,36 @@ function GridTab({ canEdit }) {
   const { data: periodsData } = useQuery({ queryKey: ['periods'], queryFn: getPeriods })
   const periods = periodsData?.results ?? periodsData ?? []
 
+  // The viewer's own sessions across every class — used to (a) list which classes
+  // they're assigned to for "My Timetable" mode, and (b) know which cells in
+  // whichever class is on screen are actually theirs, for the "only my sessions" filter.
+  const myEntriesQ = useQuery({
+    queryKey: ['tt-my-entries', effectiveYear],
+    queryFn: () => getTimetableEntries({ mine: 'true', academic_year: effectiveYear || undefined }),
+    enabled: !!effectiveYear,
+  })
+  const myEntries = myEntriesQ.data?.results ?? myEntriesQ.data ?? []
+
+  const myClasses = useMemo(() => {
+    const map = new Map()
+    myEntries.forEach((e) => {
+      const key = `${e.level}|${e.stream ?? ''}`
+      if (!map.has(key)) map.set(key, { level: e.level, stream: e.stream ?? '' })
+    })
+    return [...map.values()]
+  }, [myEntries])
+
+  const resolvedMyClassKey = myClassKey || (myClasses[0] ? `${myClasses[0].level}|${myClasses[0].stream}` : '')
+  const [viewLevel, viewStream] = viewMode === 'mine'
+    ? (resolvedMyClassKey ? resolvedMyClassKey.split('|') : ['', ''])
+    : [level, stream]
+
   const entriesQ = useQuery({
-    queryKey: ['timetable-entries', viewMode, effectiveYear, level, stream],
-    queryFn: () => getTimetableEntries(
-      viewMode === 'mine'
-        ? { mine: 'true', academic_year: effectiveYear || undefined }
-        : { academic_year: effectiveYear || undefined, level: level || undefined, stream: stream || undefined }
-    ),
-    enabled: viewMode === 'mine' ? !!effectiveYear : (!!level && !!effectiveYear),
+    queryKey: ['timetable-entries', viewLevel, viewStream, effectiveYear],
+    queryFn: () => getTimetableEntries({
+      academic_year: effectiveYear || undefined, level: viewLevel || undefined, stream: viewStream || undefined,
+    }),
+    enabled: !!viewLevel && !!effectiveYear,
   })
   const entries = entriesQ.data?.results ?? entriesQ.data ?? []
 
@@ -236,21 +262,34 @@ function GridTab({ canEdit }) {
     return map
   }, [entries])
 
-  const canBrowse = viewMode === 'class' ? !!level : true
+  const mineKeys = useMemo(() => {
+    const set = new Set()
+    myEntries.forEach((e) => {
+      if (e.level === viewLevel && (e.stream ?? '') === (viewStream ?? '')) {
+        set.add(`${e.day_of_week}-${e.period}`)
+      }
+    })
+    return set
+  }, [myEntries, viewLevel, viewStream])
+
   const currentYearLabel = years.find((y) => String(y.id) === String(effectiveYear))?.year ?? ''
 
   function handleDownloadPdf() {
     const w = window.open('', '_blank', 'width=1000,height=800')
     if (!w) return
-    const heading = viewMode === 'mine'
-      ? 'My Timetable'
-      : `${LEVEL_LABEL[level] ?? level}${stream ? ` ${stream}` : ''}`
+    const heading = viewLevel
+      ? `${LEVEL_LABEL[viewLevel] ?? viewLevel}${viewStream ? ` ${viewStream}` : ''}`
+      : 'Timetable'
+    const subheadingParts = []
+    if (currentYearLabel) subheadingParts.push(`Academic Year ${currentYearLabel}`)
+    if (onlyMine) subheadingParts.push('My sessions only')
     w.document.write(buildTimetablePrintHtml({
       heading,
-      subheading: currentYearLabel ? `Academic Year ${currentYearLabel}` : '',
+      subheading: subheadingParts.join(' · '),
       periods,
       grid,
-      viewMode,
+      mineKeys,
+      onlyMine,
     }))
     w.document.close()
     setTimeout(() => { w.print(); w.close() }, 400)
@@ -258,7 +297,7 @@ function GridTab({ canEdit }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
           <button
             type="button"
@@ -285,7 +324,7 @@ function GridTab({ canEdit }) {
           {years.map((y) => <option key={y.id} value={y.id}>{y.year}</option>)}
         </select>
 
-        {viewMode === 'class' && (
+        {viewMode === 'class' ? (
           <>
             <select value={level} onChange={(e) => setLevel(e.target.value)} className={selectCls}>
               <option value="">Select level…</option>
@@ -294,33 +333,53 @@ function GridTab({ canEdit }) {
             <input value={stream} onChange={(e) => setStream(e.target.value)} placeholder="Stream (optional)"
               className={`${selectCls} sm:w-40`} />
           </>
-        )}
+        ) : myClasses.length > 1 ? (
+          <select value={resolvedMyClassKey} onChange={(e) => setMyClassKey(e.target.value)} className={selectCls}>
+            {myClasses.map((c) => {
+              const key = `${c.level}|${c.stream}`
+              return (
+                <option key={key} value={key}>
+                  {LEVEL_LABEL[c.level] ?? c.level}{c.stream ? ` ${c.stream}` : ''}
+                </option>
+              )
+            })}
+          </select>
+        ) : myClasses.length === 1 ? (
+          <span className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg">
+            {LEVEL_LABEL[myClasses[0].level] ?? myClasses[0].level}{myClasses[0].stream ? ` ${myClasses[0].stream}` : ''}
+          </span>
+        ) : null}
+
+        <label className="flex items-center gap-2 text-sm text-gray-600 select-none">
+          <input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} className="rounded" />
+          Only my sessions
+        </label>
 
         <button
           type="button"
           onClick={handleDownloadPdf}
-          disabled={!canBrowse || !effectiveYear || periods.length === 0}
+          disabled={!viewLevel || !effectiveYear || periods.length === 0}
           className="sm:ml-auto flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Download size={14} /> Download PDF
         </button>
       </div>
 
-      {viewMode === 'class' && !level ? (
-        <div className="text-center py-16 text-gray-400 text-sm">Select a level to view its timetable.</div>
-      ) : !effectiveYear ? (
+      {!effectiveYear ? (
         <div className="text-center py-16 text-gray-400 text-sm">
           {years.length === 0
             ? 'No academic years have been set up yet. Go to Academic Year Setup to add one.'
             : 'No academic year is marked as current. Pick one from the dropdown above, or set one as current in Academic Year Setup.'}
         </div>
+      ) : viewMode === 'mine' && myClasses.length === 0 ? (
+        <div className="text-center py-16 text-gray-400 text-sm">
+          You're not currently assigned to any class sessions. Switch to "By Class" to browse the school's timetable.
+        </div>
+      ) : viewMode === 'class' && !level ? (
+        <div className="text-center py-16 text-gray-400 text-sm">Select a level to view its timetable.</div>
       ) : periods.length === 0 ? (
         <div className="text-center py-16 text-gray-400 text-sm">
           No periods have been set up yet.{canEdit ? ' Use the "Manage Periods" tab to add some.' : ''}
-        </div>
-      ) : viewMode === 'mine' && entries.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 text-sm">
-          No lessons found on your personal timetable yet.
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
@@ -346,10 +405,13 @@ function GridTab({ canEdit }) {
                     </td>
                   ) : (
                     DAYS.map((d) => {
-                      const existing = grid[`${d.value}-${p.id}`]
+                      const key = `${d.value}-${p.id}`
+                      const existing = grid[key]
+                      const isMine = mineKeys.has(key)
+                      const hideForFilter = onlyMine && existing && !isMine
                       const editable = canEdit && viewMode === 'class'
                       const context = {
-                        academic_year: effectiveYear, level, stream,
+                        academic_year: effectiveYear, level: viewLevel, stream: viewStream,
                         day_of_week: d.value, period: p.id,
                         periodLabel: p.name,
                       }
@@ -357,36 +419,26 @@ function GridTab({ canEdit }) {
                         <td key={d.value} className="px-1.5 py-1.5 align-top">
                           <button
                             type="button"
-                            disabled={!editable}
-                            onClick={() => editable && setCell({ context, entry: existing })}
+                            disabled={!editable || hideForFilter}
+                            onClick={() => editable && !hideForFilter && setCell({ context, entry: existing })}
                             className={`w-full min-h-[52px] rounded-lg px-2 py-1.5 text-left transition-colors border ${
-                              existing
-                                ? 'bg-primary/5 border-primary/20 hover:bg-primary/10'
+                              hideForFilter
+                                ? 'bg-gray-50 border-gray-100'
+                                : existing
+                                ? `bg-primary/5 hover:bg-primary/10 ${isMine ? 'border-success/40 border-l-4' : 'border-primary/20'}`
                                 : 'border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                            } ${!editable ? 'cursor-default' : ''}`}
+                            } ${!editable || hideForFilter ? 'cursor-default' : ''}`}
                           >
-                            {existing ? (
-                              viewMode === 'mine' ? (
-                                <>
-                                  <p className="text-xs font-semibold text-gray-800 truncate">
-                                    {LEVEL_LABEL[existing.level] ?? existing.level}{existing.stream ? ` ${existing.stream}` : ''}
-                                  </p>
-                                  <p className="text-[11px] text-gray-500 truncate">{existing.subject_code ?? 'Free'}</p>
-                                  {existing.room && (
-                                    <p className="text-[10px] text-gray-400 truncate">{existing.room}</p>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-xs font-semibold text-gray-800 truncate">
-                                    {existing.subject_code ?? 'Free'}
-                                  </p>
-                                  <p className="text-[11px] text-gray-500 truncate">{existing.teacher_name ?? '—'}</p>
-                                  {existing.room && (
-                                    <p className="text-[10px] text-gray-400 truncate">{existing.room}</p>
-                                  )}
-                                </>
-                              )
+                            {hideForFilter ? null : existing ? (
+                              <>
+                                <p className="text-xs font-semibold text-gray-800 truncate">
+                                  {existing.subject_code ?? 'Free'}
+                                </p>
+                                <p className="text-[11px] text-gray-500 truncate">{existing.teacher_name ?? '—'}</p>
+                                {existing.room && (
+                                  <p className="text-[10px] text-gray-400 truncate">{existing.room}</p>
+                                )}
+                              </>
                             ) : editable ? (
                               <Plus size={13} className="text-gray-300 mx-auto" />
                             ) : null}
