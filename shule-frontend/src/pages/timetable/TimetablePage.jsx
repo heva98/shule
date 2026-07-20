@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Clock, Coffee, Plus, Trash2 } from 'lucide-react'
+import { Clock, Coffee, Download, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -23,6 +23,7 @@ import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
 
 const EDIT_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']
+const MINE_DEFAULT_ROLES = ['TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']
 
 const DAYS = [
   { value: 'MON', label: 'Mon' },
@@ -35,6 +36,67 @@ const DAYS = [
 
 const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
   focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+
+// ── Printable HTML (opens a print window — same "download as PDF" pattern used
+// by report cards / receipts elsewhere in the app: user saves via the browser's
+// print-to-PDF destination) ────────────────────────────────────────────────────
+
+function buildTimetablePrintHtml({ heading, subheading, periods, grid, viewMode }) {
+  const rows = periods.map((p) => {
+    const timeLabel = `${p.start_time?.slice(0, 5)}–${p.end_time?.slice(0, 5)}`
+    if (p.is_break) {
+      return `<tr><td class="ptime"><strong>${p.name}</strong><br><span class="time">${timeLabel}</span></td>
+        <td colspan="${DAYS.length}" class="break">Break</td></tr>`
+    }
+    const cells = DAYS.map((d) => {
+      const e = grid[`${d.value}-${p.id}`]
+      if (!e) return '<td></td>'
+      const line1 = viewMode === 'mine'
+        ? `${LEVEL_LABEL[e.level] ?? e.level}${e.stream ? ' ' + e.stream : ''}`
+        : (e.subject_code ?? 'Free')
+      const line2 = viewMode === 'mine' ? (e.subject_code ?? 'Free') : (e.teacher_name ?? '—')
+      return `<td><div class="l1">${line1}</div><div class="l2">${line2}</div>${e.room ? `<div class="l3">${e.room}</div>` : ''}</td>`
+    }).join('')
+    return `<tr><td class="ptime"><strong>${p.name}</strong><br><span class="time">${timeLabel}</span></td>${cells}</tr>`
+  }).join('')
+
+  const dayHeaders = DAYS.map((d) => `<th>${d.label}</th>`).join('')
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Timetable — ${heading}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #111; padding: 28px; }
+  .header { text-align: center; border-bottom: 2px solid #1B4F72; padding-bottom: 12px; margin-bottom: 16px; }
+  .header h1 { font-size: 18px; color: #1B4F72; letter-spacing: 0.5px; }
+  .header p { font-size: 12px; color: #555; margin-top: 3px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1B4F72; color: #fff; padding: 8px 6px; text-align: left; font-size: 11px; }
+  td { padding: 6px; border: 1px solid #eee; vertical-align: top; font-size: 11px; }
+  .ptime { width: 90px; background: #f9f9f9; }
+  .ptime .time { color: #777; font-size: 10px; }
+  .break { text-align: center; color: #999; background: #fafafa; }
+  .l1 { font-weight: 600; }
+  .l2 { color: #444; }
+  .l3 { color: #888; font-size: 10px; }
+  @media print { body { padding: 12px; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>SHULE MANAGEMENT SYSTEM</h1>
+    <p>${heading}${subheading ? ` — ${subheading}` : ''}</p>
+  </div>
+  <table>
+    <thead><tr><th>Period</th>${dayHeaders}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`
+}
 
 // ── Entry (assign lesson) modal ────────────────────────────────────────────────
 
@@ -140,7 +202,9 @@ function EntryModal({ context, entry, onClose }) {
 // ── Weekly grid ─────────────────────────────────────────────────────────────
 
 function GridTab({ canEdit }) {
+  const { user } = useAuth()
   const { levelOptions } = useSchoolLevels()
+  const [viewMode, setViewMode] = useState(MINE_DEFAULT_ROLES.includes(user?.role) ? 'mine' : 'class')
   const [academicYear, setAcademicYear] = useState('')
   const [level, setLevel] = useState('')
   const [stream, setStream] = useState('')
@@ -154,13 +218,13 @@ function GridTab({ canEdit }) {
   const periods = periodsData?.results ?? periodsData ?? []
 
   const entriesQ = useQuery({
-    queryKey: ['timetable-entries', effectiveYear, level, stream],
-    queryFn: () => getTimetableEntries({
-      academic_year: effectiveYear || undefined,
-      level: level || undefined,
-      stream: stream || undefined,
-    }),
-    enabled: !!level && !!effectiveYear,
+    queryKey: ['timetable-entries', viewMode, effectiveYear, level, stream],
+    queryFn: () => getTimetableEntries(
+      viewMode === 'mine'
+        ? { mine: 'true', academic_year: effectiveYear || undefined }
+        : { academic_year: effectiveYear || undefined, level: level || undefined, stream: stream || undefined }
+    ),
+    enabled: viewMode === 'mine' ? !!effectiveYear : (!!level && !!effectiveYear),
   })
   const entries = entriesQ.data?.results ?? entriesQ.data ?? []
 
@@ -172,26 +236,91 @@ function GridTab({ canEdit }) {
     return map
   }, [entries])
 
+  const canBrowse = viewMode === 'class' ? !!level : true
+  const currentYearLabel = years.find((y) => String(y.id) === String(effectiveYear))?.year ?? ''
+
+  function handleDownloadPdf() {
+    const w = window.open('', '_blank', 'width=1000,height=800')
+    if (!w) return
+    const heading = viewMode === 'mine'
+      ? 'My Timetable'
+      : `${LEVEL_LABEL[level] ?? level}${stream ? ` ${stream}` : ''}`
+    w.document.write(buildTimetablePrintHtml({
+      heading,
+      subheading: currentYearLabel ? `Academic Year ${currentYearLabel}` : '',
+      periods,
+      grid,
+      viewMode,
+    }))
+    w.document.close()
+    setTimeout(() => { w.print(); w.close() }, 400)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => setViewMode('mine')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'mine' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            My Timetable
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('class')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'class' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            By Class
+          </button>
+        </div>
+
         <select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} className={selectCls}>
           <option value="">Current year</option>
           {years.map((y) => <option key={y.id} value={y.id}>{y.year}</option>)}
         </select>
-        <select value={level} onChange={(e) => setLevel(e.target.value)} className={selectCls}>
-          <option value="">Select level…</option>
-          {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <input value={stream} onChange={(e) => setStream(e.target.value)} placeholder="Stream (optional)"
-          className={`${selectCls} sm:w-40`} />
+
+        {viewMode === 'class' && (
+          <>
+            <select value={level} onChange={(e) => setLevel(e.target.value)} className={selectCls}>
+              <option value="">Select level…</option>
+              {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <input value={stream} onChange={(e) => setStream(e.target.value)} placeholder="Stream (optional)"
+              className={`${selectCls} sm:w-40`} />
+          </>
+        )}
+
+        <button
+          type="button"
+          onClick={handleDownloadPdf}
+          disabled={!canBrowse || !effectiveYear || periods.length === 0}
+          className="sm:ml-auto flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Download size={14} /> Download PDF
+        </button>
       </div>
 
-      {!level ? (
+      {viewMode === 'class' && !level ? (
         <div className="text-center py-16 text-gray-400 text-sm">Select a level to view its timetable.</div>
+      ) : !effectiveYear ? (
+        <div className="text-center py-16 text-gray-400 text-sm">
+          {years.length === 0
+            ? 'No academic years have been set up yet. Go to Academic Year Setup to add one.'
+            : 'No academic year is marked as current. Pick one from the dropdown above, or set one as current in Academic Year Setup.'}
+        </div>
       ) : periods.length === 0 ? (
         <div className="text-center py-16 text-gray-400 text-sm">
           No periods have been set up yet.{canEdit ? ' Use the "Manage Periods" tab to add some.' : ''}
+        </div>
+      ) : viewMode === 'mine' && entries.length === 0 ? (
+        <div className="text-center py-16 text-gray-400 text-sm">
+          No lessons found on your personal timetable yet.
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
@@ -218,6 +347,7 @@ function GridTab({ canEdit }) {
                   ) : (
                     DAYS.map((d) => {
                       const existing = grid[`${d.value}-${p.id}`]
+                      const editable = canEdit && viewMode === 'class'
                       const context = {
                         academic_year: effectiveYear, level, stream,
                         day_of_week: d.value, period: p.id,
@@ -227,22 +357,37 @@ function GridTab({ canEdit }) {
                         <td key={d.value} className="px-1.5 py-1.5 align-top">
                           <button
                             type="button"
-                            disabled={!canEdit}
-                            onClick={() => setCell({ context, entry: existing })}
+                            disabled={!editable}
+                            onClick={() => editable && setCell({ context, entry: existing })}
                             className={`w-full min-h-[52px] rounded-lg px-2 py-1.5 text-left transition-colors border ${
                               existing
                                 ? 'bg-primary/5 border-primary/20 hover:bg-primary/10'
                                 : 'border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                            } ${!canEdit ? 'cursor-default' : ''}`}
+                            } ${!editable ? 'cursor-default' : ''}`}
                           >
                             {existing ? (
-                              <>
-                                <p className="text-xs font-semibold text-gray-800 truncate">
-                                  {existing.subject_code ?? 'Free'}
-                                </p>
-                                <p className="text-[11px] text-gray-500 truncate">{existing.teacher_name ?? '—'}</p>
-                              </>
-                            ) : canEdit ? (
+                              viewMode === 'mine' ? (
+                                <>
+                                  <p className="text-xs font-semibold text-gray-800 truncate">
+                                    {LEVEL_LABEL[existing.level] ?? existing.level}{existing.stream ? ` ${existing.stream}` : ''}
+                                  </p>
+                                  <p className="text-[11px] text-gray-500 truncate">{existing.subject_code ?? 'Free'}</p>
+                                  {existing.room && (
+                                    <p className="text-[10px] text-gray-400 truncate">{existing.room}</p>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-xs font-semibold text-gray-800 truncate">
+                                    {existing.subject_code ?? 'Free'}
+                                  </p>
+                                  <p className="text-[11px] text-gray-500 truncate">{existing.teacher_name ?? '—'}</p>
+                                  {existing.room && (
+                                    <p className="text-[10px] text-gray-400 truncate">{existing.room}</p>
+                                  )}
+                                </>
+                              )
+                            ) : editable ? (
                               <Plus size={13} className="text-gray-300 mx-auto" />
                             ) : null}
                           </button>

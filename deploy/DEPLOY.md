@@ -137,7 +137,7 @@ Certbot edits the Nginx config to add the SSL server block and HTTP→HTTPS redi
 ```bash
 cd /home/deployuser/shule
 git pull
-source venv/bin/activate
+source eva/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py collectstatic --noinput
