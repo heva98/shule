@@ -1,5 +1,6 @@
 import {
   Activity,
+  BedDouble,
   BookOpen,
   CalendarCheck,
   CalendarDays,
@@ -60,6 +61,12 @@ const NAV_ITEMS = [
     icon: Clock,
     roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
             'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER'],
+  },
+  {
+    label: 'Boarding',
+    path: '/boarding',
+    icon: BedDouble,
+    roles: ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER'],
   },
   {
     label: 'Home Packages',

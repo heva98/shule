@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
+  BedDouble,
   Bell,
   BookOpen,
   Calendar,
@@ -20,6 +21,7 @@ import { getReportCard, getExams } from '../../api/exams'
 import { getInvoices } from '../../api/fees'
 import { getAttendanceSummary, getAttendance } from '../../api/attendance'
 import { getHomePackages } from '../../api/homepackages'
+import { getBoardingAssignments } from '../../api/boarding'
 import { getMyChildren } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
@@ -479,6 +481,23 @@ function AttendanceTab({ child }) {
   )
 }
 
+function BoardingBadge({ child }) {
+  const { data } = useQuery({
+    queryKey: ['parent-boarding', child.id],
+    queryFn: () => getBoardingAssignments({ student: child.id, active: 'true' }),
+  })
+  const assignment = (data?.results ?? data ?? [])[0]
+  if (!assignment) return null
+
+  return (
+    <div className="flex items-center gap-1.5 px-4 py-2 bg-primary/5 border-b border-gray-100 text-xs text-primary">
+      <BedDouble size={13} />
+      Boarding at <strong>{assignment.dormitory_name}</strong>
+      {assignment.bed_number && <span>· Bed {assignment.bed_number}</span>}
+    </div>
+  )
+}
+
 function PackagesTab({ child }) {
   const { data, isLoading } = useQuery({
     queryKey: ['parent-home-packages', child.id, child.level, child.stream],
@@ -734,6 +753,8 @@ export default function ParentPortalPage() {
                   </p>
                 </div>
               </div>
+
+              <BoardingBadge child={selectedChild} />
 
               {/* Tab bar */}
               <div className="flex border-b border-gray-100">

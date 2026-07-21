@@ -20,6 +20,7 @@ def api_root(request):
             "communications": "/api/communications/",
             "timetable":      "/api/timetable/",
             "homepackages":   "/api/homepackages/",
+            "boarding":       "/api/boarding/",
             "admin":          "/api/admin/",
         },
     })
@@ -41,6 +42,7 @@ urlpatterns = [
     path('api/communications/', include('communications.urls')),
     path('api/timetable/',      include('timetable.urls')),
     path('api/homepackages/',   include('homepackages.urls')),
+    path('api/boarding/',       include('boarding.urls')),
     path('api/admin/',          include('accounts.admin_urls')),
 ]
 
