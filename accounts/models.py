@@ -12,6 +12,7 @@ class Role(models.TextChoices):
     SUBJECT_TEACHER    = 'SUBJECT_TEACHER',    'Subject Teacher'
     TEACHER            = 'TEACHER',            'Teacher'   # legacy
     BURSAR             = 'BURSAR',             'Bursar'
+    WARDEN             = 'WARDEN',             'Warden'
     PARENT             = 'PARENT',             'Parent'
     STUDENT            = 'STUDENT',            'Student'
 

@@ -12,7 +12,7 @@ from .models import BoardingAssignment, Dormitory
 from .serializers import BoardingAssignmentSerializer, DormitorySerializer
 
 # Roles that may manage dormitories and boarding assignments
-_MANAGE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.DISCIPLINE_TEACHER}
+_MANAGE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.DISCIPLINE_TEACHER, Role.WARDEN}
 
 
 class DormitoryViewSet(ModelViewSet):

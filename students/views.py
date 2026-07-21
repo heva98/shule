@@ -24,12 +24,15 @@ class StudentViewSet(ModelViewSet):
         level = self.request.query_params.get('level')
         stream = self.request.query_params.get('stream')
         status_param = self.request.query_params.get('status')
+        gender = self.request.query_params.get('gender')
         if level:
             qs = qs.filter(level=level)
         if stream:
             qs = qs.filter(stream__iexact=stream)
         if status_param:
             qs = qs.filter(status=status_param)
+        if gender:
+            qs = qs.filter(gender=gender)
         return qs
 
     def get_serializer_class(self):
