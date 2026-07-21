@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BedDouble, Building2, Edit2, LogOut, Plus, Trash2, User, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
@@ -17,10 +17,12 @@ import { getAcademicYears } from '../../api/fees'
 import { getStaff } from '../../api/staff'
 import { getStudents } from '../../api/students'
 import { useAuth } from '../../context/AuthContext'
+import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { LEVEL_LABEL } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
 
-const MANAGE_ROLES = ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER']
+const MANAGE_ROLES = ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN']
 
 const GENDER_LABEL = { M: 'Boys', F: 'Girls' }
 
@@ -32,26 +34,19 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-// ── Student search (mirrors the pattern used for individual broadcasts) ────────
+// ── Student picker — searchable dropdown over an already class+gender-scoped roster ──
 
-function StudentSearchInput({ selected, onSelect, onClear }) {
+function StudentPicker({ students, selected, onSelect, onClear, disabled, placeholder }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const wrapRef = useRef(null)
 
-  const { data } = useQuery({
-    queryKey: ['boarding-student-search', query],
-    queryFn: () => getStudents({ search: query, status: 'ACTIVE' }),
-    enabled: query.length >= 2,
-    staleTime: 30000,
-  })
-  const students = data?.results ?? data ?? []
-
-  const handleType = useCallback((e) => {
-    const v = e.target.value
-    setQuery(v)
-    setOpen(v.length >= 2)
-  }, [])
+  const filtered = query.trim().length > 0
+    ? students.filter((s) => {
+        const q = query.trim().toLowerCase()
+        return s.full_name.toLowerCase().includes(q) || s.student_id.toLowerCase().includes(q)
+      })
+    : students
 
   useEffect(() => {
     function outside(e) {
@@ -66,7 +61,7 @@ function StudentSearchInput({ selected, onSelect, onClear }) {
       <div className="flex items-center gap-2 border-2 border-primary rounded-lg px-3 py-2 bg-primary/5">
         <User size={14} className="text-primary shrink-0" />
         <span className="text-sm flex-1 text-gray-800">
-          {selected.full_name} <span className="text-xs text-gray-400">({GENDER_LABEL[selected.gender]})</span>
+          {selected.full_name} <span className="text-xs text-gray-400 font-mono">{selected.student_id}</span>
         </span>
         <button type="button" onClick={onClear} className="p-0.5 text-gray-400 hover:text-gray-600">
           <X size={14} />
@@ -79,24 +74,25 @@ function StudentSearchInput({ selected, onSelect, onClear }) {
     <div ref={wrapRef} className="relative">
       <input
         value={query}
-        onChange={handleType}
-        placeholder="Search by name or student ID…"
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+        onChange={(e) => setQuery(e.target.value)}
+        onFocus={() => setOpen(true)}
+        disabled={disabled}
+        placeholder={placeholder}
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:bg-gray-50 disabled:text-gray-400"
       />
-      {open && students.length > 0 && (
+      {open && !disabled && (
         <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
-          {students.map((s) => (
+          {filtered.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-gray-400">No matching students in this class.</p>
+          ) : filtered.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => { onSelect(s); setQuery(''); setOpen(false) }}
               className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-sm transition-colors flex items-center justify-between"
             >
-              <span>
-                <span className="font-medium text-gray-900">{s.full_name}</span>
-                <span className="text-xs text-gray-400 ml-2 font-mono">{s.student_id}</span>
-              </span>
-              <span className="text-xs text-gray-400">{GENDER_LABEL[s.gender]}</span>
+              <span className="font-medium text-gray-900">{s.full_name}</span>
+              <span className="text-xs text-gray-400 font-mono">{s.student_id}</span>
             </button>
           ))}
         </div>
@@ -295,8 +291,11 @@ function DormitoriesTab({ canManage }) {
 
 function AssignModal({ onClose }) {
   const qc = useQueryClient()
-  const [student, setStudent] = useState(null)
+  const { levelOptions } = useSchoolLevels()
   const [dormitory, setDormitory] = useState('')
+  const [level, setLevel] = useState('')
+  const [stream, setStream] = useState('')
+  const [student, setStudent] = useState(null)
   const [bedNumber, setBedNumber] = useState('')
   const [academicYear, setAcademicYear] = useState('')
 
@@ -304,12 +303,18 @@ function AssignModal({ onClose }) {
   const years = yearsData?.results ?? yearsData ?? []
   const effectiveYear = academicYear || years.find((y) => y.is_current)?.id || ''
 
-  const { data: dormData } = useQuery({
-    queryKey: ['dormitories-for-gender', student?.gender],
-    queryFn: () => getDormitories(student ? { gender: student.gender } : {}),
-    enabled: !!student,
+  const { data: dormData } = useQuery({ queryKey: ['dormitories-all'], queryFn: () => getDormitories() })
+  const dorms = dormData?.results ?? dormData ?? []
+  const selectedDorm = dorms.find((d) => String(d.id) === String(dormitory))
+
+  const studentsQ = useQuery({
+    queryKey: ['boarding-class-students', level, stream, selectedDorm?.gender],
+    queryFn: () => getStudents({
+      level, stream: stream || undefined, gender: selectedDorm.gender, status: 'ACTIVE', all: 'true',
+    }),
+    enabled: !!level && !!selectedDorm,
   })
-  const matchingDorms = dormData?.results ?? dormData ?? []
+  const classStudents = studentsQ.data?.results ?? studentsQ.data ?? []
 
   const saveMut = useMutation({
     mutationFn: () => createBoardingAssignment({
@@ -331,21 +336,58 @@ function AssignModal({ onClose }) {
     <Modal isOpen title="Assign Student to Dormitory" onClose={onClose} size="sm">
       <div className="p-6 space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Student *</label>
-          <StudentSearchInput selected={student} onSelect={setStudent} onClear={() => { setStudent(null); setDormitory('') }} />
+          <label className="block text-xs font-medium text-gray-700 mb-1">Dormitory *</label>
+          <select
+            value={dormitory}
+            onChange={(e) => { setDormitory(e.target.value); setStudent(null) }}
+            className={selectCls + ' w-full'}
+          >
+            <option value="">Select…</option>
+            {dorms.map((d) => (
+              <option key={d.id} value={d.id}>{d.name} — {GENDER_LABEL[d.gender]} ({d.available_beds} free)</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Class *</label>
+            <select
+              value={level}
+              onChange={(e) => { setLevel(e.target.value); setStudent(null) }}
+              disabled={!dormitory}
+              className={selectCls + ' w-full'}
+            >
+              <option value="">{dormitory ? 'Select…' : 'Pick a dormitory first'}</option>
+              {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Stream</label>
+            <input
+              value={stream}
+              onChange={(e) => { setStream(e.target.value); setStudent(null) }}
+              disabled={!dormitory}
+              placeholder="Optional"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-50"
+            />
+          </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Dormitory *</label>
-          <select value={dormitory} onChange={(e) => setDormitory(e.target.value)} disabled={!student} className={selectCls + ' w-full'}>
-            <option value="">{student ? 'Select…' : 'Pick a student first'}</option>
-            {matchingDorms.map((d) => (
-              <option key={d.id} value={d.id}>{d.name} ({d.available_beds} free)</option>
-            ))}
-          </select>
-          {student && (
+          <label className="block text-xs font-medium text-gray-700 mb-1">Student *</label>
+          <StudentPicker
+            students={classStudents}
+            selected={student}
+            onSelect={setStudent}
+            onClear={() => setStudent(null)}
+            disabled={!level || !selectedDorm}
+            placeholder={!dormitory ? 'Pick a dormitory first' : !level ? 'Pick a class first' : 'Search this class…'}
+          />
+          {level && selectedDorm && (
             <p className="text-[11px] text-gray-400 mt-1">
-              Only showing {GENDER_LABEL[student.gender]} dormitories — {student.full_name} can't be placed in the other.
+              Showing {GENDER_LABEL[selectedDorm.gender]} students in {LEVEL_LABEL[level] ?? level}{stream ? ` ${stream}` : ''} only
+              — matches {selectedDorm.name}'s gender.
             </p>
           )}
         </div>

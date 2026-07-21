@@ -137,7 +137,7 @@ export default function App() {
                 <Route
                   path="/boarding"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER']}>
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN']}>
                       <BoardingPage />
                     </ProtectedRoute>
                   }

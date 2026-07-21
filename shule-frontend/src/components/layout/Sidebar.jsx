@@ -66,7 +66,7 @@ const NAV_ITEMS = [
     label: 'Boarding',
     path: '/boarding',
     icon: BedDouble,
-    roles: ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER'],
+    roles: ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN'],
   },
   {
     label: 'Home Packages',

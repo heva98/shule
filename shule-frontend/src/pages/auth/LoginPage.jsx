@@ -8,6 +8,7 @@ const ROLE_PATHS = {
   HEADTEACHER: '/dashboard',
   TEACHER: '/attendance',
   BURSAR: '/fees',
+  WARDEN: '/boarding',
   PARENT: '/parent',
   STUDENT: '/parent',
 }
