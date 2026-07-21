@@ -2,6 +2,7 @@ import {
   Activity,
   BedDouble,
   BookOpen,
+  Bus,
   CalendarCheck,
   CalendarDays,
   CalendarRange,
@@ -67,6 +68,12 @@ const NAV_ITEMS = [
     path: '/boarding',
     icon: BedDouble,
     roles: ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN'],
+  },
+  {
+    label: 'Transport',
+    path: '/transport',
+    icon: Bus,
+    roles: ['OWNER', 'HEADTEACHER', 'BURSAR'],
   },
   {
     label: 'Home Packages',

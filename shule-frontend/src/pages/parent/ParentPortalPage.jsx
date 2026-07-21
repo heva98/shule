@@ -3,6 +3,7 @@ import {
   BedDouble,
   Bell,
   BookOpen,
+  Bus,
   Calendar,
   CheckCircle,
   Download,
@@ -22,6 +23,7 @@ import { getInvoices } from '../../api/fees'
 import { getAttendanceSummary, getAttendance } from '../../api/attendance'
 import { getHomePackages } from '../../api/homepackages'
 import { getBoardingAssignments } from '../../api/boarding'
+import { getTransportAssignments } from '../../api/transport'
 import { getMyChildren } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
@@ -498,6 +500,23 @@ function BoardingBadge({ child }) {
   )
 }
 
+function TransportBadge({ child }) {
+  const { data } = useQuery({
+    queryKey: ['parent-transport', child.id],
+    queryFn: () => getTransportAssignments({ student: child.id, active: 'true' }),
+  })
+  const assignment = (data?.results ?? data ?? [])[0]
+  if (!assignment) return null
+
+  return (
+    <div className="flex items-center gap-1.5 px-4 py-2 bg-primary/5 border-b border-gray-100 text-xs text-primary">
+      <Bus size={13} />
+      On <strong>{assignment.route_name}</strong>
+      {assignment.pickup_point_name && <span>· {assignment.pickup_point_name}</span>}
+    </div>
+  )
+}
+
 function PackagesTab({ child }) {
   const { data, isLoading } = useQuery({
     queryKey: ['parent-home-packages', child.id, child.level, child.stream],
@@ -755,6 +774,7 @@ export default function ParentPortalPage() {
               </div>
 
               <BoardingBadge child={selectedChild} />
+              <TransportBadge child={selectedChild} />
 
               {/* Tab bar */}
               <div className="flex border-b border-gray-100">

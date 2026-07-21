@@ -30,6 +30,7 @@ import SchoolCalendarPage from './pages/calendar/SchoolCalendarPage'
 import TimetablePage from './pages/timetable/TimetablePage'
 import HomePackagesPage from './pages/homepackages/HomePackagesPage'
 import BoardingPage from './pages/boarding/BoardingPage'
+import TransportPage from './pages/transport/TransportPage'
 import SchoolSettingsPage from './pages/sysadmin/SchoolSettingsPage'
 import AuditLogPage from './pages/sysadmin/AuditLogPage'
 import SystemHealthPage from './pages/sysadmin/SystemHealthPage'
@@ -130,6 +131,15 @@ export default function App() {
                     <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
                       'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
                       <TimetablePage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/transport"
+                  element={
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR']}>
+                      <TransportPage />
                     </ProtectedRoute>
                   }
                 />
