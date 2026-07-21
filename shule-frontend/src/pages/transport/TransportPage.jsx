@@ -234,7 +234,13 @@ function PickupPointModal({ route, point, onClose }) {
   })
   const mut = useMutation({
     mutationFn: (data) => {
-      const payload = { ...data, order: Number(data.order), route: route.id }
+      const payload = {
+        ...data,
+        order: Number(data.order),
+        route: route.id,
+        pickup_time: data.pickup_time || null,
+        dropoff_time: data.dropoff_time || null,
+      }
       return isEdit ? updatePickupPoint(point.id, payload) : createPickupPoint(payload)
     },
     onSuccess: () => {
@@ -437,7 +443,7 @@ function RouteDetailModal({ route, canManage, onClose }) {
               {fees.map((f) => (
                 <div key={f.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
                   <p className="text-sm text-gray-800">
-                    {f.academic_year} &middot; {f.quarter} <span className="text-gray-400">({f.term?.replace('TERM', 'Term ')})</span>
+                    {f.academic_year_label ?? f.academic_year} &middot; {f.quarter} <span className="text-gray-400">({f.term?.replace('TERM', 'Term ')})</span>
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-gray-900">{fmtTZS(f.amount)}</span>

@@ -13,10 +13,11 @@ class PickupPointSerializer(serializers.ModelSerializer):
 
 class RouteFeeSerializer(serializers.ModelSerializer):
     term = serializers.SerializerMethodField()
+    academic_year_label = serializers.IntegerField(source='academic_year.year', read_only=True)
 
     class Meta:
         model = RouteFee
-        fields = ['id', 'route', 'academic_year', 'term', 'quarter', 'amount']
+        fields = ['id', 'route', 'academic_year', 'academic_year_label', 'term', 'quarter', 'amount']
         read_only_fields = ['id']
 
     def get_term(self, obj):
