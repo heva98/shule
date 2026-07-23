@@ -37,6 +37,7 @@ LOCAL_APPS = [
     'boarding',
     'transport',
     'documents',
+    'library',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
