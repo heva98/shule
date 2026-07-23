@@ -2,6 +2,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import {
   ChevronLeft,
   Download,
+  Edit2,
   FileText,
   Loader2,
   MessageCircle,
@@ -19,7 +20,13 @@ import { getAttendanceRecords, getAttendanceSummary } from '../../api/attendance
 import { getExams } from '../../api/exams'
 import { getInvoices } from '../../api/fees'
 import { createStudentDocument, deleteStudentDocument, getStudentDocuments } from '../../api/documents'
-import { getStudent, getStudentReportCard } from '../../api/students'
+import {
+  addGuardian,
+  deleteGuardian,
+  getStudent,
+  getStudentReportCard,
+  updateGuardian,
+} from '../../api/students'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import Skeleton from '../../components/ui/Skeleton'
@@ -30,6 +37,7 @@ import {
   GRADE_BADGE,
   INVOICE_BADGE,
   LEVEL_LABEL,
+  RELATIONSHIP_OPTIONS,
   STATUS_BADGE,
 } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
@@ -78,10 +86,144 @@ function InfoSkeleton() {
   )
 }
 
+// ── Guardian add/edit modal ─────────────────────────────────────────────────
+
+const phoneValidation = {
+  validate: (v) => {
+    const n = (v || '').trim().replace(/[\s-]/g, '')
+    return /^\+255\d{9}$/.test(n) || 'Use +255 followed by 9 digits (e.g. +255712345678)'
+  },
+  setValueAs: (v) => {
+    if (!v) return ''
+    const n = v.trim().replace(/[\s-]/g, '')
+    return /^0\d{9}$/.test(n) ? '+255' + n.slice(1) : n
+  },
+}
+
+const optionalPhoneValidation = {
+  ...phoneValidation,
+  validate: (v) => {
+    if (!v) return true
+    return phoneValidation.validate(v)
+  },
+}
+
+function GuardianModal({ studentPublicId, guardian, onClose, onSaved }) {
+  const isEdit = !!guardian
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: guardian
+      ? {
+          full_name: guardian.full_name, relationship: guardian.relationship,
+          phone: guardian.phone, whatsapp_phone: guardian.whatsapp_phone || '',
+          email: guardian.email || '', is_primary_contact: guardian.is_primary_contact,
+        }
+      : { relationship: '', is_primary_contact: false },
+  })
+
+  const saveMut = useMutation({
+    mutationFn: (data) =>
+      isEdit ? updateGuardian(guardian.id, data) : addGuardian(studentPublicId, data),
+    onSuccess: () => {
+      toast.success(isEdit ? 'Guardian updated.' : 'Guardian added.')
+      onSaved()
+    },
+    onError: (err) => {
+      const detail = err.response?.data
+      const first = detail && typeof detail === 'object' ? Object.values(detail)[0] : null
+      toast.error((Array.isArray(first) ? first[0] : first) ?? 'Failed to save guardian.')
+    },
+  })
+
+  return (
+    <Modal isOpen title={isEdit ? 'Edit Guardian' : 'Add Guardian'} onClose={onClose} size="sm">
+      <form onSubmit={handleSubmit((d) => saveMut.mutate(d))} className="p-6 space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Full Name *</label>
+          <input {...register('full_name', { required: 'Required' })} placeholder="e.g. Hassan Mohamed"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          {errors.full_name && <p className="text-xs text-danger mt-1">{errors.full_name.message}</p>}
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Relationship *</label>
+          <select {...register('relationship', { required: 'Required' })}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30">
+            <option value="">Select…</option>
+            {RELATIONSHIP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          {errors.relationship && <p className="text-xs text-danger mt-1">{errors.relationship.message}</p>}
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number *</label>
+          <input {...register('phone', { required: 'Phone number is required', ...phoneValidation })}
+            placeholder="+255 7xx xxx xxx"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          {errors.phone && <p className="text-xs text-danger mt-1">{errors.phone.message}</p>}
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">WhatsApp Number</label>
+          <input {...register('whatsapp_phone', optionalPhoneValidation)} placeholder="If different from phone (optional)"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          {errors.whatsapp_phone && <p className="text-xs text-danger mt-1">{errors.whatsapp_phone.message}</p>}
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" {...register('email')} placeholder="Optional"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input type="checkbox" {...register('is_primary_contact')} className="rounded" />
+          Primary contact
+        </label>
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onClose}
+            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button type="submit" disabled={saveMut.isPending}
+            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+            {saveMut.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Guardian'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+function DeleteGuardianModal({ guardian, onClose, onDeleted }) {
+  const mut = useMutation({
+    mutationFn: () => deleteGuardian(guardian.id),
+    onSuccess: () => {
+      toast.success('Guardian removed.')
+      onDeleted()
+    },
+    onError: () => toast.error('Failed to remove guardian.'),
+  })
+  return (
+    <Modal isOpen title="Remove Guardian" onClose={onClose} size="sm">
+      <div className="p-6 space-y-4">
+        <p className="text-sm text-gray-600">Remove <strong>{guardian.full_name}</strong> as a guardian? This cannot be undone.</p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button onClick={() => mut.mutate()} disabled={mut.isPending}
+            className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
+            {mut.isPending ? 'Removing…' : 'Remove'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ── Overview tab ───────────────────────────────────────────────────────────
 
-function OverviewTab({ student }) {
+function OverviewTab({ student, canManage }) {
+  const qc = useQueryClient()
+  const [showAdd, setShowAdd] = useState(false)
+  const [editGuardian, setEditGuardian] = useState(null)
+  const [deleteGuardianTarget, setDeleteGuardianTarget] = useState(null)
   const genderLabel = student.gender === 'M' ? 'Male' : student.gender === 'F' ? 'Female' : student.gender
+
+  function refreshStudent() {
+    qc.invalidateQueries({ queryKey: ['student', student.public_id] })
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -105,6 +247,18 @@ function OverviewTab({ student }) {
 
       {/* Guardian cards */}
       <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700">Guardians</h3>
+          {canManage && (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="flex items-center gap-1.5 text-xs text-primary hover:text-secondary font-medium transition-colors"
+            >
+              <Plus size={13} /> Add Guardian
+            </button>
+          )}
+        </div>
+
         {student.guardians?.length === 0 && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-sm text-gray-400">
             No guardians on record.
@@ -122,11 +276,23 @@ function OverviewTab({ student }) {
                   <p className="text-sm font-semibold text-gray-900">{g.full_name}</p>
                   <p className="text-xs text-gray-400 capitalize">{g.relationship.toLowerCase()}</p>
                 </div>
-                {g.is_primary_contact && (
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                    Primary
-                  </span>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {g.is_primary_contact && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                      Primary
+                    </span>
+                  )}
+                  {canManage && (
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setEditGuardian(g)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                        <Edit2 size={13} />
+                      </button>
+                      <button onClick={() => setDeleteGuardianTarget(g)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-danger">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
                 <a
@@ -154,6 +320,29 @@ function OverviewTab({ student }) {
           )
         })}
       </div>
+
+      {showAdd && (
+        <GuardianModal
+          studentPublicId={student.public_id}
+          onClose={() => setShowAdd(false)}
+          onSaved={() => { setShowAdd(false); refreshStudent() }}
+        />
+      )}
+      {editGuardian && (
+        <GuardianModal
+          studentPublicId={student.public_id}
+          guardian={editGuardian}
+          onClose={() => setEditGuardian(null)}
+          onSaved={() => { setEditGuardian(null); refreshStudent() }}
+        />
+      )}
+      {deleteGuardianTarget && (
+        <DeleteGuardianModal
+          guardian={deleteGuardianTarget}
+          onClose={() => setDeleteGuardianTarget(null)}
+          onDeleted={() => { setDeleteGuardianTarget(null); refreshStudent() }}
+        />
+      )}
     </div>
   )
 }
@@ -787,7 +976,7 @@ export default function StudentDetailPage() {
 
       {/* ── Tab panels ── */}
       <div>
-        {activeTab === 'overview'   && <OverviewTab student={student} />}
+        {activeTab === 'overview'   && <OverviewTab student={student} canManage={!readOnly} />}
         {activeTab === 'fees'       && <FeesTab studentId={student.id} />}
         {activeTab === 'attendance' && <AttendanceTab studentId={student.id} />}
         {activeTab === 'results'    && <ResultsTab student={student} />}

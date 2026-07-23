@@ -3,9 +3,10 @@ from rest_framework.routers import DefaultRouter
 
 from exams.views import ReportCardView
 
-from .views import StudentViewSet
+from .views import GuardianViewSet, StudentViewSet
 
 router = DefaultRouter()
+router.register(r'guardians', GuardianViewSet, basename='guardian')
 router.register(r'', StudentViewSet, basename='student')
 
 urlpatterns = [

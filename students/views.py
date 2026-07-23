@@ -85,3 +85,22 @@ class StudentViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class GuardianViewSet(ModelViewSet):
+    """
+    Direct CRUD for a single guardian record — editing/removing a guardian
+    after the fact. Creation stays on POST /students/<public_id>/guardians/
+    since a new guardian is always created in the context of a student.
+    """
+    queryset = Guardian.objects.select_related('student')
+    serializer_class = GuardianSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'patch', 'put', 'delete']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        student = self.request.query_params.get('student')
+        if student:
+            qs = qs.filter(student_id=student)
+        return qs

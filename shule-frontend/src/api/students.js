@@ -26,6 +26,12 @@ export const getStudentGuardians = (id) =>
 export const addGuardian = (studentId, data) =>
   api.post(`/students/${studentId}/guardians/`, data).then((r) => r.data)
 
+export const updateGuardian = (id, data) =>
+  api.patch(`/students/guardians/${id}/`, data).then((r) => r.data)
+
+export const deleteGuardian = (id) =>
+  api.delete(`/students/guardians/${id}/`)
+
 export const getStudentReportCard = (studentId, examId) =>
   api.get(`/students/${studentId}/report-card/`, { params: { exam: examId } }).then((r) => r.data)
 
