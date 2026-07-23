@@ -68,6 +68,7 @@ const ROLES = [
   { value: 'HEADTEACHER', label: 'Headteacher' },
   { value: 'BURSAR', label: 'Bursar' },
   { value: 'WARDEN', label: 'Warden' },
+  { value: 'LIBRARIAN', label: 'Librarian' },
   { value: 'OWNER', label: 'Owner' },
 ]
 

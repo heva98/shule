@@ -17,6 +17,7 @@ const ROLE_BADGE = {
   TEACHER:            'bg-sky-100 text-sky-700',
   BURSAR:             'bg-yellow-100 text-yellow-700',
   WARDEN:             'bg-indigo-100 text-indigo-700',
+  LIBRARIAN:          'bg-cyan-100 text-cyan-700',
   PARENT:             'bg-gray-100 text-gray-600',
   STUDENT:            'bg-blue-100 text-blue-700',
 }
@@ -24,7 +25,7 @@ const ROLE_BADGE = {
 const ROLE_ICONS = {
   OWNER: '👑', SYSTEM_ADMIN: '🛡️', HEADTEACHER: '🏫',
   ACADEMIC_TEACHER: '📚', DISCIPLINE_TEACHER: '⚖️', CLASS_TEACHER: '📋',
-  SUBJECT_TEACHER: '✏️', TEACHER: '👨‍🏫', BURSAR: '💰', WARDEN: '🛏️', PARENT: '👪', STUDENT: '🎓',
+  SUBJECT_TEACHER: '✏️', TEACHER: '👨‍🏫', BURSAR: '💰', WARDEN: '🛏️', LIBRARIAN: '📖', PARENT: '👪', STUDENT: '🎓',
 }
 
 const initials = (name = '') =>

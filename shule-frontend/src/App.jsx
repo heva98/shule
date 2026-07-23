@@ -31,6 +31,7 @@ import TimetablePage from './pages/timetable/TimetablePage'
 import HomePackagesPage from './pages/homepackages/HomePackagesPage'
 import BoardingPage from './pages/boarding/BoardingPage'
 import TransportPage from './pages/transport/TransportPage'
+import LibraryPage from './pages/library/LibraryPage'
 import SchoolSettingsPage from './pages/sysadmin/SchoolSettingsPage'
 import AuditLogPage from './pages/sysadmin/AuditLogPage'
 import SystemHealthPage from './pages/sysadmin/SystemHealthPage'
@@ -158,6 +159,15 @@ export default function App() {
                   element={
                     <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN']}>
                       <BoardingPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/library"
+                  element={
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'LIBRARIAN']}>
+                      <LibraryPage />
                     </ProtectedRoute>
                   }
                 />

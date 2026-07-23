@@ -9,6 +9,7 @@ const ROLE_PATHS = {
   TEACHER: '/attendance',
   BURSAR: '/fees',
   WARDEN: '/boarding',
+  LIBRARIAN: '/library',
   PARENT: '/parent',
   STUDENT: '/parent',
 }

@@ -17,6 +17,7 @@ export const ROLES = [
   { value: 'TEACHER',            label: 'Teacher',            desc: 'General (legacy role)',          color: 'border-sky-300 text-sky-700' },
   { value: 'BURSAR',             label: 'Bursar',             desc: 'Fees & finance management',     color: 'border-yellow-300 text-yellow-700' },
   { value: 'WARDEN',             label: 'Warden',             desc: 'Dormitories & boarding',        color: 'border-indigo-300 text-indigo-700' },
+  { value: 'LIBRARIAN',          label: 'Librarian',          desc: 'Library catalog & loans',       color: 'border-cyan-300 text-cyan-700' },
   { value: 'PARENT',             label: 'Parent',             desc: 'View children\'s records',      color: 'border-gray-300 text-gray-600' },
 ]
 

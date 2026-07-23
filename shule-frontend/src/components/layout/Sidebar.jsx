@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Heart,
   LayoutDashboard,
+  Library,
   LogOut,
   MessageSquare,
   Monitor,
@@ -68,6 +69,12 @@ const NAV_ITEMS = [
     path: '/boarding',
     icon: BedDouble,
     roles: ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN'],
+  },
+  {
+    label: 'Library',
+    path: '/library',
+    icon: Library,
+    roles: ['OWNER', 'HEADTEACHER', 'LIBRARIAN'],
   },
   {
     label: 'Transport',
