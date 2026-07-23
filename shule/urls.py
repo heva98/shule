@@ -22,6 +22,7 @@ def api_root(request):
             "homepackages":   "/api/homepackages/",
             "boarding":       "/api/boarding/",
             "transport":      "/api/transport/",
+            "documents":      "/api/documents/",
             "admin":          "/api/admin/",
         },
     })
@@ -45,6 +46,7 @@ urlpatterns = [
     path('api/homepackages/',   include('homepackages.urls')),
     path('api/boarding/',       include('boarding.urls')),
     path('api/transport/',      include('transport.urls')),
+    path('api/documents/',      include('documents.urls')),
     path('api/admin/',          include('accounts.admin_urls')),
 ]
 

@@ -1,20 +1,27 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft,
   Download,
+  FileText,
   Loader2,
   MessageCircle,
   Phone,
+  Plus,
   Printer,
+  Trash2,
   User,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { getAttendanceRecords, getAttendanceSummary } from '../../api/attendance'
 import { getExams } from '../../api/exams'
 import { getInvoices } from '../../api/fees'
+import { createStudentDocument, deleteStudentDocument, getStudentDocuments } from '../../api/documents'
 import { getStudent, getStudentReportCard } from '../../api/students'
 import Badge from '../../components/ui/Badge'
+import Modal from '../../components/ui/Modal'
 import Skeleton from '../../components/ui/Skeleton'
 import Tabs from '../../components/ui/Tabs'
 import { useAuth } from '../../context/AuthContext'
@@ -28,6 +35,19 @@ import {
 import { formatTZS } from '../../lib/format'
 
 const READ_ONLY_ROLES = ['TEACHER', 'BURSAR']
+
+// Documents (birth certificates, medical forms, etc.) are sensitive — only senior
+// staff can see the tab at all, matching the backend's own access restriction.
+const DOCUMENT_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']
+
+const DOCUMENT_CATEGORIES = [
+  { value: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },
+  { value: 'TRANSFER_LETTER', label: 'Transfer Letter' },
+  { value: 'MEDICAL_FORM', label: 'Medical Form' },
+  { value: 'IMMUNIZATION_RECORD', label: 'Immunization Record' },
+  { value: 'NATIONAL_ID', label: 'National ID / Passport' },
+  { value: 'OTHER', label: 'Other' },
+]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -485,9 +505,177 @@ function ResultsTab({ student }) {
   )
 }
 
+// ── Documents tab ──────────────────────────────────────────────────────────
+
+function UploadDocumentModal({ studentId, onClose }) {
+  const qc = useQueryClient()
+  const [file, setFile] = useState(null)
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: { category: 'BIRTH_CERTIFICATE' },
+  })
+
+  const saveMut = useMutation({
+    mutationFn: (data) => {
+      const fd = new FormData()
+      fd.append('student', studentId)
+      fd.append('category', data.category)
+      if (data.title) fd.append('title', data.title)
+      if (data.notes) fd.append('notes', data.notes)
+      fd.append('file', file)
+      return createStudentDocument(fd)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['student-documents', studentId] })
+      toast.success('Document uploaded.')
+      onClose()
+    },
+    onError: (err) => toast.error(err.response?.data?.detail ?? 'Failed to upload.'),
+  })
+
+  return (
+    <Modal isOpen title="Upload Document" onClose={onClose} size="sm">
+      <form
+        onSubmit={handleSubmit((d) => saveMut.mutate(d))}
+        className="p-6 space-y-4"
+      >
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Category *</label>
+          <select {...register('category', { required: true })}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+            {DOCUMENT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Title <span className="text-gray-400 font-normal">(optional)</span></label>
+          <input {...register('title')} placeholder="e.g. Birth certificate — updated 2026"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">File *</label>
+          <input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Notes <span className="text-gray-400 font-normal">(optional)</span></label>
+          <textarea {...register('notes')} rows={2}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onClose}
+            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button type="submit" disabled={!file || saveMut.isPending}
+            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+            {saveMut.isPending ? 'Uploading…' : 'Upload'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+function DeleteDocumentModal({ doc, studentId, onClose }) {
+  const qc = useQueryClient()
+  const mut = useMutation({
+    mutationFn: () => deleteStudentDocument(doc.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['student-documents', studentId] })
+      toast.success('Document removed.')
+      onClose()
+    },
+    onError: () => toast.error('Failed to remove.'),
+  })
+  return (
+    <Modal isOpen title="Remove Document" onClose={onClose} size="sm">
+      <div className="p-6 space-y-4">
+        <p className="text-sm text-gray-600">
+          Remove <strong>{doc.title || doc.category_display}</strong>? This cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button onClick={() => mut.mutate()} disabled={mut.isPending}
+            className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
+            {mut.isPending ? 'Removing…' : 'Remove'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function DocumentsTab({ studentId }) {
+  const [showUpload, setShowUpload] = useState(false)
+  const [deleteDoc, setDeleteDoc] = useState(null)
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['student-documents', studentId],
+    queryFn: () => getStudentDocuments({ student: studentId }),
+  })
+  const documents = data?.results ?? data ?? []
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <button onClick={() => setShowUpload(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
+          <Plus size={14} /> Upload Document
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+        </div>
+      ) : isError ? (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <p className="text-sm text-danger text-center">Failed to load documents.</p>
+        </div>
+      ) : documents.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center">
+          <FileText size={28} className="mx-auto text-gray-200 mb-2" />
+          <p className="text-sm text-gray-400">No documents on file for this student.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+          {documents.map((doc) => (
+            <div key={doc.id} className="flex items-center gap-3 px-4 py-3">
+              <span className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <FileText size={16} className="text-primary" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {doc.title || doc.category_display}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {doc.category_display} &middot; Uploaded {doc.uploaded_at?.slice(0, 10)}
+                  {doc.uploaded_by_name ? ` by ${doc.uploaded_by_name}` : ''}
+                </p>
+                {doc.notes && <p className="text-xs text-gray-500 mt-1">{doc.notes}</p>}
+              </div>
+              <a href={doc.file} target="_blank" rel="noreferrer"
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors shrink-0" title="Download">
+                <Download size={15} />
+              </a>
+              <button onClick={() => setDeleteDoc(doc)}
+                className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-danger transition-colors shrink-0" title="Remove">
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showUpload && <UploadDocumentModal studentId={studentId} onClose={() => setShowUpload(false)} />}
+      {deleteDoc && <DeleteDocumentModal doc={deleteDoc} studentId={studentId} onClose={() => setDeleteDoc(null)} />}
+    </div>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
-const TABS = [
+const BASE_TABS = [
   { id: 'overview',    label: 'Overview' },
   { id: 'fees',        label: 'Fees' },
   { id: 'attendance',  label: 'Attendance' },
@@ -499,6 +687,10 @@ export default function StudentDetailPage() {
   const navigate  = useNavigate()
   const { user }  = useAuth()
   const readOnly  = READ_ONLY_ROLES.includes(user?.role)
+  const canSeeDocuments = DOCUMENT_ROLES.includes(user?.role)
+  const TABS = canSeeDocuments
+    ? [...BASE_TABS, { id: 'documents', label: 'Documents' }]
+    : BASE_TABS
 
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -599,6 +791,7 @@ export default function StudentDetailPage() {
         {activeTab === 'fees'       && <FeesTab studentId={student.id} />}
         {activeTab === 'attendance' && <AttendanceTab studentId={student.id} />}
         {activeTab === 'results'    && <ResultsTab student={student} />}
+        {activeTab === 'documents'  && canSeeDocuments && <DocumentsTab studentId={student.id} />}
       </div>
 
     </div>
