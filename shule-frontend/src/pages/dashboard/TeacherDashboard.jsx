@@ -348,7 +348,7 @@ export default function TeacherDashboard() {
                 {openIncidents.slice(0, 5).map((inc) => (
                   <Link
                     key={inc.id}
-                    to={`/students/${inc.student}`}
+                    to={`/students/${inc.student_public_id}`}
                     className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-gray-50/70 hover:bg-gray-100 transition-colors"
                   >
                     <div className="min-w-0">

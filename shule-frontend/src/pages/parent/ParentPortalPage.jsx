@@ -278,8 +278,8 @@ function ResultsTab({ child }) {
   const exams = examsData?.results ?? examsData ?? []
 
   const { data: rc, isLoading: rcLoading } = useQuery({
-    queryKey: ['parent-rc', child.id, examId],
-    queryFn: () => getReportCard(child.id, examId),
+    queryKey: ['parent-rc', child.public_id, examId],
+    queryFn: () => getReportCard(child.public_id, examId),
     enabled: !!examId,
   })
 

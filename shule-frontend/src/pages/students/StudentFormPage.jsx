@@ -1,9 +1,10 @@
+import { useQuery } from '@tanstack/react-query'
 import { useFieldArray, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
-import { useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { Camera, ChevronLeft, Loader2, Plus, Star, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { addGuardian, createStudent } from '../../api/students'
+import { addGuardian, createStudent, getStudent, updateStudent } from '../../api/students'
 import {
   GENDER_OPTIONS,
   RELATIONSHIP_OPTIONS,
@@ -44,6 +45,8 @@ const selectCls = `${inputCls} bg-white`
 
 export default function StudentFormPage() {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEdit = !!id
   const { levelOptions } = useSchoolLevels()
 
   const [photoFile,    setPhotoFile]    = useState(null)
@@ -52,12 +55,19 @@ export default function StudentFormPage() {
 
   const [submitting, setSubmitting] = useState(false)
 
+  const { data: existingStudent, isLoading: loadingStudent, isError: loadError } = useQuery({
+    queryKey: ['student', id],
+    queryFn: () => getStudent(id),
+    enabled: isEdit,
+  })
+
   const {
     register,
     control,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -76,6 +86,27 @@ export default function StudentFormPage() {
       guardians: [],
     },
   })
+
+  // Pre-fill the form once the existing student loads (edit mode only)
+  useEffect(() => {
+    if (!existingStudent) return
+    reset({
+      first_name:          existingStudent.first_name,
+      last_name:           existingStudent.last_name,
+      middle_name:         existingStudent.middle_name || '',
+      date_of_birth:       existingStudent.date_of_birth,
+      gender:              existingStudent.gender,
+      level:               existingStudent.level,
+      stream:              existingStudent.stream || '',
+      admission_date:      existingStudent.admission_date,
+      status:              existingStudent.status,
+      nemis_id:            existingStudent.nemis_id || '',
+      has_special_needs:   existingStudent.has_special_needs,
+      special_needs_notes: existingStudent.special_needs_notes || '',
+      guardians: [],
+    })
+    if (existingStudent.photo) setPhotoPreview(existingStudent.photo)
+  }, [existingStudent, reset])
 
   const { fields: guardianFields, append, remove } = useFieldArray({
     control,
@@ -141,6 +172,13 @@ export default function StudentFormPage() {
 
       if (photoFile) fd.append('photo', photoFile)
 
+      if (isEdit) {
+        const student = await updateStudent(id, fd)
+        toast.success(`${student.full_name} updated successfully.`)
+        navigate(`/students/${id}`)
+        return
+      }
+
       const student = await createStudent(fd)
 
       // Sequential guardian POSTs
@@ -155,7 +193,7 @@ export default function StudentFormPage() {
           is_primary_contact: g.is_primary_contact,
         }
         try {
-          await addGuardian(student.id, payload)
+          await addGuardian(student.public_id, payload)
         } catch {
           // Guardian failures are non-fatal; student was already created
           toast.error(`Guardian "${g.full_name}" could not be saved.`)
@@ -163,14 +201,14 @@ export default function StudentFormPage() {
       }
 
       toast.success(`${student.full_name} enrolled successfully.`)
-      navigate(`/students/${student.id}`)
+      navigate(`/students/${student.public_id}`)
     } catch (err) {
       const detail = err.response?.data
       if (detail && typeof detail === 'object') {
         const first = Object.values(detail)[0]
         toast.error(Array.isArray(first) ? first[0] : String(first))
       } else {
-        toast.error('Enrolment failed. Please check the form and try again.')
+        toast.error(isEdit ? 'Update failed. Please check the form and try again.' : 'Enrolment failed. Please check the form and try again.')
       }
     } finally {
       setSubmitting(false)
@@ -178,6 +216,25 @@ export default function StudentFormPage() {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────
+
+  if (isEdit && loadingStudent) {
+    return (
+      <div className="max-w-3xl mx-auto py-16 flex items-center justify-center text-gray-400">
+        <Loader2 size={20} className="animate-spin mr-2" /> Loading student…
+      </div>
+    )
+  }
+
+  if (isEdit && loadError) {
+    return (
+      <div className="max-w-3xl mx-auto py-16 text-center">
+        <p className="text-sm text-danger">Student not found or failed to load.</p>
+        <button onClick={() => navigate('/students')} className="mt-4 text-sm text-primary hover:underline">
+          Back to Students
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -192,8 +249,12 @@ export default function StudentFormPage() {
           <ChevronLeft size={20} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Enrol New Student</h1>
-          <p className="text-sm text-gray-500">Fill in all required fields marked with *</p>
+          <h1 className="text-xl font-bold text-gray-900">
+            {isEdit ? 'Edit Student' : 'Enrol New Student'}
+          </h1>
+          <p className="text-sm text-gray-500">
+            {isEdit ? 'Update this student\'s details.' : 'Fill in all required fields marked with *'}
+          </p>
         </div>
       </div>
 
@@ -374,7 +435,8 @@ export default function StudentFormPage() {
           )}
         </div>
 
-        {/* ── Guardians ── */}
+        {/* ── Guardians (create only — existing guardians are managed from the student's Overview tab) ── */}
+        {!isEdit && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
             <h3 className="text-sm font-semibold text-gray-700">
@@ -525,6 +587,7 @@ export default function StudentFormPage() {
             })}
           </div>
         </div>
+        )}
 
         {/* ── Actions ── */}
         <div className="flex items-center justify-end gap-3 pb-6">
@@ -544,7 +607,9 @@ export default function StudentFormPage() {
               text-sm font-medium hover:bg-secondary disabled:opacity-60 transition-colors"
           >
             {submitting && <Loader2 size={15} className="animate-spin" />}
-            {submitting ? 'Enrolling…' : 'Enrol Student'}
+            {isEdit
+              ? (submitting ? 'Saving…' : 'Save Changes')
+              : (submitting ? 'Enrolling…' : 'Enrol Student')}
           </button>
         </div>
 

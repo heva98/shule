@@ -81,6 +81,15 @@ export default function App() {
                   }
                 />
                 <Route
+                  path="/students/:id/edit"
+                  element={
+                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER',
+                      'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
+                      <StudentFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/students/:id"
                   element={
                     <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR',

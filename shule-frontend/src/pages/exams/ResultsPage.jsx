@@ -140,7 +140,7 @@ export default function ResultsPage() {
     try {
       const cards = await Promise.all(
         ranking.map((row) =>
-          getReportCard(row.student_pk, id).catch(() => null)
+          getReportCard(row.student_public_id, id).catch(() => null)
         )
       )
       const valid = cards.filter(Boolean)
@@ -316,7 +316,7 @@ export default function ResultsPage() {
                     </td>
                     <td className="px-3 py-2.5">
                       <button
-                        onClick={() => setViewingCard({ studentPk: row.student_pk })}
+                        onClick={() => setViewingCard({ studentPk: row.student_public_id })}
                         className="text-xs text-primary hover:underline whitespace-nowrap"
                       >
                         Report card

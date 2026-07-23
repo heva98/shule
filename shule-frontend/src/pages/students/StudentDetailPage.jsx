@@ -344,8 +344,8 @@ function ResultsTab({ student }) {
   const examList = exams?.results ?? exams ?? []
 
   const { data: reportCard, isLoading: rcLoading, isError: rcError } = useQuery({
-    queryKey: ['report-card', student.id, selectedExam],
-    queryFn: () => getStudentReportCard(student.id, selectedExam),
+    queryKey: ['report-card', student.public_id, selectedExam],
+    queryFn: () => getStudentReportCard(student.public_id, selectedExam),
     enabled: !!selectedExam,
   })
 

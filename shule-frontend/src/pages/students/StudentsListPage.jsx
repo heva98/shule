@@ -250,7 +250,7 @@ export default function StudentsListPage() {
                 students.map((student) => (
                   <tr
                     key={student.id}
-                    onClick={() => navigate(`/students/${student.id}`)}
+                    onClick={() => navigate(`/students/${student.public_id}`)}
                     className="hover:bg-blue-50/40 cursor-pointer transition-colors"
                   >
                     <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">

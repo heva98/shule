@@ -219,6 +219,7 @@ class ExamViewSet(ModelViewSet):
             average = round(total / len(marks), 2) if marks else Decimal('0')
             rows.append({
                 'student_pk':    student.pk,
+                'student_public_id': str(student.public_id),
                 'student_id':    student.student_id,
                 'student_name':  student.full_name,
                 'total_score':   str(total),

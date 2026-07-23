@@ -13,8 +13,12 @@ export const createStudent = (formData) =>
     })
     .then((r) => r.data)
 
-export const updateStudent = (id, data) =>
-  api.patch(`/students/${id}/`, data).then((r) => r.data)
+export const updateStudent = (id, formData) =>
+  api
+    .patch(`/students/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then((r) => r.data)
 
 export const getStudentGuardians = (id) =>
   api.get(`/students/${id}/guardians/`).then((r) => r.data)
