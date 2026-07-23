@@ -74,7 +74,7 @@ class StudentViewSet(ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=['get', 'post'], url_path='guardians')
-    def guardians(self, request, pk=None):
+    def guardians(self, request, public_id=None):
         student = self.get_object()
 
         if request.method == 'GET':
