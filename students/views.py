@@ -18,6 +18,11 @@ class StudentViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
     search_fields = ['first_name', 'last_name', 'student_id', 'nemis_id']
+    # Look up by the opaque public_id (a UUID) instead of the sequential pk or
+    # the human-readable student_id — a URL/link should neither leak how many
+    # students exist nor double as a guessable credential.
+    lookup_field = 'public_id'
+    lookup_value_regex = '[0-9a-f-]{36}'
 
     def get_queryset(self):
         qs = Student.objects.prefetch_related('guardians').all()

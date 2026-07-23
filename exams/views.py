@@ -246,8 +246,8 @@ class ExamViewSet(ModelViewSet):
 class ReportCardView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
-        student = get_object_or_404(Student, pk=pk)
+    def get(self, request, public_id):
+        student = get_object_or_404(Student, public_id=public_id)
         exam_id = request.query_params.get('exam')
         if not exam_id:
             return Response(

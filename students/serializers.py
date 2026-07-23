@@ -46,7 +46,7 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = [
-            'id', 'student_id', 'nemis_id',
+            'id', 'public_id', 'student_id', 'nemis_id',
             'first_name', 'last_name', 'middle_name', 'full_name',
             'date_of_birth', 'gender',
             'photo', 'level', 'stream',
@@ -55,16 +55,19 @@ class StudentSerializer(serializers.ModelSerializer):
             'user', 'guardians',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'student_id', 'full_name', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'public_id', 'student_id', 'full_name', 'created_at', 'updated_at']
 
 
 class StudentWriteSerializer(serializers.ModelSerializer):
-    """Separate write serializer — excludes computed/read-only fields."""
+    """Separate write serializer — excludes computed/read-only fields.
+    id/public_id/student_id are included read-only so the frontend can redirect
+    to the new record (by public_id) after creation."""
     class Meta:
         model = Student
         fields = [
-            'nemis_id', 'first_name', 'last_name', 'middle_name',
+            'id', 'public_id', 'student_id', 'nemis_id', 'first_name', 'last_name', 'middle_name',
             'date_of_birth', 'gender', 'photo', 'level', 'stream',
             'admission_date', 'status',
             'has_special_needs', 'special_needs_notes', 'user',
         ]
+        read_only_fields = ['id', 'public_id', 'student_id']

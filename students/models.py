@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
@@ -30,6 +32,10 @@ class StudentStatus(models.TextChoices):
 
 
 class Student(models.Model):
+    # Opaque, non-guessable identifier used in URLs/API lookups — never the
+    # sequential pk or the human-readable student_id (admission number), so a
+    # link can't be used to enumerate students or double as a credential.
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
     student_id = models.CharField(max_length=20, unique=True, blank=True, db_index=True)
     nemis_id = models.CharField(max_length=50, blank=True, unique=True, null=True)
 

@@ -173,6 +173,7 @@ class ClassTeacherAssignmentCreateSerializer(serializers.Serializer):
 class DisciplinaryIncidentSerializer(serializers.ModelSerializer):
     student_name   = serializers.CharField(source='student.full_name', read_only=True)
     student_id_no  = serializers.CharField(source='student.student_id', read_only=True)
+    student_public_id = serializers.UUIDField(source='student.public_id', read_only=True)
     reported_by_name = serializers.CharField(source='reported_by.user.full_name', read_only=True)
     referred_to_name = serializers.CharField(
         source='referred_to.full_name', read_only=True, default=None
@@ -181,7 +182,7 @@ class DisciplinaryIncidentSerializer(serializers.ModelSerializer):
     class Meta:
         model = DisciplinaryIncident
         fields = [
-            'id', 'student', 'student_name', 'student_id_no',
+            'id', 'student', 'student_name', 'student_id_no', 'student_public_id',
             'reported_by', 'reported_by_name',
             'date', 'incident_type', 'description', 'severity',
             'status', 'action_taken',
