@@ -552,6 +552,15 @@ export default function StudentFormPage() {
                       <input
                         {...register(`guardians.${index}.phone`, {
                           required: 'Phone number is required',
+                          validate: (v) => {
+                            const n = v.trim().replace(/[\s-]/g, '')
+                            return /^\+255\d{9}$/.test(n) || 'Use +255 followed by 9 digits (e.g. +255712345678)'
+                          },
+                          setValueAs: (v) => {
+                            if (!v) return ''
+                            const n = v.trim().replace(/[\s-]/g, '')
+                            return /^0\d{9}$/.test(n) ? '+255' + n.slice(1) : n
+                          },
                         })}
                         className={inputCls}
                         placeholder="+255 7xx xxx xxx"
@@ -563,7 +572,18 @@ export default function StudentFormPage() {
                       error={errors.guardians?.[index]?.whatsapp_phone?.message}
                     >
                       <input
-                        {...register(`guardians.${index}.whatsapp_phone`)}
+                        {...register(`guardians.${index}.whatsapp_phone`, {
+                          validate: (v) => {
+                            if (!v) return true
+                            const n = v.trim().replace(/[\s-]/g, '')
+                            return /^\+255\d{9}$/.test(n) || 'Use +255 followed by 9 digits (e.g. +255712345678)'
+                          },
+                          setValueAs: (v) => {
+                            if (!v) return ''
+                            const n = v.trim().replace(/[\s-]/g, '')
+                            return /^0\d{9}$/.test(n) ? '+255' + n.slice(1) : n
+                          },
+                        })}
                         className={inputCls}
                         placeholder="If different from phone (optional)"
                       />

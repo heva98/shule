@@ -174,8 +174,23 @@ function RouteModal({ route, onClose }) {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Driver Phone</label>
-            <input {...register('driver_phone')} placeholder="Optional"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            <input
+              {...register('driver_phone', {
+                validate: (v) => {
+                  if (!v) return true
+                  const n = v.trim().replace(/[\s-]/g, '')
+                  return /^\+255\d{9}$/.test(n) || 'Use +255 followed by 9 digits (e.g. +255712345678)'
+                },
+                setValueAs: (v) => {
+                  if (!v) return ''
+                  const n = v.trim().replace(/[\s-]/g, '')
+                  return /^0\d{9}$/.test(n) ? '+255' + n.slice(1) : n
+                },
+              })}
+              placeholder="Optional"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            {errors.driver_phone && <p className="text-xs text-danger mt-1">{errors.driver_phone.message}</p>}
           </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-600">
