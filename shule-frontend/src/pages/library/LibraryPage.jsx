@@ -294,7 +294,7 @@ function IssueBookModal({ onClose }) {
   const today = new Date().toISOString().slice(0, 10)
   const [dueDate, setDueDate] = useState(addDays(today, 14))
 
-  const { data: booksData } = useQuery({ queryKey: ['books-all'], queryFn: () => getBooks({}) })
+  const { data: booksData } = useQuery({ queryKey: ['books', 'all'], queryFn: () => getBooks({}) })
   const books = (booksData?.results ?? booksData ?? []).filter((b) => b.available_copies > 0)
 
   const saveMut = useMutation({
