@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import logo from '../../assets/ShuleSMSLogo.png'
 
 const ADMIN_ROLES = ['OWNER', 'SYSTEM_ADMIN']
 
@@ -183,9 +184,7 @@ export default function Sidebar({ onClose }) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-5 border-b border-white/20">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center font-bold text-white text-sm shrink-0">
-            S
-          </div>
+          <img src={logo} alt="Shule SMS" className="w-9 h-9 rounded-lg object-contain shrink-0 bg-white" />
           <div>
             <div className="font-semibold text-sm leading-tight">Shule SMS</div>
             <div className="text-xs text-white/60">School Management</div>

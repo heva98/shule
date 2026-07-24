@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import logo from '../../assets/ShuleSMSLogo.png'
 
 const ROLE_PATHS = {
   OWNER: '/dashboard',
@@ -44,9 +45,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Branding */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary mx-auto flex items-center justify-center mb-4 shadow-lg">
-            <span className="text-2xl font-bold text-white">S</span>
-          </div>
+          <img src={logo} alt="Shule SMS" className="w-16 h-16 rounded-2xl mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-bold text-gray-900">Shule SMS</h1>
           <p className="text-sm text-gray-500 mt-1">School Management System</p>
         </div>

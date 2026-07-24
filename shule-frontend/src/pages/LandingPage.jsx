@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import { submitDemoRequest } from '../api/communications'
+import logo from '../assets/ShuleSMSLogo.png'
 
 const FEATURES = [
   {
@@ -135,9 +136,7 @@ function NavBar() {
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <a href="#top" className="flex items-center gap-2.5">
-          <span className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-lg">S</span>
-          </span>
+          <img src={logo} alt="Shule SMS" className="w-9 h-9 rounded-xl object-contain shadow-sm" />
           <span className="font-bold text-gray-900 text-lg">Shule SMS</span>
         </a>
 
@@ -664,9 +663,7 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-              <span className="text-white font-bold">S</span>
-            </span>
+            <img src={logo} alt="Shule SMS" className="w-8 h-8 rounded-lg object-contain bg-white/10" />
             <span className="text-white font-semibold">Shule SMS</span>
           </div>
           <p className="text-xs text-white/60 mt-3 leading-relaxed max-w-[220px]">
