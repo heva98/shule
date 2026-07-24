@@ -69,7 +69,7 @@ export default function SchoolSettingsPage() {
   const q = useQuery({ queryKey: ['admin-settings'], queryFn: getSettings })
   const settings = q.data
 
-  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm()
+  const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
   useEffect(() => {
     if (settings) {
@@ -86,6 +86,10 @@ export default function SchoolSettingsPage() {
         region: settings.region ?? '',
         district: settings.district ?? '',
       })
+      // Deliberate exception: syncing local state from data that only exists once
+      // the settings query resolves — there's no render-time equivalent since the
+      // value isn't known until this effect runs.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveLevels(Array.isArray(settings.active_levels) ? settings.active_levels : [])
     }
   }, [settings, reset])

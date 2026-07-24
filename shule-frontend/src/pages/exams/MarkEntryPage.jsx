@@ -6,7 +6,7 @@ import {
   Loader2,
   Save,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { bulkEnterMarks, getExam, getResults, getSubjects } from '../../api/exams'
@@ -95,11 +95,15 @@ export default function MarkEntryPage() {
   const dataReady = !examLoading && !studentsLoading && !subjectsLoading && !marksLoading
     && students.length > 0 && subjects.length > 0
 
-  // Initialize grid from server data (skip if draft pending)
+  // Initialize grid from server data (skip if draft pending).
+  // Deliberate exception: this can only run once the exam/student/subject/mark
+  // queries resolve — there's no render-time equivalent since none of these
+  // values are known until this effect runs.
   useEffect(() => {
     if (!dataReady) return
     const draft = localStorage.getItem(DRAFT_KEY(id))
     if (draft) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasDraft(true)
       return
     }

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   AlertCircle, CheckCircle2, Database, Mail, MessageSquare,
-  RefreshCw, Server, Smartphone, Users, Zap,
+  RefreshCw, Smartphone, Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'

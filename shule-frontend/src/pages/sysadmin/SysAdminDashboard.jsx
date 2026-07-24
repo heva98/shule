@@ -1,15 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  Activity, BookOpen, CalendarDays, Plus,
-  ScrollText, Settings, Shield, UserCog, Users,
+  BookOpen, CalendarDays, Plus,
+  ScrollText, Settings, Shield, Users,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Cell, Pie, PieChart, Tooltip } from 'recharts'
 import { useNavigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
 import { getAuditLogs, getSettings, getSystemHealth, getUsers } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
-import Modal from '../../components/ui/Modal'
 import AddUserModal from './components/AddUserModal'
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

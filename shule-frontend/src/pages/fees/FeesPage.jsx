@@ -8,7 +8,7 @@ import {
   Send,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
@@ -304,8 +304,6 @@ function InvoicesTab() {
   const [showGenerate,  setShowGenerate]  = useState(false)
   const [payInvoice,    setPayInvoice]    = useState(null)
 
-  useEffect(() => setPage(1), [termFilter, quarterFilter, statusFilter, levelFilter])
-
   const queryClient = useQueryClient()
 
   const { data, isLoading, isError } = useQuery({
@@ -332,7 +330,7 @@ function InvoicesTab() {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select
           value={termFilter}
-          onChange={(e) => { setTermFilter(e.target.value); setQuarterFilter('') }}
+          onChange={(e) => { setTermFilter(e.target.value); setQuarterFilter(''); setPage(1) }}
           className={selectCls}
         >
           <option value="">All Terms</option>
@@ -343,7 +341,7 @@ function InvoicesTab() {
 
         <select
           value={quarterFilter}
-          onChange={(e) => setQuarterFilter(e.target.value)}
+          onChange={(e) => { setQuarterFilter(e.target.value); setPage(1) }}
           className={selectCls}
         >
           <option value="">All Quarters</option>
@@ -352,14 +350,14 @@ function InvoicesTab() {
           ))}
         </select>
 
-        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={selectCls}>
+        <select value={levelFilter} onChange={(e) => { setLevelFilter(e.target.value); setPage(1) }} className={selectCls}>
           <option value="">All Levels</option>
           {levelOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
 
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} className={selectCls}>
           <option value="">All Statuses</option>
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -793,7 +791,7 @@ function AddStructureForm({ onDone }) {
   })
   const years = yearsData?.results ?? yearsData ?? []
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch } = useForm({
     defaultValues: {
       academic_year: '', level: '', term: '', quarter: '',
       tuition_fee: 0, lunch_fee: 0, transport_fee: 0, uniform_fee: 0, activity_fee: 0,

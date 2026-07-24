@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AlertTriangle, Check, ChevronDown, Download, Edit2,
-  KeyRound, MoreVertical, RefreshCw, Search, Shield,
-  Upload, UserCheck, UserMinus, Users, X,
+  AlertTriangle, Check, Download, Edit2,
+  KeyRound, MoreVertical, Search, Shield,
+  Upload, UserCheck, UserMinus, Users,
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -147,7 +147,7 @@ function ChangeRoleModal({ user, onClose }) {
 
 function ResetPasswordModal({ user, onClose }) {
   const qc = useQueryClient()
-  const [pw, setPw] = useState(() => {
+  const [pw] = useState(() => {
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#'
     return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   })

@@ -25,7 +25,7 @@ import { getAcademicYears } from '../../api/fees'
 import { getStudents } from '../../api/students'
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
-import { FEATURE_ROLES, LEVEL_LABEL } from '../../lib/constants'
+import { FEATURE_ROLES } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
 

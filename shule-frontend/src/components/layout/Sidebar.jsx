@@ -59,7 +59,7 @@ const ADMIN_NAV_ITEMS = [
   { label: 'System Health',       path: '/admin-panel/system-health',  icon: Activity },
 ]
 
-function NavItem({ item, role, onClose }) {
+function NavItem({ item, onClose }) {
   const Icon = item.icon
   return (
     <NavLink
@@ -114,7 +114,7 @@ export default function Sidebar({ onClose }) {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
         {/* Regular nav */}
         {regularItems.map(item => (
-          <NavItem key={item.path} item={item} role={role} onClose={onClose} />
+          <NavItem key={item.path} item={item} onClose={onClose} />
         ))}
 
         {/* Admin nav section */}
@@ -129,7 +129,7 @@ export default function Sidebar({ onClose }) {
               </div>
             )}
             {ADMIN_NAV_ITEMS.map(item => (
-              <NavItem key={item.path} item={item} role={role} onClose={onClose} />
+              <NavItem key={item.path} item={item} onClose={onClose} />
             ))}
           </>
         )}

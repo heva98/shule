@@ -134,11 +134,9 @@ export default function StudentsListPage() {
   const [page,           setPage]           = useState(1)
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(search), 400)
+    const t = setTimeout(() => { setDebounced(search); setPage(1) }, 400)
     return () => clearTimeout(t)
   }, [search])
-
-  useEffect(() => setPage(1), [debouncedSearch, levelFilter, statusFilter])
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['students', debouncedSearch, levelFilter, statusFilter, page],
@@ -175,14 +173,14 @@ export default function StudentsListPage() {
           />
         </div>
 
-        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={selectCls}>
+        <select value={levelFilter} onChange={(e) => { setLevelFilter(e.target.value); setPage(1) }} className={selectCls}>
           <option value="">All Levels</option>
           {levelOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
 
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} className={selectCls}>
           <option value="">All Statuses</option>
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>

@@ -1,10 +1,9 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft,
   Download,
   Edit2,
   FileText,
-  Loader2,
   MessageCircle,
   Phone,
   Plus,
@@ -705,7 +704,7 @@ function ResultsTab({ student }) {
 function UploadDocumentModal({ studentId, onClose }) {
   const qc = useQueryClient()
   const [file, setFile] = useState(null)
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit } = useForm({
     defaultValues: { category: 'BIRTH_CERTIFICATE' },
   })
 
