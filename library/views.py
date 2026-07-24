@@ -1,7 +1,8 @@
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -62,7 +63,17 @@ class BorrowRecordViewSet(ModelViewSet):
             raise PermissionDenied('You do not have permission to manage book loans.')
 
     def perform_create(self, serializer):
-        serializer.save(issued_by=self.request.user)
+        book = serializer.validated_data['book']
+        with transaction.atomic():
+            # Lock the book row so two concurrent requests for the last copy
+            # can't both pass the availability check before either one commits.
+            locked_book = Book.objects.select_for_update().get(pk=book.pk)
+            borrowed_count = locked_book.borrow_records.filter(status=BorrowStatus.BORROWED).count()
+            if borrowed_count >= locked_book.total_copies:
+                raise ValidationError({
+                    'book': f'"{locked_book.title}" has no available copies right now.'
+                })
+            serializer.save(issued_by=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='return')
     def return_book(self, request, pk=None):

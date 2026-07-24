@@ -1,7 +1,8 @@
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -102,7 +103,20 @@ class TransportAssignmentViewSet(ModelViewSet):
             raise PermissionDenied('You do not have permission to manage transport assignments.')
 
     def perform_create(self, serializer):
-        serializer.save(assigned_by=self.request.user)
+        route = serializer.validated_data['route']
+        academic_year = serializer.validated_data['academic_year']
+        with transaction.atomic():
+            # Lock the route row so two concurrent requests for the last seat
+            # can't both pass the capacity check before either one commits.
+            locked_route = Route.objects.select_for_update().get(pk=route.pk)
+            occupied = TransportAssignment.objects.filter(
+                route=locked_route, academic_year=academic_year, is_active=True,
+            ).count()
+            if occupied >= locked_route.capacity:
+                raise ValidationError({
+                    'route': f'{locked_route.name} is at full capacity ({locked_route.capacity} seats).'
+                })
+            serializer.save(assigned_by=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='vacate')
     def vacate(self, request, pk=None):

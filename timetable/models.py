@@ -50,6 +50,17 @@ class TimetableEntry(models.Model):
         ordering = ['day_of_week', 'period__order']
         unique_together = ('academic_year', 'level', 'stream', 'day_of_week', 'period')
         verbose_name_plural = 'Timetable entries'
+        constraints = [
+            # DB-enforced, race-proof version of the "teacher not already booked
+            # elsewhere at this time" check the serializer does on a best-effort
+            # basis — two concurrent requests can both pass that check before
+            # either commits, but the database itself can't let both rows exist.
+            models.UniqueConstraint(
+                fields=['teacher', 'academic_year', 'day_of_week', 'period'],
+                condition=models.Q(teacher__isnull=False),
+                name='unique_teacher_per_timeslot',
+            )
+        ]
 
     def __str__(self):
         cls = f'{self.level}{self.stream}' if self.stream else self.level

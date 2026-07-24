@@ -1,7 +1,8 @@
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -62,7 +63,21 @@ class BoardingAssignmentViewSet(ModelViewSet):
             raise PermissionDenied('You do not have permission to manage boarding assignments.')
 
     def perform_create(self, serializer):
-        serializer.save(assigned_by=self.request.user)
+        dormitory = serializer.validated_data['dormitory']
+        academic_year = serializer.validated_data['academic_year']
+        with transaction.atomic():
+            # Lock the dormitory row so two concurrent requests for the last bed
+            # can't both pass the capacity check before either one commits —
+            # the serializer's own check runs first but isn't safe under concurrency.
+            locked_dormitory = Dormitory.objects.select_for_update().get(pk=dormitory.pk)
+            occupied = BoardingAssignment.objects.filter(
+                dormitory=locked_dormitory, academic_year=academic_year, is_active=True,
+            ).count()
+            if occupied >= locked_dormitory.capacity:
+                raise ValidationError({
+                    'dormitory': f'{locked_dormitory.name} is at full capacity ({locked_dormitory.capacity} beds).'
+                })
+            serializer.save(assigned_by=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='vacate')
     def vacate(self, request, pk=None):
