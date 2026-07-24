@@ -2,18 +2,15 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from accounts.models import Role
+from accounts.permissions import CONTENT_CREATOR_ROLES, SENIOR_STAFF_ROLES
 
 from .models import HomePackage
 from .serializers import HomePackageSerializer
 
 # Roles that may post a home package
-_CREATE_ROLES = {
-    Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER,
-    Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.TEACHER,
-}
+_CREATE_ROLES = CONTENT_CREATOR_ROLES
 # Roles that may edit/delete someone else's post (the original poster always can)
-_SENIOR_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+_SENIOR_ROLES = SENIOR_STAFF_ROLES
 
 
 class HomePackageViewSet(ModelViewSet):

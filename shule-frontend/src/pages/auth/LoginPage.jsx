@@ -3,17 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/ShuleSMSLogo.png'
-
-const ROLE_PATHS = {
-  OWNER: '/dashboard',
-  HEADTEACHER: '/dashboard',
-  TEACHER: '/attendance',
-  BURSAR: '/fees',
-  WARDEN: '/boarding',
-  LIBRARIAN: '/library',
-  PARENT: '/parent',
-  STUDENT: '/parent',
-}
+import { ROLE_LANDING_PATH } from '../../lib/constants'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -30,7 +20,7 @@ export default function LoginPage() {
     setServerError('')
     try {
       const user = await login(email, password)
-      navigate(ROLE_PATHS[user.role] ?? '/dashboard', { replace: true })
+      navigate(ROLE_LANDING_PATH[user.role] ?? '/dashboard', { replace: true })
     } catch (err) {
       setServerError(
         err.response?.data?.detail ??

@@ -4,29 +4,7 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { changeRole, getUsers } from '../../api/sysadmin'
 import Modal from '../../components/ui/Modal'
-import { ROLES } from './components/AddUserModal'
-
-const ROLE_BADGE = {
-  OWNER:              'bg-purple-100 text-purple-700',
-  SYSTEM_ADMIN:       'bg-red-100 text-red-700',
-  HEADTEACHER:        'bg-[#1B4F72]/10 text-[#1B4F72]',
-  ACADEMIC_TEACHER:   'bg-orange-100 text-orange-700',
-  DISCIPLINE_TEACHER: 'bg-violet-100 text-violet-700',
-  CLASS_TEACHER:      'bg-green-100 text-green-700',
-  SUBJECT_TEACHER:    'bg-teal-100 text-teal-700',
-  TEACHER:            'bg-sky-100 text-sky-700',
-  BURSAR:             'bg-yellow-100 text-yellow-700',
-  WARDEN:             'bg-indigo-100 text-indigo-700',
-  LIBRARIAN:          'bg-cyan-100 text-cyan-700',
-  PARENT:             'bg-gray-100 text-gray-600',
-  STUDENT:            'bg-blue-100 text-blue-700',
-}
-
-const ROLE_ICONS = {
-  OWNER: '👑', SYSTEM_ADMIN: '🛡️', HEADTEACHER: '🏫',
-  ACADEMIC_TEACHER: '📚', DISCIPLINE_TEACHER: '⚖️', CLASS_TEACHER: '📋',
-  SUBJECT_TEACHER: '✏️', TEACHER: '👨‍🏫', BURSAR: '💰', WARDEN: '🛏️', LIBRARIAN: '📖', PARENT: '👪', STUDENT: '🎓',
-}
+import { ROLE_BADGE, ROLE_ICON, ROLE_OPTIONS } from '../../lib/constants'
 
 const initials = (name = '') =>
   name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'
@@ -171,7 +149,7 @@ export default function RoleAssignmentPage() {
             <div className="flex-1 overflow-y-auto p-6">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Select New Role</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {ROLES.map(r => (
+                {ROLE_OPTIONS.map(r => (
                   <button
                     key={r.value}
                     onClick={() => setNewRole(r.value)}
@@ -188,7 +166,7 @@ export default function RoleAssignmentPage() {
                         current
                       </span>
                     )}
-                    <div className="text-xl mb-1">{ROLE_ICONS[r.value] ?? '👤'}</div>
+                    <div className="text-xl mb-1">{ROLE_ICON[r.value] ?? '👤'}</div>
                     <div className="text-xs font-semibold text-gray-800">{r.label}</div>
                     <div className="text-[10px] text-gray-400 mt-0.5 leading-tight">{r.desc}</div>
                   </button>

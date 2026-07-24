@@ -14,6 +14,7 @@ import {
   getLeaveRequests, getStaff, rejectLeave, updateStaff,
 } from '../../api/staff'
 import { getSubjects } from '../../api/exams'
+import { ROLE_LABEL } from '../../lib/constants'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -63,14 +64,11 @@ const LEAVE_STATUS_CLR = {
 
 // Individual levels — filtered at runtime by useSchoolLevels() inside ProfileFields
 
-const ROLES = [
-  { value: 'TEACHER', label: 'Teacher' },
-  { value: 'HEADTEACHER', label: 'Headteacher' },
-  { value: 'BURSAR', label: 'Bursar' },
-  { value: 'WARDEN', label: 'Warden' },
-  { value: 'LIBRARIAN', label: 'Librarian' },
-  { value: 'OWNER', label: 'Owner' },
-]
+// Subset of account roles assignable when creating a staff member through this flow
+// (academic sub-roles like ACADEMIC_TEACHER/CLASS_TEACHER are assigned separately
+// via Role Assignment, not at staff creation time).
+const ROLES = ['TEACHER', 'HEADTEACHER', 'BURSAR', 'WARDEN', 'LIBRARIAN', 'OWNER']
+  .map(value => ({ value, label: ROLE_LABEL[value] }))
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 

@@ -9,14 +9,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from accounts.models import Role
+from accounts.permissions import SENIOR_STAFF_ROLES
 
 from .models import StudentDocument
 from .serializers import StudentDocumentSerializer
 
 # Documents like birth certificates and medical forms are sensitive — restrict the
 # whole viewset (including read) to senior staff, not just write actions.
-_ALLOWED_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+_ALLOWED_ROLES = SENIOR_STAFF_ROLES
 
 
 class StudentDocumentViewSet(ModelViewSet):

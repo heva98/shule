@@ -2,6 +2,21 @@ from rest_framework.permissions import BasePermission
 
 from .models import Role
 
+# ── Shared role-set constants ──────────────────────────────────────────────
+# Several apps (documents, exams, homepackages) independently redefined the
+# same "senior staff" / "content creator" role sets. Import these instead of
+# re-declaring a local copy — a set that's only ever defined once can't drift.
+
+# Owner, Headteacher, or Academic Teacher — can delete/edit content created
+# by others (exams, home packages, student documents).
+SENIOR_STAFF_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+
+# Any teaching role that may create academic content (exams, home packages).
+CONTENT_CREATOR_ROLES = {
+    Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER,
+    Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.TEACHER,
+}
+
 
 class IsSystemAdmin(BasePermission):
     """SYSTEM_ADMIN or OWNER — full admin panel access."""
@@ -75,7 +90,7 @@ class IsAcademicStaff(BasePermission):
 
 class IsSeniorStaff(BasePermission):
     """Owner, Headteacher, or Academic Teacher — can manage exams and assignments."""
-    SENIOR_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+    SENIOR_ROLES = SENIOR_STAFF_ROLES
 
     def has_permission(self, request, view):
         return (

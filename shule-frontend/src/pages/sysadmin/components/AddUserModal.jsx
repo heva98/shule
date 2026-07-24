@@ -5,21 +5,7 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { createUser } from '../../../api/sysadmin'
 import Modal from '../../../components/ui/Modal'
-
-export const ROLES = [
-  { value: 'OWNER',              label: 'Owner',              desc: 'Full system access',            color: 'border-purple-300 text-purple-700' },
-  { value: 'SYSTEM_ADMIN',       label: 'System Admin',       desc: 'System configuration & users',  color: 'border-red-300 text-red-700' },
-  { value: 'HEADTEACHER',        label: 'Headteacher',        desc: 'School administration & oversight', color: 'border-blue-900/40 text-blue-900' },
-  { value: 'ACADEMIC_TEACHER',   label: 'Academic Teacher',   desc: 'Academic coordination',         color: 'border-orange-300 text-orange-700' },
-  { value: 'DISCIPLINE_TEACHER', label: 'Discipline Teacher', desc: 'Disciplinary management',       color: 'border-purple-300 text-purple-600' },
-  { value: 'CLASS_TEACHER',      label: 'Class Teacher',      desc: 'Class register & marks',        color: 'border-green-300 text-green-700' },
-  { value: 'SUBJECT_TEACHER',    label: 'Subject Teacher',    desc: 'Mark entry for subjects',       color: 'border-teal-300 text-teal-700' },
-  { value: 'TEACHER',            label: 'Teacher',            desc: 'General (legacy role)',          color: 'border-sky-300 text-sky-700' },
-  { value: 'BURSAR',             label: 'Bursar',             desc: 'Fees & finance management',     color: 'border-yellow-300 text-yellow-700' },
-  { value: 'WARDEN',             label: 'Warden',             desc: 'Dormitories & boarding',        color: 'border-indigo-300 text-indigo-700' },
-  { value: 'LIBRARIAN',          label: 'Librarian',          desc: 'Library catalog & loans',       color: 'border-cyan-300 text-cyan-700' },
-  { value: 'PARENT',             label: 'Parent',             desc: 'View children\'s records',      color: 'border-gray-300 text-gray-600' },
-]
+import { ROLE_OPTIONS } from '../../../lib/constants'
 
 function genPassword(len = 12) {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$'
@@ -198,7 +184,7 @@ export default function AddUserModal({ isOpen, onClose }) {
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-2">Role *</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {ROLES.map(r => (
+            {ROLE_OPTIONS.map(r => (
               <button
                 key={r.value}
                 type="button"

@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import Role
-from accounts.permissions import IsAcademicStaff, IsSeniorStaff
+from accounts.permissions import CONTENT_CREATOR_ROLES, SENIOR_STAFF_ROLES, IsAcademicStaff, IsSeniorStaff
 from students.models import Student
 
 from .models import Exam, LevelGroup, MarkEntry, Subject
@@ -61,12 +61,9 @@ class SubjectViewSet(ModelViewSet):
 # ── Exams ─────────────────────────────────────────────────────────────────────
 
 # Roles that may create exams
-_EXAM_CREATE_ROLES = {
-    Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER,
-    Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.TEACHER,
-}
+_EXAM_CREATE_ROLES = CONTENT_CREATOR_ROLES
 # Roles that may delete exams (created by anyone)
-_EXAM_DELETE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+_EXAM_DELETE_ROLES = SENIOR_STAFF_ROLES
 
 
 class ExamViewSet(ModelViewSet):

@@ -35,10 +35,11 @@ import LibraryPage from './pages/library/LibraryPage'
 import SchoolSettingsPage from './pages/sysadmin/SchoolSettingsPage'
 import AuditLogPage from './pages/sysadmin/AuditLogPage'
 import SystemHealthPage from './pages/sysadmin/SystemHealthPage'
+import { FEATURE_ROLES } from './lib/constants'
 
 const queryClient = new QueryClient()
 
-const ADMIN_ROLES = ['OWNER', 'SYSTEM_ADMIN']
+const ADMIN_ROLES = FEATURE_ROLES.ADMIN
 
 export default function App() {
   return (
@@ -57,8 +58,7 @@ export default function App() {
                 <Route
                   path="/dashboard"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR', 'TEACHER',
-                      'ACADEMIC_TEACHER', 'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.DASHBOARD}>
                       <DashboardRouter />
                     </ProtectedRoute>
                   }
@@ -67,8 +67,7 @@ export default function App() {
                 <Route
                   path="/students"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR',
-                      'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.STUDENTS}>
                       <StudentsListPage />
                     </ProtectedRoute>
                   }
@@ -93,8 +92,7 @@ export default function App() {
                 <Route
                   path="/students/:id"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR',
-                      'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.STUDENTS}>
                       <StudentDetailPage />
                     </ProtectedRoute>
                   }
@@ -103,7 +101,7 @@ export default function App() {
                 <Route
                   path="/fees"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES}>
                       <FeesPage />
                     </ProtectedRoute>
                   }
@@ -111,7 +109,7 @@ export default function App() {
                 <Route
                   path="/fees/invoices"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES}>
                       <InvoicesPage />
                     </ProtectedRoute>
                   }
@@ -119,7 +117,7 @@ export default function App() {
                 <Route
                   path="/fees/payments/new"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES}>
                       <RecordPaymentPage />
                     </ProtectedRoute>
                   }
@@ -128,8 +126,7 @@ export default function App() {
                 <Route
                   path="/attendance"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-                      'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.ATTENDANCE}>
                       <AttendancePage />
                     </ProtectedRoute>
                   }
@@ -138,8 +135,7 @@ export default function App() {
                 <Route
                   path="/timetable"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-                      'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.TIMETABLE}>
                       <TimetablePage />
                     </ProtectedRoute>
                   }
@@ -148,7 +144,7 @@ export default function App() {
                 <Route
                   path="/transport"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'BURSAR']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.TRANSPORT}>
                       <TransportPage />
                     </ProtectedRoute>
                   }
@@ -157,7 +153,7 @@ export default function App() {
                 <Route
                   path="/boarding"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.BOARDING}>
                       <BoardingPage />
                     </ProtectedRoute>
                   }
@@ -166,7 +162,7 @@ export default function App() {
                 <Route
                   path="/library"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'LIBRARIAN']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.LIBRARY}>
                       <LibraryPage />
                     </ProtectedRoute>
                   }
@@ -175,8 +171,7 @@ export default function App() {
                 <Route
                   path="/home-packages"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-                      'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.HOME_PACKAGES}>
                       <HomePackagesPage />
                     </ProtectedRoute>
                   }
@@ -185,8 +180,7 @@ export default function App() {
                 <Route
                   path="/exams"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-                      'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS}>
                       <ExamsPage />
                     </ProtectedRoute>
                   }
@@ -194,8 +188,7 @@ export default function App() {
                 <Route
                   path="/exams/:id/marks"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-                      'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS}>
                       <MarkEntryPage />
                     </ProtectedRoute>
                   }
@@ -203,8 +196,7 @@ export default function App() {
                 <Route
                   path="/exams/:id/results"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-                      'CLASS_TEACHER', 'SUBJECT_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS}>
                       <ResultsPage />
                     </ProtectedRoute>
                   }
@@ -213,7 +205,7 @@ export default function App() {
                 <Route
                   path="/staff"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.STAFF}>
                       <StaffPage />
                     </ProtectedRoute>
                   }
@@ -222,7 +214,7 @@ export default function App() {
                 <Route
                   path="/communications"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.COMMUNICATIONS}>
                       <CommunicationsPage />
                     </ProtectedRoute>
                   }
@@ -231,8 +223,7 @@ export default function App() {
                 <Route
                   path="/school-calendar"
                   element={
-                    <ProtectedRoute allowedRoles={['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER',
-                      'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER', 'BURSAR']}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.SCHOOL_CALENDAR}>
                       <SchoolCalendarPage />
                     </ProtectedRoute>
                   }
@@ -311,7 +302,7 @@ export default function App() {
             <Route
               path="/parent"
               element={
-                <ProtectedRoute allowedRoles={['PARENT']}>
+                <ProtectedRoute allowedRoles={FEATURE_ROLES.PARENT}>
                   <ParentPortalPage />
                 </ProtectedRoute>
               }

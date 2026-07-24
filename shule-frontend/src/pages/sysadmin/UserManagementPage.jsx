@@ -11,25 +11,10 @@ import {
   bulkImport, changeRole, getUsers, resetPassword, toggleActive, updateUser,
 } from '../../api/sysadmin'
 import Modal from '../../components/ui/Modal'
-import AddUserModal, { ROLES } from './components/AddUserModal'
+import AddUserModal from './components/AddUserModal'
+import { ROLE_BADGE, ROLE_LABEL, ROLE_OPTIONS } from '../../lib/constants'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const ROLE_BADGE = {
-  OWNER:              'bg-purple-100 text-purple-700',
-  SYSTEM_ADMIN:       'bg-red-100 text-red-700',
-  HEADTEACHER:        'bg-[#1B4F72]/10 text-[#1B4F72]',
-  ACADEMIC_TEACHER:   'bg-orange-100 text-orange-700',
-  DISCIPLINE_TEACHER: 'bg-violet-100 text-violet-700',
-  CLASS_TEACHER:      'bg-green-100 text-green-700',
-  SUBJECT_TEACHER:    'bg-teal-100 text-teal-700',
-  TEACHER:            'bg-sky-100 text-sky-700',
-  BURSAR:             'bg-yellow-100 text-yellow-700',
-  WARDEN:             'bg-indigo-100 text-indigo-700',
-  LIBRARIAN:          'bg-cyan-100 text-cyan-700',
-  PARENT:             'bg-gray-100 text-gray-600',
-  STUDENT:            'bg-blue-100 text-blue-700',
-}
 
 const initials = (name = '') =>
   name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'
@@ -124,7 +109,7 @@ function ChangeRoleModal({ user, onClose }) {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {ROLES.map(r => (
+          {ROLE_OPTIONS.map(r => (
             <button key={r.value} type="button" onClick={() => setSelected(r.value)}
               className={`text-left p-2.5 rounded-lg border-2 transition-colors ${
                 selected === r.value ? `${r.color} bg-white font-medium` : 'border-gray-100 text-gray-600 hover:border-gray-200'
@@ -469,9 +454,8 @@ export default function UserManagementPage() {
         <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(1) }}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none">
           <option value="">All roles</option>
-          {['OWNER','SYSTEM_ADMIN','HEADTEACHER','ACADEMIC_TEACHER','DISCIPLINE_TEACHER',
-            'CLASS_TEACHER','SUBJECT_TEACHER','TEACHER','BURSAR','WARDEN','LIBRARIAN','PARENT','STUDENT'].map(r => (
-            <option key={r} value={r}>{r.replace('_', ' ')}</option>
+          {[...ROLE_OPTIONS.map(r => r.value), 'STUDENT'].map(r => (
+            <option key={r} value={r}>{ROLE_LABEL[r]}</option>
           ))}
         </select>
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}

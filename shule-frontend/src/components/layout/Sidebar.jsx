@@ -27,101 +27,25 @@ import {
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/ShuleSMSLogo.png'
+import { FEATURE_ROLES, ROLE_LABEL } from '../../lib/constants'
 
-const ADMIN_ROLES = ['OWNER', 'SYSTEM_ADMIN']
+const ADMIN_ROLES = FEATURE_ROLES.ADMIN
 
 const NAV_ITEMS = [
-  {
-    label: 'Dashboard',
-    path: '/dashboard',
-    icon: LayoutDashboard,
-    roles: ['OWNER', 'HEADTEACHER', 'BURSAR', 'TEACHER', 'ACADEMIC_TEACHER',
-            'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER'],
-  },
-  {
-    label: 'Students',
-    path: '/students',
-    icon: GraduationCap,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'BURSAR', 'ACADEMIC_TEACHER',
-            'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER'],
-  },
-  {
-    label: 'Fees',
-    path: '/fees',
-    icon: CreditCard,
-    roles: ['OWNER', 'HEADTEACHER', 'BURSAR'],
-  },
-  {
-    label: 'Attendance',
-    path: '/attendance',
-    icon: CalendarCheck,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-            'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER'],
-  },
-  {
-    label: 'Timetable',
-    path: '/timetable',
-    icon: Clock,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-            'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER'],
-  },
-  {
-    label: 'Boarding',
-    path: '/boarding',
-    icon: BedDouble,
-    roles: ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN'],
-  },
-  {
-    label: 'Library',
-    path: '/library',
-    icon: Library,
-    roles: ['OWNER', 'HEADTEACHER', 'LIBRARIAN'],
-  },
-  {
-    label: 'Transport',
-    path: '/transport',
-    icon: Bus,
-    roles: ['OWNER', 'HEADTEACHER', 'BURSAR'],
-  },
-  {
-    label: 'Home Packages',
-    path: '/home-packages',
-    icon: Package,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-            'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER'],
-  },
-  {
-    label: 'Exams',
-    path: '/exams',
-    icon: ClipboardList,
-    roles: ['OWNER', 'HEADTEACHER', 'TEACHER', 'ACADEMIC_TEACHER',
-            'CLASS_TEACHER', 'SUBJECT_TEACHER'],
-  },
-  {
-    label: 'Staff',
-    path: '/staff',
-    icon: Users,
-    roles: ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'],
-  },
-  {
-    label: 'Communications',
-    path: '/communications',
-    icon: MessageSquare,
-    roles: ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'],
-  },
-  {
-    label: 'School Calendar',
-    path: '/school-calendar',
-    icon: CalendarRange,
-    roles: ['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER',
-            'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER', 'BURSAR'],
-  },
-  {
-    label: 'My Children',
-    path: '/parent',
-    icon: Heart,
-    roles: ['PARENT'],
-  },
+  { label: 'Dashboard',       path: '/dashboard',      icon: LayoutDashboard, roles: FEATURE_ROLES.DASHBOARD },
+  { label: 'Students',        path: '/students',       icon: GraduationCap,   roles: FEATURE_ROLES.STUDENTS },
+  { label: 'Fees',            path: '/fees',           icon: CreditCard,      roles: FEATURE_ROLES.FEES },
+  { label: 'Attendance',      path: '/attendance',     icon: CalendarCheck,   roles: FEATURE_ROLES.ATTENDANCE },
+  { label: 'Timetable',       path: '/timetable',      icon: Clock,           roles: FEATURE_ROLES.TIMETABLE },
+  { label: 'Boarding',        path: '/boarding',       icon: BedDouble,       roles: FEATURE_ROLES.BOARDING },
+  { label: 'Library',         path: '/library',        icon: Library,         roles: FEATURE_ROLES.LIBRARY },
+  { label: 'Transport',       path: '/transport',      icon: Bus,             roles: FEATURE_ROLES.TRANSPORT },
+  { label: 'Home Packages',   path: '/home-packages',  icon: Package,         roles: FEATURE_ROLES.HOME_PACKAGES },
+  { label: 'Exams',           path: '/exams',          icon: ClipboardList,   roles: FEATURE_ROLES.EXAMS },
+  { label: 'Staff',           path: '/staff',          icon: Users,           roles: FEATURE_ROLES.STAFF },
+  { label: 'Communications',  path: '/communications', icon: MessageSquare,   roles: FEATURE_ROLES.COMMUNICATIONS },
+  { label: 'School Calendar', path: '/school-calendar',icon: CalendarRange,   roles: FEATURE_ROLES.SCHOOL_CALENDAR },
+  { label: 'My Children',     path: '/parent',         icon: Heart,           roles: FEATURE_ROLES.PARENT },
 ]
 
 const ADMIN_NAV_ITEMS = [
@@ -134,20 +58,6 @@ const ADMIN_NAV_ITEMS = [
   { label: 'Audit Logs',          path: '/admin-panel/audit-logs',     icon: ScrollText },
   { label: 'System Health',       path: '/admin-panel/system-health',  icon: Activity },
 ]
-
-const ROLE_LABELS = {
-  OWNER:              'Owner',
-  SYSTEM_ADMIN:       'System Admin',
-  HEADTEACHER:        'Head Teacher',
-  ACADEMIC_TEACHER:   'Academic Teacher',
-  DISCIPLINE_TEACHER: 'Discipline Teacher',
-  CLASS_TEACHER:      'Class Teacher',
-  SUBJECT_TEACHER:    'Subject Teacher',
-  TEACHER:            'Teacher',
-  BURSAR:             'Bursar',
-  PARENT:             'Parent',
-  STUDENT:            'Student',
-}
 
 function NavItem({ item, role, onClose }) {
   const Icon = item.icon
@@ -230,7 +140,7 @@ export default function Sidebar({ onClose }) {
         <div>
           <div className="text-sm font-medium truncate">{user?.full_name ?? 'User'}</div>
           <span className="inline-block mt-1 text-[10px] bg-accent/80 text-white px-2 py-0.5 rounded-full">
-            {ROLE_LABELS[role] ?? role}
+            {ROLE_LABEL[role] ?? role}
           </span>
         </div>
         <button
