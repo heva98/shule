@@ -131,6 +131,13 @@ export const ROLE_LANDING_PATH = {
   STUDENT: '/parent',
 }
 
+// Mirrors backend accounts.permissions.SENIOR_STAFF_ROLES / CONTENT_CREATOR_ROLES —
+// used within feature pages to gate edit/create actions (as opposed to
+// FEATURE_ROLES below, which gates access to the page itself). Previously
+// redefined identically in HomePackagesPage, StudentDetailPage and TimetablePage.
+export const SENIOR_STAFF_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']
+export const CONTENT_CREATOR_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER']
+
 // Per-feature access lists — the single source shared by route guards
 // (App.jsx) and sidebar nav visibility (Sidebar.jsx) so the two can't drift
 // apart (previously each kept its own copy of every list).

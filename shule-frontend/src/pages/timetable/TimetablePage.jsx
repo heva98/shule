@@ -18,11 +18,11 @@ import { getSubjects } from '../../api/exams'
 import { getStaff } from '../../api/staff'
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
-import { LEVEL_LABEL } from '../../lib/constants'
+import { LEVEL_LABEL, SENIOR_STAFF_ROLES } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
 
-const EDIT_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']
+const EDIT_ROLES = SENIOR_STAFF_ROLES
 const MINE_DEFAULT_ROLES = ['TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']
 
 const DAYS = [

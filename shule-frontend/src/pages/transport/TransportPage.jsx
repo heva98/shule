@@ -25,11 +25,11 @@ import { getAcademicYears } from '../../api/fees'
 import { getStudents } from '../../api/students'
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
-import { LEVEL_LABEL } from '../../lib/constants'
+import { FEATURE_ROLES, LEVEL_LABEL } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
 
-const MANAGE_ROLES = ['OWNER', 'HEADTEACHER', 'BURSAR']
+const MANAGE_ROLES = FEATURE_ROLES.TRANSPORT
 
 const QUARTER_OPTIONS = [
   { value: 'Q1', label: 'Quarter 1' },

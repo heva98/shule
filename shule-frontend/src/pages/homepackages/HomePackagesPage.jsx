@@ -13,11 +13,11 @@ import { getAcademicYears } from '../../api/fees'
 import { getSubjects } from '../../api/exams'
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
-import { LEVEL_LABEL } from '../../lib/constants'
+import { CONTENT_CREATOR_ROLES, LEVEL_LABEL, SENIOR_STAFF_ROLES } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 
-const CREATE_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER']
-const SENIOR_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']
+const CREATE_ROLES = CONTENT_CREATOR_ROLES
+const SENIOR_ROLES = SENIOR_STAFF_ROLES
 
 const QUARTER_OPTIONS = [
   { value: 'Q1', label: 'Quarter 1' },

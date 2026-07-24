@@ -15,10 +15,11 @@ import {
 } from '../../api/library'
 import { getStudents } from '../../api/students'
 import { useAuth } from '../../context/AuthContext'
+import { FEATURE_ROLES } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
 
-const MANAGE_ROLES = ['OWNER', 'HEADTEACHER', 'LIBRARIAN']
+const MANAGE_ROLES = FEATURE_ROLES.LIBRARY
 
 const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
   focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`

@@ -43,6 +43,7 @@ import {
   INVOICE_BADGE,
   LEVEL_LABEL,
   RELATIONSHIP_OPTIONS,
+  SENIOR_STAFF_ROLES,
   STATUS_BADGE,
 } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
@@ -51,7 +52,7 @@ const READ_ONLY_ROLES = ['TEACHER', 'BURSAR']
 
 // Documents (birth certificates, medical forms, etc.) are sensitive — only senior
 // staff can see the tab at all, matching the backend's own access restriction.
-const DOCUMENT_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']
+const DOCUMENT_ROLES = SENIOR_STAFF_ROLES
 
 const DOCUMENT_CATEGORIES = [
   { value: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },

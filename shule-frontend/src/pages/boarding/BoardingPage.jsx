@@ -18,11 +18,11 @@ import { getStaff } from '../../api/staff'
 import { getStudents } from '../../api/students'
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
-import { LEVEL_LABEL } from '../../lib/constants'
+import { FEATURE_ROLES, LEVEL_LABEL } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
 
-const MANAGE_ROLES = ['OWNER', 'HEADTEACHER', 'DISCIPLINE_TEACHER', 'WARDEN']
+const MANAGE_ROLES = FEATURE_ROLES.BOARDING
 
 const GENDER_LABEL = { M: 'Boys', F: 'Girls' }
 
