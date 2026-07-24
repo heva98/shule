@@ -1,10 +1,13 @@
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+
+from accounts.models import Role
 
 from .models import Guardian, Student, StudentStatus
 from .serializers import (
@@ -12,6 +15,21 @@ from .serializers import (
     StudentSerializer,
     StudentWriteSerializer,
 )
+
+# Roles that may view student records at all (matches the frontend's
+# FEATURE_ROLES.STUDENTS) — deliberately excludes PARENT/STUDENT, who only
+# ever see their own children through the separate my-children action.
+_VIEW_ROLES = {
+    Role.OWNER, Role.HEADTEACHER, Role.TEACHER, Role.BURSAR,
+    Role.ACADEMIC_TEACHER, Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.DISCIPLINE_TEACHER,
+}
+# Roles that may create a new student record (matches the frontend's /students/new route)
+_CREATE_ROLES = {Role.OWNER, Role.HEADTEACHER}
+# Roles that may edit an existing student or their guardians (matches /students/:id/edit)
+_EDIT_ROLES = {
+    Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER,
+    Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.DISCIPLINE_TEACHER,
+}
 
 
 class StudentViewSet(ModelViewSet):
@@ -23,6 +41,19 @@ class StudentViewSet(ModelViewSet):
     # students exist nor double as a guessable credential.
     lookup_field = 'public_id'
     lookup_value_regex = '[0-9a-f-]{36}'
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if self.action == 'my_children':
+            return  # any authenticated user (parent) may fetch their own children
+        if request.user.role not in _VIEW_ROLES:
+            raise PermissionDenied('You do not have permission to access student records.')
+        if self.action == 'create' and request.user.role not in _CREATE_ROLES:
+            raise PermissionDenied('Only Owner or Headteacher can add new students.')
+        if self.action in ('update', 'partial_update', 'destroy') and request.user.role not in _EDIT_ROLES:
+            raise PermissionDenied('You do not have permission to edit this student record.')
+        if self.action == 'guardians' and request.method == 'POST' and request.user.role not in _EDIT_ROLES:
+            raise PermissionDenied('You do not have permission to add a guardian.')
 
     def get_queryset(self):
         qs = Student.objects.prefetch_related('guardians').all()
@@ -97,6 +128,13 @@ class GuardianViewSet(ModelViewSet):
     serializer_class = GuardianSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ['get', 'patch', 'put', 'delete']
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _VIEW_ROLES:
+            raise PermissionDenied('You do not have permission to access guardian records.')
+        if request.method in ('PATCH', 'PUT', 'DELETE') and request.user.role not in _EDIT_ROLES:
+            raise PermissionDenied('You do not have permission to edit guardian records.')
 
     def get_queryset(self):
         qs = super().get_queryset()

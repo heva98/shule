@@ -51,7 +51,7 @@ class Student(models.Model):
     level = models.CharField(max_length=10, choices=Level.choices)
     stream = models.CharField(max_length=10, blank=True)
 
-    admission_date = models.DateField(default=timezone.now)
+    admission_date = models.DateField(default=timezone.localdate)
     status = models.CharField(
         max_length=15, choices=StudentStatus.choices, default=StudentStatus.ACTIVE
     )
