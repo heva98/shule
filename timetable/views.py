@@ -1,12 +1,18 @@
 from django.db import IntegrityError, transaction
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+
+from accounts.permissions import SENIOR_STAFF_ROLES
 
 from .models import Period, TimetableEntry
 from .serializers import PeriodSerializer, TimetableEntrySerializer
 
 _TEACHER_CLASH_MESSAGE = 'This teacher is already scheduled for another class at this exact day and period.'
+
+# Roles that may create/edit the timetable itself (any authenticated user may
+# still read it — teachers and parents need to see the schedule).
+_MANAGE_ROLES = SENIOR_STAFF_ROLES
 
 
 class PeriodViewSet(ModelViewSet):
@@ -14,6 +20,11 @@ class PeriodViewSet(ModelViewSet):
     queryset = Period.objects.all()
     serializer_class = PeriodSerializer
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if self.action in ('create', 'update', 'partial_update', 'destroy') and request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to manage periods.')
 
 
 class TimetableEntryViewSet(ModelViewSet):
@@ -45,6 +56,11 @@ class TimetableEntryViewSet(ModelViewSet):
             qs = qs.filter(teacher_id=p['teacher'])
 
         return qs
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if self.action in ('create', 'update', 'partial_update', 'destroy') and request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to manage the timetable.')
 
     def perform_create(self, serializer):
         # The serializer's own clash check runs first (fast, friendly message
