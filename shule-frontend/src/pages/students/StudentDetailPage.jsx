@@ -19,7 +19,12 @@ import toast from 'react-hot-toast'
 import { getAttendanceRecords, getAttendanceSummary } from '../../api/attendance'
 import { getExams } from '../../api/exams'
 import { getInvoices } from '../../api/fees'
-import { createStudentDocument, deleteStudentDocument, getStudentDocuments } from '../../api/documents'
+import {
+  createStudentDocument,
+  deleteStudentDocument,
+  downloadStudentDocument,
+  getStudentDocuments,
+} from '../../api/documents'
 import {
   addGuardian,
   deleteGuardian,
@@ -804,6 +809,23 @@ function DocumentsTab({ studentId }) {
   })
   const documents = data?.results ?? data ?? []
 
+  async function handleDownload(doc) {
+    try {
+      const res = await downloadStudentDocument(doc.id)
+      const filename = doc.file?.split('/').pop() || doc.title || 'document'
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: res.headers['content-type'] }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Failed to download document.')
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -843,10 +865,10 @@ function DocumentsTab({ studentId }) {
                 </p>
                 {doc.notes && <p className="text-xs text-gray-500 mt-1">{doc.notes}</p>}
               </div>
-              <a href={doc.file} target="_blank" rel="noreferrer"
+              <button onClick={() => handleDownload(doc)}
                 className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors shrink-0" title="Download">
                 <Download size={15} />
-              </a>
+              </button>
               <button onClick={() => setDeleteDoc(doc)}
                 className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-danger transition-colors shrink-0" title="Remove">
                 <Trash2 size={15} />

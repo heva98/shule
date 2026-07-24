@@ -12,3 +12,9 @@ export const createStudentDocument = (formData) =>
 
 export const deleteStudentDocument = (id) =>
   api.delete(`/documents/${id}/`)
+
+// Fetches the file as a blob through the authenticated endpoint — the JWT
+// travels as an Authorization header (axios), which a plain <a href> download
+// never would have sent. See documents/views.py:StudentDocumentDownloadView.
+export const downloadStudentDocument = (id) =>
+  api.get(`/documents/${id}/download/`, { responseType: 'blob' }).then((r) => r)
