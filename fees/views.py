@@ -1,16 +1,18 @@
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
+from accounts.models import Role
 from students.models import Student, StudentStatus
 
 from .models import AcademicYear, FeeStructure, Invoice, InvoiceStatus, Payment
@@ -23,16 +25,33 @@ from .serializers import (
     ReceiptSerializer,
 )
 
+# Roles that may manage fee structures, invoices and payments (matches the
+# frontend's FEATURE_ROLES.FEES — nothing here has a legitimate non-finance
+# use case except a parent viewing their own child's invoices, handled below).
+_MANAGE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.BURSAR}
+
 
 class AcademicYearViewSet(ModelViewSet):
     queryset = AcademicYear.objects.all()
     serializer_class = AcademicYearSerializer
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        # Read is left open — many other apps (timetable, exams, boarding...)
+        # need academic years for their own forms.
+        if self.action in ('create', 'update', 'partial_update', 'destroy') and request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to manage academic years.')
+
 
 class FeeStructureViewSet(ModelViewSet):
     serializer_class = FeeStructureSerializer
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to access fee structures.')
 
     def get_queryset(self):
         qs = FeeStructure.objects.select_related('academic_year').all()
@@ -49,12 +68,32 @@ class InvoiceViewSet(ModelViewSet):
     serializer_class = InvoiceSerializer
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        role = request.user.role
+        if role in _MANAGE_ROLES:
+            return
+        # Parents may only ever read (their own children's invoices are
+        # enforced in get_queryset below) — never create/edit/delete.
+        if role == Role.PARENT and self.action in ('list', 'retrieve'):
+            return
+        raise PermissionDenied('You do not have permission to access invoices.')
+
     def get_queryset(self):
         qs = (
             Invoice.objects
             .select_related('student', 'academic_year')
             .prefetch_related('payments')
         )
+        user = self.request.user
+        if user.role == Role.PARENT:
+            # A parent may only ever see invoices for their own children,
+            # regardless of what ?student= is passed.
+            child_filter = Q(student__guardians__phone=user.phone)
+            if user.email:
+                child_filter |= Q(student__guardians__email=user.email)
+            qs = qs.filter(child_filter).distinct()
+
         student = self.request.query_params.get('student')
         term = self.request.query_params.get('term')
         inv_status = self.request.query_params.get('status')
@@ -129,6 +168,11 @@ class PaymentViewSet(ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to access payments.')
+
     def get_queryset(self):
         return Payment.objects.select_related('invoice__student', 'received_by').all()
 
@@ -143,6 +187,11 @@ class PaymentViewSet(ModelViewSet):
 
 class DefaultersView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to view defaulters.')
 
     def get(self, request):
         term = request.query_params.get('term')
@@ -195,6 +244,11 @@ class FeeMonthlyView(APIView):
     """GET /api/fees/summary/monthly/?year=YYYY — revenue bar chart data."""
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to view fee summaries.')
+
     def get(self, request):
         year = request.query_params.get('year') or timezone.now().year
         MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -215,6 +269,11 @@ class FeeMonthlyView(APIView):
 
 class FeeSummaryView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to view fee summaries.')
 
     def get(self, request):
         term = request.query_params.get('term')

@@ -1,16 +1,25 @@
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from accounts.models import Role
 from attendance.models import AbsenceAlert
 
 from .models import Audience, Message
 from .serializers import BroadcastSerializer, DemoRequestSerializer, MessageSerializer
 from .services import NotificationService, notify_demo_request
+
+# Roles that may broadcast, view message history, or trigger bulk
+# reminders/alerts (matches the frontend's FEATURE_ROLES.COMMUNICATIONS).
+_MANAGE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}
+# Fee reminders are also triggered one-at-a-time from the Fees page, which
+# Bursar can access even though they can't reach the Communications page.
+_FEE_REMINDER_ROLES = _MANAGE_ROLES | {Role.BURSAR}
 
 
 class DemoRequestView(APIView):
@@ -64,6 +73,11 @@ class MessageHistoryViewSet(ReadOnlyModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to view message history.')
+
     def get_queryset(self):
         qs = Message.objects.select_related('sent_by').prefetch_related('logs').order_by('-sent_at')
         p = self.request.query_params
@@ -79,6 +93,11 @@ class MessageHistoryViewSet(ReadOnlyModelViewSet):
 class BroadcastView(APIView):
     """POST /api/communications/broadcast/"""
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to send broadcasts.')
 
     def post(self, request):
         serializer = BroadcastSerializer(data=request.data)
@@ -106,6 +125,11 @@ class FeeReminderView(APIView):
     Body: {"student_id": "SHULE-2024-0001"}
     """
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _FEE_REMINDER_ROLES:
+            raise PermissionDenied('You do not have permission to send fee reminders.')
 
     def post(self, request):
         from fees.models import Invoice, InvoiceStatus
@@ -149,6 +173,11 @@ class BulkFeeReminderView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _FEE_REMINDER_ROLES:
+            raise PermissionDenied('You do not have permission to send fee reminders.')
+
     def post(self, request):
         from fees.models import Invoice, InvoiceStatus
 
@@ -189,6 +218,11 @@ class SendAbsenceAlertsView(APIView):
     Also used as a fallback if the Celery beat task hasn't run.
     """
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to send absence alerts.')
 
     def post(self, request):
         today = timezone.localdate()

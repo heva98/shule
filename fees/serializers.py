@@ -99,7 +99,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             'transaction_id', 'phone_used', 'paid_at',
             'received_by', 'receipt_number', 'notes',
         ]
-        read_only_fields = ['id', 'receipt_number']
+        read_only_fields = ['id', 'received_by', 'receipt_number']
 
     def validate_amount(self, value):
         if value <= 0:

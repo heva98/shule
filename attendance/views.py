@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
@@ -22,6 +23,24 @@ _UNRESTRICTED_ROLES = {
     Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER, Role.TEACHER,
 }
 
+# Roles that may browse attendance broadly (matches the frontend's
+# FEATURE_ROLES.ATTENDANCE). Parents are handled separately — they may read,
+# but only ever their own children's records (enforced below).
+_VIEW_ROLES = {
+    Role.OWNER, Role.HEADTEACHER, Role.TEACHER, Role.ACADEMIC_TEACHER,
+    Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.DISCIPLINE_TEACHER,
+}
+
+
+def _is_own_child(user, student_pk):
+    if not student_pk:
+        return False
+    from students.models import Student
+    child_filter = Q(pk=student_pk, guardians__phone=user.phone)
+    if user.email:
+        child_filter |= Q(pk=student_pk, guardians__email=user.email)
+    return Student.objects.filter(child_filter).exists()
+
 
 class AttendanceViewSet(ReadOnlyModelViewSet):
     """
@@ -31,8 +50,20 @@ class AttendanceViewSet(ReadOnlyModelViewSet):
     serializer_class   = AttendanceRecordSerializer
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _VIEW_ROLES and request.user.role != Role.PARENT:
+            raise PermissionDenied('You do not have permission to view attendance records.')
+
     def get_queryset(self):
         qs = AttendanceRecord.objects.select_related('student', 'marked_by')
+        user = self.request.user
+        if user.role == Role.PARENT:
+            child_filter = Q(student__guardians__phone=user.phone)
+            if user.email:
+                child_filter |= Q(student__guardians__email=user.email)
+            qs = qs.filter(child_filter).distinct()
+
         p  = self.request.query_params
         if p.get('student'):
             qs = qs.filter(student__pk=p['student'])
@@ -155,6 +186,13 @@ class AttendanceSummaryView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        role = request.user.role
+        if role == Role.PARENT:
+            if not _is_own_child(request.user, student_pk):
+                raise PermissionDenied('You do not have permission to view this attendance summary.')
+        elif role not in _VIEW_ROLES:
+            raise PermissionDenied('You do not have permission to view attendance summaries.')
+
         qs = AttendanceRecord.objects.filter(student__pk=student_pk)
         if year:
             qs = qs.filter(date__year=year)
@@ -187,8 +225,16 @@ class AttendanceDailySummaryView(APIView):
     """
     GET /api/attendance/daily-summary/?date=YYYY-MM-DD
     School-wide attendance rate for a single day (defaults to today).
+    Aggregate counts only (no student/guardian PII), also shown on the
+    Bursar's dashboard — so Bursar is allowed here even though they're not
+    in the general attendance _VIEW_ROLES.
     """
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _VIEW_ROLES | {Role.BURSAR}:
+            raise PermissionDenied('You do not have permission to view this summary.')
 
     def get(self, request):
         date_str = request.query_params.get('date') or str(timezone.localdate())
@@ -216,6 +262,11 @@ class AbsenteesView(APIView):
     Returns absent students with primary guardian contact for SMS trigger.
     """
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _VIEW_ROLES:
+            raise PermissionDenied('You do not have permission to view absentee contact details.')
 
     def get(self, request):
         date  = request.query_params.get('date')

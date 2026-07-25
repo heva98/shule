@@ -10,6 +10,7 @@ from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from accounts.models import Role
 from accounts.permissions import (
+    IsAcademicTeacher,
     IsDisciplineTeacher,
     IsHeadteacher,
     IsOwner,
@@ -55,9 +56,8 @@ class StaffViewSet(ModelViewSet):
         return StaffProfileSerializer
 
     def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy'):
-            return [(IsOwner | IsHeadteacher)()]
-        return [IsAuthenticated()]
+        # Staff records include salary and national ID — not just a directory.
+        return [(IsOwner | IsHeadteacher | IsAcademicTeacher)()]
 
 
 # ── Leave requests ─────────────────────────────────────────────────────────────

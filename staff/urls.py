@@ -10,8 +10,12 @@ from .views import (
 )
 
 router = SimpleRouter()
-router.register(r'', StaffViewSet, basename='staff')
+# 'leave' MUST be registered before the r'' StaffViewSet — otherwise
+# StaffViewSet's own /{pk}/ catch-all pattern (registered first = matched
+# first) swallows /staff/leave/ as if "leave" were a StaffProfile pk, and
+# LeaveRequestViewSet's routes become unreachable.
 router.register(r'leave', LeaveRequestViewSet, basename='leave')
+router.register(r'', StaffViewSet, basename='staff')
 
 # Explicit paths come BEFORE include(router.urls) so they aren't swallowed
 # by the r'' router's /{pk}/ catch-all pattern.
