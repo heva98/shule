@@ -6,7 +6,6 @@ import {
   Edit2, GraduationCap, Mail, Phone, Plus,
   Search, Shield, User, X,
 } from 'lucide-react'
-import api from '../../lib/axios'
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import {
@@ -14,6 +13,7 @@ import {
   getLeaveRequests, getStaff, rejectLeave, updateStaff,
 } from '../../api/staff'
 import { getSubjects } from '../../api/exams'
+import { createUser } from '../../api/sysadmin'
 import { ROLE_LABEL } from '../../lib/constants'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -450,8 +450,8 @@ function AddStaffModal({ onClose }) {
     }
     setLoading(true)
     try {
-      const res = await api.post('/auth/register/', { ...account, phone: account.phone ? normalizePhone(account.phone) : '' })
-      setCreatedUserId(res.data.user.id)
+      const res = await createUser({ ...account, phone: account.phone ? normalizePhone(account.phone) : '' })
+      setCreatedUserId(res.id)
       setStep(2)
     } catch (err) {
       const d = err.response?.data
@@ -823,7 +823,7 @@ function NewLeaveModal({ staffList, onClose }) {
 
 // ─── StaffDirectoryTab ────────────────────────────────────────────────────────
 
-function StaffDirectoryTab({ canEdit }) {
+function StaffDirectoryTab({ canEdit, canCreateAccount }) {
   const [search, setSearch] = useState('')
   const [desigFilter, setDesigFilter] = useState('')
   const [selected, setSelected] = useState(null)
@@ -885,7 +885,7 @@ function StaffDirectoryTab({ canEdit }) {
           <option value="">All Designations</option>
           {DESIG.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        {canEdit && (
+        {canCreateAccount && (
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1B4F72] text-white text-sm rounded-lg hover:bg-[#154060] whitespace-nowrap"
@@ -1128,6 +1128,9 @@ export default function StaffPage() {
   const [tab, setTab] = useState('directory')
 
   const canEdit = user?.role === 'OWNER' || user?.role === 'HEADTEACHER'
+  // Creating a staff account (step 1 of Add Staff) hits the admin-only
+  // user-creation endpoint — only OWNER passes that check (see accounts.permissions.IsSystemAdmin).
+  const canCreateAccount = user?.role === 'OWNER'
 
   const { data: staffData } = useQuery({
     queryKey: ['staff'],
@@ -1161,7 +1164,7 @@ export default function StaffPage() {
       </div>
 
       {tab === 'directory'
-        ? <StaffDirectoryTab canEdit={canEdit} />
+        ? <StaffDirectoryTab canEdit={canEdit} canCreateAccount={canCreateAccount} />
         : <LeaveTab canApprove={canEdit} allStaff={allStaff} />}
     </div>
   )

@@ -1,4 +1,3 @@
-from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,30 +5,12 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import SchoolSettings, UserNotification
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from .serializers import LoginSerializer, UserSerializer
 
 
 def _token_pair(user):
     refresh = RefreshToken.for_user(user)
     return str(refresh.access_token), str(refresh)
-
-
-class RegisterView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        access, refresh = _token_pair(user)
-        return Response(
-            {
-                'access': access,
-                'refresh': refresh,
-                'user': UserSerializer(user).data,
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
 
 class LoginView(APIView):
