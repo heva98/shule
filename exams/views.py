@@ -12,6 +12,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import Role
 from accounts.permissions import CONTENT_CREATOR_ROLES, SENIOR_STAFF_ROLES, IsAcademicStaff, IsSeniorStaff
+from attendance.views import _is_own_child
 from students.models import Student
 
 from .models import Exam, LevelGroup, MarkEntry, Subject
@@ -241,11 +242,28 @@ class ExamViewSet(ModelViewSet):
 
 # ── Report card ───────────────────────────────────────────────────────────────
 
+# Staff roles that may view any student's report card. Discipline teachers,
+# bursars, librarians, and wardens have no legitimate need for academic
+# records, so they're deliberately excluded.
+_REPORT_CARD_STAFF_ROLES = {
+    Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER,
+    Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.TEACHER,
+}
+
+
 class ReportCardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, public_id):
         student = get_object_or_404(Student, public_id=public_id)
+
+        role = request.user.role
+        if role == Role.PARENT:
+            if not _is_own_child(request.user, student.pk):
+                raise PermissionDenied('You do not have permission to view this report card.')
+        elif role not in _REPORT_CARD_STAFF_ROLES:
+            raise PermissionDenied('You do not have permission to view report cards.')
+
         exam_id = request.query_params.get('exam')
         if not exam_id:
             return Response(

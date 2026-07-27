@@ -4,7 +4,8 @@ from django.test import TransactionTestCase
 from rest_framework.test import APIClient
 
 from accounts.models import Role
-from shule.factories import make_academic_year, make_user
+from shule.factories import make_academic_year, make_student, make_user
+from students.models import Guardian, Relationship
 
 from .models import Exam, ExamType
 
@@ -67,3 +68,50 @@ class ExamPermissionTests(TransactionTestCase):
         client.force_authenticate(user=headteacher)
         resp = client.delete(f'/api/exams/{exam.id}/')
         self.assertEqual(resp.status_code, 204)
+
+
+class ReportCardAuthorizationTests(TransactionTestCase):
+    """Regression coverage for the report-card IDOR: an authenticated user
+    who has no relationship to a student must not be able to view it."""
+
+    def setUp(self):
+        self.student = make_student()
+        Guardian.objects.create(
+            student=self.student,
+            full_name='Jane Parent',
+            relationship=Relationship.MOTHER,
+            phone='+255712345678',
+            email='jane.parent@test.local',
+            is_primary_contact=True,
+        )
+        self.url = f'/api/students/{self.student.public_id}/report-card/'
+
+    def test_unrelated_parent_cannot_view_report_card(self):
+        stranger = make_user(role=Role.PARENT, phone='+255700000000', email='stranger@test.local')
+        client = APIClient()
+        client.force_authenticate(user=stranger)
+        resp = client.get(self.url)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_disallowed_staff_role_cannot_view_report_card(self):
+        bursar = make_user(role=Role.BURSAR)
+        client = APIClient()
+        client.force_authenticate(user=bursar)
+        resp = client.get(self.url)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_own_parent_can_reach_report_card(self):
+        parent = make_user(role=Role.PARENT, phone='+255712345678', email='jane.parent@test.local')
+        client = APIClient()
+        client.force_authenticate(user=parent)
+        # No exam= param supplied — a 400 (not 403) proves the authorization
+        # check passed and it's failing on the next validation step instead.
+        resp = client.get(self.url)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_teacher_can_reach_report_card(self):
+        teacher = make_user(role=Role.TEACHER)
+        client = APIClient()
+        client.force_authenticate(user=teacher)
+        resp = client.get(self.url)
+        self.assertEqual(resp.status_code, 400)
