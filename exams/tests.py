@@ -4,7 +4,7 @@ from django.test import TransactionTestCase
 from rest_framework.test import APIClient
 
 from accounts.models import Role
-from shule.factories import make_academic_year, make_student, make_user
+from shule.factories import make_academic_year, make_student, make_subject, make_user
 from students.models import Guardian, Relationship
 
 from .models import Exam, ExamType
@@ -115,3 +115,41 @@ class ReportCardAuthorizationTests(TransactionTestCase):
         client.force_authenticate(user=teacher)
         resp = client.get(self.url)
         self.assertEqual(resp.status_code, 400)
+
+
+class SubjectPermissionTests(TransactionTestCase):
+    def _payload(self):
+        return {
+            'name': 'Mathematics', 'code': 'MATH',
+            'level_group': 'PRIMARY', 'is_compulsory': True,
+        }
+
+    def test_disallowed_role_cannot_create_subject(self):
+        parent = make_user(role=Role.PARENT)
+        client = APIClient()
+        client.force_authenticate(user=parent)
+        resp = client.post('/api/exams/subjects/', self._payload(), format='json')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_disallowed_role_cannot_delete_subject(self):
+        subject = make_subject()
+        librarian = make_user(role=Role.LIBRARIAN)
+        client = APIClient()
+        client.force_authenticate(user=librarian)
+        resp = client.delete(f'/api/exams/subjects/{subject.id}/')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_senior_staff_can_create_subject(self):
+        headteacher = make_user(role=Role.HEADTEACHER)
+        client = APIClient()
+        client.force_authenticate(user=headteacher)
+        resp = client.post('/api/exams/subjects/', self._payload(), format='json')
+        self.assertEqual(resp.status_code, 201)
+
+    def test_any_authenticated_role_can_list_subjects(self):
+        make_subject()
+        student = make_user(role=Role.STUDENT)
+        client = APIClient()
+        client.force_authenticate(user=student)
+        resp = client.get('/api/exams/subjects/')
+        self.assertEqual(resp.status_code, 200)

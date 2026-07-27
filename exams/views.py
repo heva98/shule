@@ -46,6 +46,12 @@ class SubjectViewSet(ModelViewSet):
     serializer_class   = SubjectSerializer
     permission_classes = [IsAuthenticated]
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if self.action in ('create', 'update', 'partial_update', 'destroy') and \
+           request.user.role not in SENIOR_STAFF_ROLES:
+            raise PermissionDenied('You do not have permission to manage subjects.')
+
     def get_queryset(self):
         qs = Subject.objects.all()
         lg = self.request.query_params.get('level_group')
