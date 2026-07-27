@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   Briefcase, Calendar, ChevronDown, ChevronRight,
-  Edit2, GraduationCap, Mail, Phone, Plus,
+  Edit2, Eye, EyeOff, GraduationCap, Mail, Phone, Plus,
   Search, Shield, User, X,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -429,6 +429,7 @@ function AddStaffModal({ onClose }) {
   const [profile, setProfile] = useState(BLANK_PROFILE)
   const [loading, setLoading] = useState(false)
   const [phoneError, setPhoneError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const setA = (k, v) => setAccount(a => ({ ...a, [k]: v }))
   const setP = (k, v) => setProfile(p => ({ ...p, [k]: v }))
@@ -533,9 +534,15 @@ function AddStaffModal({ onClose }) {
               </F>
               <div className="col-span-2">
                 <F label="Temporary Password" req>
-                  <input className={inputCls} type="password" required minLength={8}
-                    value={account.password} onChange={e => setA('password', e.target.value)}
-                    placeholder="Minimum 8 characters" />
+                  <div className="relative">
+                    <input className={`${inputCls} pr-9`} type={showPassword ? 'text' : 'password'} required minLength={8}
+                      value={account.password} onChange={e => setA('password', e.target.value)}
+                      placeholder="Minimum 8 characters" />
+                    <button type="button" onClick={() => setShowPassword(p => !p)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
                 </F>
               </div>
             </div>
