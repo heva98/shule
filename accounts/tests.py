@@ -133,6 +133,59 @@ class AdminPanelPermissionTests(TestCase):
         self.assertEqual(target.deactivation_reason, '')
 
 
+class LogoutAndTokenRevocationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def _login(self):
+        user = make_user(role=Role.TEACHER, password='correct-pass123')
+        client = APIClient()
+        resp = client.post('/api/auth/login/', {
+            'email': user.email, 'password': 'correct-pass123',
+        }, format='json')
+        return user, client, resp.data['access'], resp.data['refresh']
+
+    def test_logout_requires_authentication(self):
+        client = APIClient()
+        resp = client.post('/api/auth/logout/', {'refresh': 'whatever'}, format='json')
+        self.assertEqual(resp.status_code, 401)
+
+    def test_logout_without_refresh_is_rejected(self):
+        _, client, access, _ = self._login()
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        resp = client.post('/api/auth/logout/', {}, format='json')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_logout_with_garbage_token_is_rejected(self):
+        _, client, access, _ = self._login()
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        resp = client.post('/api/auth/logout/', {'refresh': 'not-a-real-token'}, format='json')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_logout_blacklists_the_refresh_token(self):
+        _, client, access, refresh = self._login()
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+
+        resp = client.post('/api/auth/logout/', {'refresh': refresh}, format='json')
+        self.assertEqual(resp.status_code, 205)
+
+        # The blacklisted refresh token can no longer mint new access tokens.
+        refresh_resp = client.post('/api/auth/token/refresh/', {'refresh': refresh}, format='json')
+        self.assertEqual(refresh_resp.status_code, 401)
+
+    def test_rotated_refresh_token_cannot_be_reused(self):
+        # Regression for BLACKLIST_AFTER_ROTATION silently no-oping without
+        # the token_blacklist app installed: the *old* refresh token must
+        # stop working the moment it's used to mint a new one.
+        _, client, _, refresh = self._login()
+
+        first_rotation = client.post('/api/auth/token/refresh/', {'refresh': refresh}, format='json')
+        self.assertEqual(first_rotation.status_code, 200)
+
+        reuse_attempt = client.post('/api/auth/token/refresh/', {'refresh': refresh}, format='json')
+        self.assertEqual(reuse_attempt.status_code, 401)
+
+
 class AccountLockoutTests(TestCase):
     def setUp(self):
         cache.clear()  # reset the login endpoint's throttle history between tests

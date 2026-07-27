@@ -53,7 +53,15 @@ export function AuthProvider({ children }) {
     return profile
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const refresh = localStorage.getItem('shule_refresh')
+    // Revoke the refresh token server-side so it can't be reused (stolen
+    // token, shared/public computer, etc.) — awaited so the request completes
+    // before the redirect below unloads the page. Client state is cleared
+    // either way; a failed revoke shouldn't trap the user in a logged-in UI.
+    if (refresh) {
+      await api.post('/auth/logout/', { refresh }).catch(() => {})
+    }
     localStorage.removeItem('shule_access')
     localStorage.removeItem('shule_refresh')
     setUser(null)

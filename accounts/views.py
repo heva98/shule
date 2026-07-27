@@ -1,8 +1,10 @@
+from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import SchoolSettings, UserNotification
@@ -33,6 +35,26 @@ class LoginView(APIView):
                 'user': UserSerializer(user).data,
             }
         )
+
+
+class LogoutView(APIView):
+    """Blacklists the presented refresh token so it can't be used again —
+    for revoking a stolen/leaked token or a device the user no longer trusts,
+    not just clearing tokens client-side."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        refresh = request.data.get('refresh')
+        if not refresh:
+            return Response({'detail': 'refresh is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            RefreshToken(refresh).blacklist()
+        except TokenError:
+            return Response(
+                {'detail': 'Invalid or already-invalidated refresh token.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(status=status.HTTP_205_RESET_CONTENT)
 
 
 class MeView(APIView):

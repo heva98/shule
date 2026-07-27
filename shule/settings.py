@@ -21,6 +21,9 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
+    # Required for SIMPLE_JWT's BLACKLIST_AFTER_ROTATION below, and for the
+    # logout endpoint (accounts.views.LogoutView) to actually revoke tokens.
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_celery_beat',
 ]
