@@ -55,9 +55,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'full_name', 'phone', 'role', 'role_display',
-            'profile_photo', 'is_active', 'date_joined', 'last_login',
+            'profile_photo', 'is_active', 'deactivation_reason', 'date_joined', 'last_login',
         ]
-        read_only_fields = ['id', 'date_joined', 'last_login']
+        read_only_fields = ['id', 'deactivation_reason', 'date_joined', 'last_login']
 
 
 class AdminUserCreateSerializer(serializers.ModelSerializer):
@@ -96,6 +96,15 @@ class AdminRoleChangeSerializer(serializers.Serializer):
 class AdminPasswordResetSerializer(serializers.Serializer):
     new_password = serializers.CharField(min_length=8, write_only=True)
     notify = serializers.BooleanField(default=True)
+
+
+class AdminDeactivateUserSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=500, trim_whitespace=True)
+
+    def validate_reason(self, value):
+        if not value.strip():
+            raise serializers.ValidationError('A reason is required to disable an account.')
+        return value.strip()
 
 
 class AuditLogSerializer(serializers.ModelSerializer):

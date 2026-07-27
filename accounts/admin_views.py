@@ -24,6 +24,7 @@ from fees.serializers import SchoolCalendarEventSerializer
 from .models import AuditLog, Role, SchoolSettings, User
 from .permissions import IsCalendarManager, IsCalendarManagerOrReadOnly, IsSystemAdmin
 from .serializers import (
+    AdminDeactivateUserSerializer,
     AdminPasswordResetSerializer,
     AdminRoleChangeSerializer,
     AdminUserCreateSerializer,
@@ -178,6 +179,12 @@ class AdminUserPasswordResetView(APIView):
 
 
 class AdminUserToggleActiveView(APIView):
+    """
+    Disabling a user (is_active True → False) requires a `reason` in the
+    body — it's persisted on the user record and surfaced back to the
+    admin panel so anyone reviewing the account later knows why it was
+    disabled. Reinstating (False → True) needs no reason and clears it.
+    """
     permission_classes = [IsAuthenticated, IsSystemAdmin]
 
     def put(self, request, pk):
@@ -192,19 +199,37 @@ class AdminUserToggleActiveView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        reason = ''
+        if user.is_active:
+            # Currently active — this request is disabling it, so a reason is required.
+            serializer = AdminDeactivateUserSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            reason = serializer.validated_data['reason']
+
         user.is_active = not user.is_active
-        user.save(update_fields=['is_active'])
+        user.deactivation_reason = reason
+        user.save(update_fields=['is_active', 'deactivation_reason'])
 
         action = AuditLog.Action.USER_ACTIVATED if user.is_active else AuditLog.Action.USER_DEACTIVATED
+        description = (
+            f'Activated user {user.email}'
+            if user.is_active
+            else f'Deactivated user {user.email}. Reason: {reason}'
+        )
         log_action(
             user=request.user,
             action=action,
             target_model='User',
             target_id=user.pk,
-            description=f'{"Activated" if user.is_active else "Deactivated"} user {user.email}',
+            description=description,
             request=request,
+            extra_data={'reason': reason} if reason else {},
         )
-        return Response({'detail': f'User {"activated" if user.is_active else "deactivated"}.', 'is_active': user.is_active})
+        return Response({
+            'detail': f'User {"activated" if user.is_active else "deactivated"}.',
+            'is_active': user.is_active,
+            'deactivation_reason': user.deactivation_reason,
+        })
 
 
 # ── Bulk import ───────────────────────────────────────────────────────────────

@@ -15,8 +15,8 @@ export const changeRole = (id, data) =>
 export const resetPassword = (id, data) =>
   api.put(`/admin/users/${id}/reset-password/`, data).then(r => r.data)
 
-export const toggleActive = (id) =>
-  api.put(`/admin/users/${id}/toggle-active/`).then(r => r.data)
+export const toggleActive = (id, data) =>
+  api.put(`/admin/users/${id}/toggle-active/`, data).then(r => r.data)
 
 export const bulkImport = (file) => {
   const fd = new FormData()

@@ -200,34 +200,56 @@ function ResetPasswordModal({ user, onClose }) {
 function ToggleActiveModal({ user, onClose }) {
   const qc = useQueryClient()
   const isActive = user.is_active
+  const [reason, setReason] = useState('')
+  const trimmedReason = reason.trim()
   const mut = useMutation({
-    mutationFn: () => toggleActive(user.id),
+    mutationFn: () => toggleActive(user.id, isActive ? { reason: trimmedReason } : undefined),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['admin-users'] })
       toast.success(data.detail)
       onClose()
     },
-    onError: (err) => toast.error(err.response?.data?.detail ?? 'Failed.'),
+    onError: (err) => toast.error(err.response?.data?.reason?.[0] ?? err.response?.data?.detail ?? 'Failed.'),
   })
   return (
-    <Modal isOpen title={isActive ? 'Deactivate User' : 'Activate User'} onClose={onClose} size="sm">
+    <Modal isOpen title={isActive ? 'Disable User' : 'Reinstate User'} onClose={onClose} size="sm">
       <div className="p-6 space-y-4">
         <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <AlertTriangle size={18} className="text-amber-600 shrink-0" />
           <p className="text-sm text-amber-700">
             {isActive
-              ? `Deactivating ${user.full_name} will prevent them from logging in.`
+              ? `Disabling ${user.full_name} will prevent them from logging in.`
               : `This will re-enable login for ${user.full_name}.`}
           </p>
         </div>
+        {isActive ? (
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Reason for disabling <span className="text-danger">*</span>
+            </label>
+            <textarea
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="e.g. Left the school, disciplinary suspension, extended leave…"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            />
+          </div>
+        ) : user.deactivation_reason ? (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <p className="text-xs text-gray-500 mb-1">Previously disabled because:</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{user.deactivation_reason}</p>
+          </div>
+        ) : null}
         <div className="flex gap-3">
           <button onClick={onClose}
             className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending}
+          <button onClick={() => mut.mutate()} disabled={mut.isPending || (isActive && !trimmedReason)}
             className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50 ${
               isActive ? 'bg-danger hover:bg-danger/90' : 'bg-success hover:bg-success/90'
             }`}>
-            {mut.isPending ? 'Saving…' : isActive ? 'Deactivate' : 'Activate'}
+            {mut.isPending ? 'Saving…' : isActive ? 'Disable' : 'Reinstate'}
           </button>
         </div>
       </div>
@@ -404,7 +426,7 @@ function RowMenu({ user, onEdit, onRole, onReset, onToggle }) {
                 user.is_active ? 'text-danger' : 'text-success'
               }`}>
               {user.is_active ? <UserMinus size={13} /> : <UserCheck size={13} />}
-              {user.is_active ? 'Deactivate' : 'Activate'}
+              {user.is_active ? 'Disable' : 'Reinstate'}
             </button>
           </div>
         </>
@@ -528,9 +550,12 @@ export default function UserManagementPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
-                      }`}>
+                      <span
+                        title={!user.is_active ? user.deactivation_reason || undefined : undefined}
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                        }`}
+                      >
                         {user.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>

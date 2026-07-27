@@ -83,3 +83,43 @@ class AdminPanelPermissionTests(TestCase):
             'role': Role.BURSAR,
         }, format='json')
         self.assertEqual(resp.status_code, 403)
+
+    def test_disabling_user_without_reason_is_rejected(self):
+        admin = make_user(role=Role.SYSTEM_ADMIN)
+        target = make_user(role=Role.TEACHER)
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        resp = client.put(f'/api/admin/users/{target.id}/toggle-active/', {}, format='json')
+        self.assertEqual(resp.status_code, 400)
+        target.refresh_from_db()
+        self.assertTrue(target.is_active)
+
+    def test_disabling_user_with_reason_persists_it(self):
+        admin = make_user(role=Role.SYSTEM_ADMIN)
+        target = make_user(role=Role.TEACHER)
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        resp = client.put(f'/api/admin/users/{target.id}/toggle-active/', {
+            'reason': 'Left the school',
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.data['is_active'])
+        self.assertEqual(resp.data['deactivation_reason'], 'Left the school')
+        target.refresh_from_db()
+        self.assertFalse(target.is_active)
+        self.assertEqual(target.deactivation_reason, 'Left the school')
+
+    def test_reinstating_user_clears_reason_without_needing_one(self):
+        admin = make_user(role=Role.SYSTEM_ADMIN)
+        target = make_user(role=Role.TEACHER, is_active=False)
+        target.deactivation_reason = 'Disciplinary suspension'
+        target.save(update_fields=['deactivation_reason'])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        resp = client.put(f'/api/admin/users/{target.id}/toggle-active/', {}, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.data['is_active'])
+        self.assertEqual(resp.data['deactivation_reason'], '')
+        target.refresh_from_db()
+        self.assertTrue(target.is_active)
+        self.assertEqual(target.deactivation_reason, '')

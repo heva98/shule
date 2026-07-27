@@ -58,6 +58,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active    = models.BooleanField(default=True)
     is_staff     = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    # Why the account is currently disabled — set when a SYSTEM_ADMIN/OWNER
+    # deactivates it, cleared again on reinstatement.
+    deactivation_reason = models.CharField(max_length=500, blank=True)
 
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login  = models.DateTimeField(null=True, blank=True)
