@@ -1,12 +1,20 @@
+from django.core.cache import cache
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from shule.factories import make_user
 
-from .models import Role
+from .models import AuditLog, Role
 
 
 class AuthTests(TestCase):
+    def setUp(self):
+        # The login endpoint's ScopedRateThrottle (5/min, keyed by IP) shares
+        # its counter across every test in this process via the cache — clear
+        # it so one test's login attempts don't 429 the next.
+        cache.clear()
+
     def test_login_with_valid_credentials_returns_tokens(self):
         make_user(role=Role.TEACHER, email='teacher@test.local', password='correct-pass123')
         client = APIClient()
@@ -123,3 +131,92 @@ class AdminPanelPermissionTests(TestCase):
         target.refresh_from_db()
         self.assertTrue(target.is_active)
         self.assertEqual(target.deactivation_reason, '')
+
+
+class AccountLockoutTests(TestCase):
+    def setUp(self):
+        cache.clear()  # reset the login endpoint's throttle history between tests
+
+    def _login(self, client, email, password):
+        return client.post('/api/auth/login/', {'email': email, 'password': password}, format='json')
+
+    def test_third_consecutive_failure_locks_the_account(self):
+        user = make_user(role=Role.TEACHER, email='lockout1@test.local', password='correct-pass123')
+        client = APIClient()
+
+        for _ in range(user.LOCKOUT_THRESHOLD):
+            resp = self._login(client, user.email, 'wrong-pass')
+            self.assertEqual(resp.status_code, 400)
+
+        user.refresh_from_db()
+        self.assertEqual(user.failed_login_attempts, user.LOCKOUT_THRESHOLD)
+        self.assertIsNotNone(user.locked_until)
+        self.assertTrue(user.is_locked_out())
+
+        # Even the correct password is rejected while locked.
+        resp = self._login(client, user.email, 'correct-pass123')
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Too many failed login attempts', str(resp.data))
+
+    def test_lockout_is_audit_logged(self):
+        user = make_user(role=Role.TEACHER, email='lockout2@test.local', password='correct-pass123')
+        client = APIClient()
+        for _ in range(user.LOCKOUT_THRESHOLD):
+            self._login(client, user.email, 'wrong-pass')
+
+        log = AuditLog.objects.filter(
+            action=AuditLog.Action.ACCOUNT_LOCKED, target_model='User', target_id=str(user.pk),
+        ).first()
+        self.assertIsNotNone(log)
+        self.assertIsNone(log.performed_by)
+
+    def test_successful_login_resets_failed_attempts(self):
+        user = make_user(role=Role.TEACHER, email='lockout3@test.local', password='correct-pass123')
+        client = APIClient()
+
+        # Two failures — below the lockout threshold.
+        self._login(client, user.email, 'wrong-pass')
+        self._login(client, user.email, 'wrong-pass')
+        user.refresh_from_db()
+        self.assertEqual(user.failed_login_attempts, 2)
+
+        resp = self._login(client, user.email, 'correct-pass123')
+        self.assertEqual(resp.status_code, 200)
+        user.refresh_from_db()
+        self.assertEqual(user.failed_login_attempts, 0)
+        self.assertIsNone(user.locked_until)
+
+    def test_admin_password_reset_clears_lockout(self):
+        admin = make_user(role=Role.SYSTEM_ADMIN)
+        user = make_user(role=Role.TEACHER, email='lockout4@test.local', password='correct-pass123')
+        user.failed_login_attempts = user.LOCKOUT_THRESHOLD
+        user.locked_until = timezone.now() + user.LOCKOUT_DURATION
+        user.save(update_fields=['failed_login_attempts', 'locked_until'])
+
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        resp = client.put(f'/api/admin/users/{user.id}/reset-password/', {
+            'new_password': 'BrandNewPass123', 'notify': False,
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+
+        user.refresh_from_db()
+        self.assertEqual(user.failed_login_attempts, 0)
+        self.assertIsNone(user.locked_until)
+
+    def test_reinstating_account_clears_lockout(self):
+        admin = make_user(role=Role.SYSTEM_ADMIN)
+        user = make_user(role=Role.TEACHER, is_active=False)
+        user.failed_login_attempts = user.LOCKOUT_THRESHOLD
+        user.locked_until = timezone.now() + user.LOCKOUT_DURATION
+        user.save(update_fields=['failed_login_attempts', 'locked_until'])
+
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        resp = client.put(f'/api/admin/users/{user.id}/toggle-active/', {}, format='json')
+        self.assertEqual(resp.status_code, 200)
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(user.failed_login_attempts, 0)
+        self.assertIsNone(user.locked_until)

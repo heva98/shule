@@ -151,7 +151,9 @@ class AdminUserPasswordResetView(APIView):
             return Response({'detail': list(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
-        user.save(update_fields=['password'])
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        user.save(update_fields=['password', 'failed_login_attempts', 'locked_until'])
 
         log_action(
             user=request.user,
@@ -208,7 +210,15 @@ class AdminUserToggleActiveView(APIView):
 
         user.is_active = not user.is_active
         user.deactivation_reason = reason
-        user.save(update_fields=['is_active', 'deactivation_reason'])
+        update_fields = ['is_active', 'deactivation_reason']
+        if user.is_active:
+            # Reinstating — also clear any brute-force lockout so the admin's
+            # action takes effect immediately rather than leaving them locked
+            # out for the rest of the lockout window.
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            update_fields += ['failed_login_attempts', 'locked_until']
+        user.save(update_fields=update_fields)
 
         action = AuditLog.Action.USER_ACTIVATED if user.is_active else AuditLog.Action.USER_DEACTIVATED
         description = (

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
@@ -117,6 +118,17 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/min',
+        'user': '120/min',
+        # Stricter, IP-scoped rate applied to LoginView specifically —
+        # see accounts.views.LoginView.throttle_scope.
+        'login': '5/min',
+    },
 }
 
 SIMPLE_JWT = {
@@ -144,12 +156,23 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': REDIS_URL,
+# `manage.py test` shouldn't require a real Redis server just to exercise
+# DRF's cache-backed request throttling — swap to an in-memory cache for
+# test runs. Runtime (dev/prod, incl. gunicorn's multiple workers, which
+# need a *shared* cache for throttling to actually work) still uses Redis.
+if 'test' in sys.argv:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
 
 # ── Email ─────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = config(

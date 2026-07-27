@@ -1,9 +1,11 @@
 import re
 
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import AuditLog, Role, SchoolSettings, User
+from .utils import log_action
 
 
 def validate_tz_phone(value: str) -> str:
@@ -37,11 +39,41 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        user = authenticate(username=attrs['email'], password=attrs['password'])
+        email = attrs['email']
+        try:
+            existing_user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            existing_user = None
+
+        if existing_user and existing_user.is_locked_out():
+            minutes_left = max(1, int((existing_user.locked_until - timezone.now()).total_seconds() // 60) + 1)
+            raise serializers.ValidationError(
+                f'Too many failed login attempts. Try again in {minutes_left} minute(s).'
+            )
+
+        user = authenticate(username=email, password=attrs['password'])
+
         if not user:
+            if existing_user and existing_user.is_active:
+                existing_user.register_failed_login()
+                if existing_user.is_locked_out():
+                    log_action(
+                        user=None,
+                        action=AuditLog.Action.ACCOUNT_LOCKED,
+                        target_model='User',
+                        target_id=existing_user.pk,
+                        description=(
+                            f'Account locked after {existing_user.failed_login_attempts} '
+                            f'consecutive failed login attempts: {existing_user.email}'
+                        ),
+                        request=self.context.get('request'),
+                    )
             raise serializers.ValidationError('Invalid email or password.')
+
         if not user.is_active:
             raise serializers.ValidationError('This account has been deactivated.')
+
+        user.reset_lockout()
         attrs['user'] = user
         return attrs
 

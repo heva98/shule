@@ -1,5 +1,6 @@
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -15,9 +16,13 @@ def _token_pair(user):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    # Replaces the global anon/user throttle with a much stricter per-IP
+    # rate on this one endpoint — see DEFAULT_THROTTLE_RATES['login'].
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer = LoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         access, refresh = _token_pair(user)

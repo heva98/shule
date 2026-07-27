@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 
 class Role(models.TextChoices):
@@ -62,6 +65,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     # deactivates it, cleared again on reinstatement.
     deactivation_reason = models.CharField(max_length=500, blank=True)
 
+    # Brute-force lockout — independent of the admin-initiated is_active
+    # toggle above. Reset on any successful login.
+    failed_login_attempts = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
+
+    LOCKOUT_THRESHOLD = 3
+    LOCKOUT_DURATION = timedelta(minutes=15)
+
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login  = models.DateTimeField(null=True, blank=True)
 
@@ -77,6 +88,21 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.full_name} <{self.email}>'
+
+    def is_locked_out(self) -> bool:
+        return bool(self.locked_until and self.locked_until > timezone.now())
+
+    def register_failed_login(self) -> None:
+        self.failed_login_attempts += 1
+        if self.failed_login_attempts >= self.LOCKOUT_THRESHOLD:
+            self.locked_until = timezone.now() + self.LOCKOUT_DURATION
+        self.save(update_fields=['failed_login_attempts', 'locked_until'])
+
+    def reset_lockout(self) -> None:
+        if self.failed_login_attempts or self.locked_until:
+            self.failed_login_attempts = 0
+            self.locked_until = None
+            self.save(update_fields=['failed_login_attempts', 'locked_until'])
 
 
 class UserNotification(models.Model):
@@ -121,6 +147,7 @@ class AuditLog(models.Model):
         LOGIN             = 'LOGIN',              'Login'
         LOGOUT            = 'LOGOUT',             'Logout'
         BULK_IMPORT       = 'BULK_IMPORT',        'Bulk Import'
+        ACCOUNT_LOCKED    = 'ACCOUNT_LOCKED',     'Account Locked'
 
     performed_by = models.ForeignKey(
         User,

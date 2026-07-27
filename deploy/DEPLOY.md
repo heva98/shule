@@ -107,6 +107,28 @@ tail -n 50 /home/deployuser/shule/logs/gunicorn-error.log
 
 The other domain already served by this Nginx is untouched — this adds a new site alongside it.
 
+### 9a. One-time: declare the rate-limit zones
+
+`shule.ac.tz.conf` uses `limit_req zone=login` / `zone=api`, but `limit_req_zone`
+is only valid in the `http{}` context — which lives in the shared
+`/etc/nginx/nginx.conf`, not in this per-site file. Add these two lines inside
+that file's existing `http { ... }` block (do this once; it doesn't affect the
+other site already on this server):
+
+```nginx
+http {
+    # ...existing directives...
+
+    limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+    limit_req_zone $binary_remote_addr zone=api:10m rate=60r/m;
+}
+```
+
+Then `sudo nginx -t` before reloading — if these are missing, the `server{}`
+block below fails to load with `unknown "login" zone`.
+
+### 9b. Enable the site
+
 ```bash
 sudo cp /home/deployuser/shule/deploy/nginx/shule.ac.tz.conf /etc/nginx/sites-available/shule.ac.tz.conf
 sudo ln -s /etc/nginx/sites-available/shule.ac.tz.conf /etc/nginx/sites-enabled/
