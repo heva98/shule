@@ -1,51 +1,66 @@
+import { lazy, Suspense } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
-import AttendancePage from './pages/attendance/AttendancePage'
-import CommunicationsPage from './pages/communications/CommunicationsPage'
-import DashboardRouter from './pages/dashboard/DashboardRouter'
-import ExamsPage from './pages/exams/ExamsPage'
-import MarkEntryPage from './pages/exams/MarkEntryPage'
-import ResultsPage from './pages/exams/ResultsPage'
-import FeesPage from './pages/fees/FeesPage'
-import InvoicesPage from './pages/fees/InvoicesPage'
-import RecordPaymentPage from './pages/fees/RecordPaymentPage'
-import ParentPortalPage from './pages/parent/ParentPortalPage'
-import StaffPage from './pages/staff/StaffPage'
-import StudentDetailPage from './pages/students/StudentDetailPage'
-import StudentFormPage from './pages/students/StudentFormPage'
-import StudentsListPage from './pages/students/StudentsListPage'
 import LoginPage from './pages/auth/LoginPage'
 import LandingPage from './pages/LandingPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
-import SysAdminDashboard from './pages/sysadmin/SysAdminDashboard'
-import UserManagementPage from './pages/sysadmin/UserManagementPage'
-import RoleAssignmentPage from './pages/sysadmin/RoleAssignmentPage'
-import SubjectsPage from './pages/sysadmin/SubjectsPage'
-import AcademicYearPage from './pages/sysadmin/AcademicYearPage'
-import SchoolCalendarPage from './pages/calendar/SchoolCalendarPage'
-import TimetablePage from './pages/timetable/TimetablePage'
-import HomePackagesPage from './pages/homepackages/HomePackagesPage'
-import BoardingPage from './pages/boarding/BoardingPage'
-import TransportPage from './pages/transport/TransportPage'
-import LibraryPage from './pages/library/LibraryPage'
-import SchoolSettingsPage from './pages/sysadmin/SchoolSettingsPage'
-import AuditLogPage from './pages/sysadmin/AuditLogPage'
-import SystemHealthPage from './pages/sysadmin/SystemHealthPage'
 import { FEATURE_ROLES } from './lib/constants'
+
+// Every in-app page is code-split so a first-time visitor (or a teacher who
+// only ever opens /attendance) doesn't pay for the admin panel, PDF export
+// (jspdf), and charting (recharts) bundles pulled in by pages they never
+// visit. Only the public/auth shell above is loaded eagerly.
+const DashboardRouter = lazy(() => import('./pages/dashboard/DashboardRouter'))
+const StudentsListPage = lazy(() => import('./pages/students/StudentsListPage'))
+const StudentFormPage = lazy(() => import('./pages/students/StudentFormPage'))
+const StudentDetailPage = lazy(() => import('./pages/students/StudentDetailPage'))
+const FeesPage = lazy(() => import('./pages/fees/FeesPage'))
+const InvoicesPage = lazy(() => import('./pages/fees/InvoicesPage'))
+const RecordPaymentPage = lazy(() => import('./pages/fees/RecordPaymentPage'))
+const AttendancePage = lazy(() => import('./pages/attendance/AttendancePage'))
+const TimetablePage = lazy(() => import('./pages/timetable/TimetablePage'))
+const TransportPage = lazy(() => import('./pages/transport/TransportPage'))
+const BoardingPage = lazy(() => import('./pages/boarding/BoardingPage'))
+const LibraryPage = lazy(() => import('./pages/library/LibraryPage'))
+const HomePackagesPage = lazy(() => import('./pages/homepackages/HomePackagesPage'))
+const ExamsPage = lazy(() => import('./pages/exams/ExamsPage'))
+const MarkEntryPage = lazy(() => import('./pages/exams/MarkEntryPage'))
+const ResultsPage = lazy(() => import('./pages/exams/ResultsPage'))
+const StaffPage = lazy(() => import('./pages/staff/StaffPage'))
+const CommunicationsPage = lazy(() => import('./pages/communications/CommunicationsPage'))
+const SchoolCalendarPage = lazy(() => import('./pages/calendar/SchoolCalendarPage'))
+const ParentPortalPage = lazy(() => import('./pages/parent/ParentPortalPage'))
+const SysAdminDashboard = lazy(() => import('./pages/sysadmin/SysAdminDashboard'))
+const UserManagementPage = lazy(() => import('./pages/sysadmin/UserManagementPage'))
+const RoleAssignmentPage = lazy(() => import('./pages/sysadmin/RoleAssignmentPage'))
+const SubjectsPage = lazy(() => import('./pages/sysadmin/SubjectsPage'))
+const AcademicYearPage = lazy(() => import('./pages/sysadmin/AcademicYearPage'))
+const SchoolSettingsPage = lazy(() => import('./pages/sysadmin/SchoolSettingsPage'))
+const AuditLogPage = lazy(() => import('./pages/sysadmin/AuditLogPage'))
+const SystemHealthPage = lazy(() => import('./pages/sysadmin/SystemHealthPage'))
 
 const queryClient = new QueryClient()
 
 const ADMIN_ROLES = FEATURE_ROLES.ADMIN
+
+function RouteFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[40vh]">
+      <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  )
+}
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
+          <Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
@@ -308,6 +323,7 @@ export default function App() {
               }
             />
           </Routes>
+          </Suspense>
 
           <Toaster
             position="top-right"

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import api from '../lib/axios'
 
 const AuthContext = createContext(null)
@@ -69,8 +69,17 @@ export function AuthProvider({ children }) {
     window.location.href = '/login'
   }, [])
 
+  // login/logout are already stable (useCallback with no deps), so this only
+  // changes reference when user/accessToken/loading actually change —
+  // without it, every consumer of useAuth() re-renders on every AuthProvider
+  // render since the object literal would be a new reference each time.
+  const value = useMemo(
+    () => ({ user, accessToken, loading, login, logout }),
+    [user, accessToken, loading, login, logout]
+  )
+
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

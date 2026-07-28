@@ -6,7 +6,7 @@ import {
   Loader2,
   Save,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { bulkEnterMarks, getExam, getResults, getSubjects } from '../../api/exams'
@@ -42,6 +42,58 @@ function getLevelGroup(level) {
 }
 
 const DRAFT_KEY = (id) => `exam-draft-${id}`
+
+// Memoized per-row so a keystroke in one student's row only re-renders that
+// row's cells (~10 inputs) instead of every input in the grid (400+ for a
+// 40-student x 10-subject exam) — `row` only changes reference for the
+// student whose grid entry was just edited; other rows keep their prop
+// object identity and React.memo skips them.
+const MarkRow = memo(function MarkRow({ student, si, subjects, row, onChange, onKeyDown }) {
+  return (
+    <tr className="hover:bg-gray-50/40 transition-colors">
+      {/* # */}
+      <td className="sticky left-0 z-10 bg-white border-r border-gray-100
+        px-3 py-1.5 text-xs text-gray-400 tabular-nums text-center">
+        {si + 1}
+      </td>
+      {/* Name */}
+      <td className="sticky left-10 z-10 bg-white border-r border-gray-100
+        px-4 py-1.5 whitespace-nowrap">
+        <div className="font-medium text-gray-900 text-xs">{student.full_name}</div>
+        <div className="text-[10px] text-gray-400 font-mono">{student.student_id}</div>
+      </td>
+      {/* Score cells */}
+      {subjects.map((sub, sj) => {
+        const val = row?.[sub.id] ?? ''
+        const g   = grade(val)
+        const sty = GRADE_STYLE[g]
+        return (
+          <td
+            key={sub.id}
+            className={`border-r border-gray-100 px-1.5 py-1.5 text-center
+              ${g ? sty.cell : ''}`}
+          >
+            <input
+              id={`cell-${si}-${sj}`}
+              type="text"
+              inputMode="decimal"
+              value={val}
+              onChange={(e) => onChange(student.id, sub.id, e.target.value)}
+              onKeyDown={(e) => onKeyDown(e, si, sj)}
+              className="w-14 text-center border border-gray-200 rounded-md px-1 py-0.5
+                text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40
+                focus:border-primary bg-white"
+              placeholder="—"
+            />
+            {g && (
+              <div className={`text-[10px] font-bold mt-0.5 ${sty.text}`}>{g}</div>
+            )}
+          </td>
+        )
+      })}
+    </tr>
+  )
+})
 
 // ── Mark entry grid ────────────────────────────────────────────────────────
 
@@ -162,7 +214,7 @@ export default function MarkEntryPage() {
     }))
   }, [])
 
-  function handleKeyDown(e, si, sj) {
+  const handleKeyDown = useCallback((e, si, sj) => {
     if (e.key !== 'Tab') return
     e.preventDefault()
     let nsi = si, nsj = sj + 1
@@ -170,7 +222,7 @@ export default function MarkEntryPage() {
     if (nsi < students.length) {
       document.getElementById(`cell-${nsi}-${nsj}`)?.focus()
     }
-  }
+  }, [subjects.length, students.length])
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
@@ -331,48 +383,15 @@ export default function MarkEntryPage() {
 
             <tbody className="divide-y divide-gray-100">
               {students.map((s, si) => (
-                <tr key={s.id} className="hover:bg-gray-50/40 transition-colors">
-                  {/* # */}
-                  <td className="sticky left-0 z-10 bg-white border-r border-gray-100
-                    px-3 py-1.5 text-xs text-gray-400 tabular-nums text-center">
-                    {si + 1}
-                  </td>
-                  {/* Name */}
-                  <td className="sticky left-10 z-10 bg-white border-r border-gray-100
-                    px-4 py-1.5 whitespace-nowrap">
-                    <div className="font-medium text-gray-900 text-xs">{s.full_name}</div>
-                    <div className="text-[10px] text-gray-400 font-mono">{s.student_id}</div>
-                  </td>
-                  {/* Score cells */}
-                  {subjects.map((sub, sj) => {
-                    const val = grid[s.id]?.[sub.id] ?? ''
-                    const g   = grade(val)
-                    const sty = GRADE_STYLE[g]
-                    return (
-                      <td
-                        key={sub.id}
-                        className={`border-r border-gray-100 px-1.5 py-1.5 text-center
-                          ${g ? sty.cell : ''}`}
-                      >
-                        <input
-                          id={`cell-${si}-${sj}`}
-                          type="text"
-                          inputMode="decimal"
-                          value={val}
-                          onChange={(e) => handleChange(s.id, sub.id, e.target.value)}
-                          onKeyDown={(e) => handleKeyDown(e, si, sj)}
-                          className="w-14 text-center border border-gray-200 rounded-md px-1 py-0.5
-                            text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40
-                            focus:border-primary bg-white"
-                          placeholder="—"
-                        />
-                        {g && (
-                          <div className={`text-[10px] font-bold mt-0.5 ${sty.text}`}>{g}</div>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
+                <MarkRow
+                  key={s.id}
+                  student={s}
+                  si={si}
+                  subjects={subjects}
+                  row={grid[s.id]}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                />
               ))}
             </tbody>
           </table>
