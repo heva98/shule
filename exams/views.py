@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
@@ -432,25 +433,35 @@ class ClassPerformanceView(APIView):
             by_student[sid]['subjects'].append(entry)
             by_student[sid]['total'] += entry.score
 
-        # Attendance % for the quarter
+        # Attendance % for the quarter — one aggregate query for the whole
+        # class instead of two `.count()` queries per student.
         from attendance.models import AttendanceRecord, AttendanceStatus
         quarter = request.query_params.get('quarter')
         term    = request.query_params.get('term')
 
+        att_qs = AttendanceRecord.objects.filter(student__in=by_student.keys())
+        if quarter:
+            att_qs = att_qs.filter(quarter=quarter)
+        elif term:
+            from shule.utils import TERM_QUARTER_MAP
+            qs_for_term = [q for q, t in TERM_QUARTER_MAP.items() if t == term]
+            att_qs = att_qs.filter(quarter__in=qs_for_term)
+
+        att_stats = {
+            row['student_id']: row
+            for row in att_qs.values('student_id').annotate(
+                total=Count('id'),
+                present=Count(
+                    'id', filter=Q(status__in=[AttendanceStatus.PRESENT, AttendanceStatus.LATE])
+                ),
+            )
+        }
+
         def _att_pct(student):
-            att_qs = AttendanceRecord.objects.filter(student=student)
-            if quarter:
-                att_qs = att_qs.filter(quarter=quarter)
-            elif term:
-                # Map term to quarters
-                from shule.utils import TERM_QUARTER_MAP
-                qs_for_term = [q for q, t in TERM_QUARTER_MAP.items() if t == term]
-                att_qs = att_qs.filter(quarter__in=qs_for_term)
-            total   = att_qs.count()
-            present = att_qs.filter(
-                status__in=[AttendanceStatus.PRESENT, AttendanceStatus.LATE]
-            ).count()
-            return round(present / total * 100, 1) if total else 0.0
+            stats = att_stats.get(student.pk)
+            if not stats or not stats['total']:
+                return 0.0
+            return round(stats['present'] / stats['total'] * 100, 1)
 
         # Build rows and rank
         rows = []
