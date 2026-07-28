@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -76,6 +77,15 @@ class NotificationsView(APIView):
         unread_only = request.query_params.get('unread') == 'true'
         if unread_only:
             qs = qs.filter(is_read=False)
+
+        # This endpoint is polled frequently by the notification bell —
+        # one aggregate query for both counts instead of two separate
+        # .count() calls on top of the row fetch below.
+        counts = qs.aggregate(
+            total=Count('id'),
+            unread=Count('id', filter=Q(is_read=False)),
+        )
+
         data = [
             {
                 'id':         n.id,
@@ -88,9 +98,9 @@ class NotificationsView(APIView):
             for n in qs[:50]
         ]
         return Response({
-            'count':       qs.count(),
-            'unread_count': qs.filter(is_read=False).count(),
-            'results':     data,
+            'count':        counts['total'],
+            'unread_count': counts['unread'],
+            'results':      data,
         })
 
     def post(self, request):

@@ -145,10 +145,23 @@ class ExamViewSet(ModelViewSet):
                 ).values_list('id', flat=True)
             )
 
-        created_count = 0
-        updated_count = 0
+        records = serializer.validated_data['records']
 
-        for item in serializer.validated_data['records']:
+        # One SELECT for every (student, subject) pair in this submission
+        # instead of one SELECT+INSERT/UPDATE per row.
+        existing_by_key = {
+            (e.student_id, e.subject_id): e
+            for e in MarkEntry.objects.filter(
+                exam=exam,
+                student_id__in={item['student_id'].id for item in records},
+                subject_id__in={item['subject_id'].id for item in records},
+            )
+        }
+
+        to_create_by_key = {}
+        to_update = []
+
+        for item in records:
             student = item['student_id']
             subject = item['subject_id']
             score   = item['score']
@@ -167,20 +180,37 @@ class ExamViewSet(ModelViewSet):
                     f'Student {student.student_id} is not in your assigned class.'
                 )
 
-            _, created = MarkEntry.objects.update_or_create(
-                exam=exam,
-                student=student,
-                subject=subject,
-                defaults={
-                    'score':      score,
-                    'remarks':    remarks,
-                    'entered_by': request.user,
-                },
-            )
-            if created:
-                created_count += 1
+            existing = existing_by_key.get((student.id, subject.id))
+            if existing:
+                existing.score = score
+                existing.grade = get_grade(score)
+                existing.remarks = remarks
+                existing.entered_by = request.user
+                to_update.append(existing)
             else:
-                updated_count += 1
+                # Same key as (student, subject) above — last one in the
+                # payload wins if a subject/student pair repeats.
+                to_create_by_key[(student.id, subject.id)] = MarkEntry(
+                    exam=exam,
+                    student=student,
+                    subject=subject,
+                    score=score,
+                    grade=get_grade(score),
+                    remarks=remarks,
+                    entered_by=request.user,
+                )
+
+        to_create = list(to_create_by_key.values())
+
+        if to_create:
+            MarkEntry.objects.bulk_create(to_create)
+        if to_update:
+            MarkEntry.objects.bulk_update(
+                to_update, ['score', 'grade', 'remarks', 'entered_by']
+            )
+
+        created_count = len(to_create)
+        updated_count = len(to_update)
 
         return Response(
             {
