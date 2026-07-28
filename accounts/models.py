@@ -55,10 +55,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     email         = models.EmailField(unique=True)
     full_name     = models.CharField(max_length=255)
     phone         = models.CharField(max_length=20, blank=True)
-    role          = models.CharField(max_length=20, choices=Role.choices, default=Role.TEACHER)
+    role          = models.CharField(max_length=20, choices=Role.choices, default=Role.TEACHER, db_index=True)
     profile_photo = models.ImageField(upload_to='profiles/', blank=True, null=True)
 
-    is_active    = models.BooleanField(default=True)
+    is_active    = models.BooleanField(default=True, db_index=True)
     is_staff     = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     # Why the account is currently disabled — set when a SYSTEM_ADMIN/OWNER
@@ -155,12 +155,12 @@ class AuditLog(models.Model):
         null=True, blank=True,
         related_name='audit_logs',
     )
-    action       = models.CharField(max_length=20, choices=Action.choices)
+    action       = models.CharField(max_length=20, choices=Action.choices, db_index=True)
     target_model = models.CharField(max_length=50, blank=True)
     target_id    = models.CharField(max_length=50, blank=True)
     description  = models.TextField()
     ip_address   = models.GenericIPAddressField(null=True, blank=True)
-    timestamp    = models.DateTimeField(auto_now_add=True)
+    timestamp    = models.DateTimeField(auto_now_add=True, db_index=True)
     extra_data   = models.JSONField(default=dict, blank=True)
 
     class Meta:

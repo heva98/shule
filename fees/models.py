@@ -157,6 +157,11 @@ class Invoice(models.Model):
     class Meta:
         unique_together = ('student', 'academic_year', 'term', 'quarter')
         ordering = ['-academic_year__year', 'term', 'quarter', 'student__last_name']
+        indexes = [
+            # Defaulters/summary views filter on status + due_date together
+            # (outstanding invoices past their due date).
+            models.Index(fields=['status', 'due_date'], name='invoice_status_due_date_idx'),
+        ]
 
     def __str__(self):
         return f'{self.student.student_id} | {self.academic_year} | {self.term} | {self.quarter}'
@@ -184,7 +189,7 @@ class Payment(models.Model):
     payment_method = models.CharField(max_length=15, choices=PaymentMethod.choices)
     transaction_id = models.CharField(max_length=100, blank=True)
     phone_used = models.CharField(max_length=20, blank=True)
-    paid_at = models.DateTimeField()
+    paid_at = models.DateTimeField(db_index=True)
     received_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='payments_received'
     )

@@ -48,12 +48,12 @@ class Student(models.Model):
 
     photo = models.ImageField(upload_to='students/', blank=True, null=True)
 
-    level = models.CharField(max_length=10, choices=Level.choices)
+    level = models.CharField(max_length=10, choices=Level.choices, db_index=True)
     stream = models.CharField(max_length=10, blank=True)
 
     admission_date = models.DateField(default=timezone.localdate)
     status = models.CharField(
-        max_length=15, choices=StudentStatus.choices, default=StudentStatus.ACTIVE
+        max_length=15, choices=StudentStatus.choices, default=StudentStatus.ACTIVE, db_index=True
     )
 
     has_special_needs = models.BooleanField(default=False)
@@ -72,6 +72,12 @@ class Student(models.Model):
 
     class Meta:
         ordering = ['last_name', 'first_name']
+        indexes = [
+            # Class roster / broadcast / defaulter queries filter on
+            # level(+stream)+status together far more often than on any
+            # single field alone.
+            models.Index(fields=['level', 'stream', 'status'], name='student_lvl_strm_stat_idx'),
+        ]
 
     def __str__(self):
         return f'{self.student_id} — {self.full_name}'

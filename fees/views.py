@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -185,6 +186,15 @@ class PaymentViewSet(ModelViewSet):
         return Response(ReceiptSerializer(payment).data)
 
 
+class _DefaultersPagination(PageNumberPagination):
+    page_size = 20
+    # Keep the existing `?limit=N` contract callers already use
+    # (DashboardPage's "top 5 defaulters" widget) while adding real
+    # page-based pagination instead of loading the whole table.
+    page_size_query_param = 'limit'
+    max_page_size = 200
+
+
 class DefaultersView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -206,16 +216,16 @@ class DefaultersView(APIView):
         if level:
             qs = qs.filter(student__level=level)
 
-        # Mark overdue invoices whose due_date has passed
+        # Flip invoices past their due date to OVERDUE in one UPDATE —
+        # `status__in` above already excludes PAID, so no extra exclude needed.
         today = timezone.now().date()
-        overdue_ids = [
-            inv.pk for inv in qs
-            if inv.due_date < today and inv.status != InvoiceStatus.PAID
-        ]
-        if overdue_ids:
-            Invoice.objects.filter(pk__in=overdue_ids).update(status=InvoiceStatus.OVERDUE)
-            qs = qs.all()  # re-evaluate after update
+        qs.filter(due_date__lt=today).exclude(status=InvoiceStatus.OVERDUE).update(
+            status=InvoiceStatus.OVERDUE
+        )
 
+        qs = qs.order_by('student__last_name')
+        paginator = _DefaultersPagination()
+        page = paginator.paginate_queryset(qs, request, view=self)
         data = [
             {
                 'student_id': inv.student.student_id,
@@ -229,15 +239,9 @@ class DefaultersView(APIView):
                 'due_date': str(inv.due_date),
                 'status': inv.status,
             }
-            for inv in qs.order_by('student__last_name')
+            for inv in page
         ]
-        limit = request.query_params.get('limit')
-        if limit:
-            try:
-                data = data[:int(limit)]
-            except (ValueError, TypeError):
-                pass
-        return Response(data)
+        return paginator.get_paginated_response(data)
 
 
 class FeeMonthlyView(APIView):

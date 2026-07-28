@@ -120,7 +120,9 @@ export default function DashboardPage() {
     collected: parseFloat(row.collected) || 0,
   }))
 
-  const defaulters = defaultersQ.data ?? []
+  const defaulters = Array.isArray(defaultersQ.data)
+    ? defaultersQ.data
+    : defaultersQ.data?.results ?? []
 
   return (
     <div className="space-y-6">
