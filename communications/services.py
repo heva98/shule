@@ -13,7 +13,7 @@ import urllib.parse
 from urllib.parse import quote as url_quote
 
 from django.conf import settings
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import EmailMessage
 
 from .models import DeliveryStatus, Message, MessageLog
 
@@ -64,35 +64,31 @@ def notify_demo_request(demo_request) -> bool:
 
 # ── Core send helpers ─────────────────────────────────────────────────────────
 
-def _send_email(
-    message_obj: Message,
-    to_email: str,
-    recipient_name: str,
-) -> bool:
-    log = MessageLog.objects.create(
-        message=message_obj,
-        recipient_email=to_email,
-        recipient_name=recipient_name,
-        status=DeliveryStatus.PENDING,
-    )
-    try:
-        send_mail(
-            subject=message_obj.subject or 'Shule Notification',
-            message=message_obj.body,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@shule.ac.tz'),
-            recipient_list=[to_email],
-            fail_silently=False,
-        )
-        log.status = DeliveryStatus.SENT
-        log.provider_response = {'channel': 'email', 'to': to_email}
-        log.save(update_fields=['status', 'provider_response'])
-        return True
-    except Exception as exc:
-        logger.error('Email failed to %s: %s', to_email, exc)
-        log.status = DeliveryStatus.FAILED
-        log.provider_response = {'error': str(exc)}
-        log.save(update_fields=['status', 'provider_response'])
-        return False
+def _queue_email(message_obj: Message, to_email: str, recipient_name: str) -> None:
+    """
+    Hand an email off to Celery instead of blocking the request/loop on SMTP.
+    Fire-and-forget: delivery success/failure is recorded on the MessageLog
+    and reconciled onto Message.delivered_count by the task itself.
+    """
+    from .tasks import send_email_task
+    send_email_task.delay(message_obj.pk, to_email, recipient_name)
+
+
+def _primary_guardian(student):
+    """
+    Pick the primary guardian (or first available) from an ALREADY-FETCHED
+    `student.guardians` relation. Calling code must have prefetched
+    'guardians' (or 'student__guardians') — using `.all()` here reuses that
+    cache instead of issuing a fresh query, unlike `.filter(...).first()`
+    which always hits the DB even when the relation was prefetched.
+    """
+    guardians = list(student.guardians.all())
+    if not guardians:
+        return None
+    for guardian in guardians:
+        if guardian.is_primary_contact:
+            return guardian
+    return guardians[0]
 
 
 def _send_whatsapp(
