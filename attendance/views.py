@@ -12,7 +12,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from accounts.models import Role
 
-from .models import AttendanceRecord, AttendanceStatus
+from .models import AbsenceAlert, AttendanceRecord, AttendanceStatus
 from .serializers import (
     AttendanceRecordSerializer,
     BulkAttendanceSerializer,
@@ -138,28 +138,63 @@ class BulkAttendanceView(APIView):
         session = data['session']
         records = data['records']
 
-        created_count = 0
-        updated_count = 0
+        # One SELECT for the whole register instead of one per row.
+        student_ids = [item['student_id'].pk for item in records]
+        existing_by_student = {
+            rec.student_id: rec
+            for rec in AttendanceRecord.objects.filter(
+                date=date, session=session, student_id__in=student_ids
+            )
+        }
+
+        # Keyed by student pk so a duplicate row for the same student in one
+        # payload can't violate the (student, date, session) unique constraint
+        # in bulk_create — last one in the payload wins, matching the old
+        # per-row update_or_create's "last write wins" behaviour.
+        to_create_by_student = {}
+        to_update = []
 
         for item in records:
             student    = item['student_id']
             att_status = item['status']
             reason     = item.get('reason', '')
 
-            obj, created = AttendanceRecord.objects.update_or_create(
-                student=student,
-                date=date,
-                session=session,
-                defaults={
-                    'status':    att_status,
-                    'reason':    reason,
-                    'marked_by': request.user,
-                },
-            )
-            if created:
-                created_count += 1
+            existing = existing_by_student.get(student.pk)
+            if existing:
+                existing.status = att_status
+                existing.reason = reason
+                existing.marked_by = request.user
+                to_update.append(existing)
             else:
-                updated_count += 1
+                to_create_by_student[student.pk] = AttendanceRecord(
+                    student=student,
+                    date=date,
+                    session=session,
+                    status=att_status,
+                    reason=reason,
+                    marked_by=request.user,
+                )
+
+        to_create = list(to_create_by_student.values())
+        newly_absent_student_ids = [
+            rec.student_id for rec in to_create if rec.status == AttendanceStatus.ABSENT
+        ]
+
+        if to_create:
+            AttendanceRecord.objects.bulk_create(to_create)
+        if to_update:
+            AttendanceRecord.objects.bulk_update(to_update, ['status', 'reason', 'marked_by'])
+
+        if newly_absent_student_ids:
+            # bulk_create() doesn't fire post_save, so replicate what the
+            # AttendanceRecord signal does for newly-created ABSENT rows.
+            AbsenceAlert.objects.bulk_create(
+                [AbsenceAlert(student_id=sid, date=date) for sid in newly_absent_student_ids],
+                ignore_conflicts=True,
+            )
+
+        created_count = len(to_create)
+        updated_count = len(to_update)
 
         return Response(
             {
