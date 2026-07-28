@@ -43,12 +43,16 @@ class StaffViewSet(ModelViewSet):
     search_fields   = ['user__full_name', 'employee_id', 'tsc_number', 'designation']
 
     def get_queryset(self):
-        return (
+        qs = (
             StaffProfile.objects
             .select_related('user')
             .prefetch_related('subjects', 'class_assignments__academic_year')
             .all()
         )
+        designation = self.request.query_params.get('designation')
+        if designation:
+            qs = qs.filter(designation=designation)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ('create', 'update', 'partial_update'):

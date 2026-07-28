@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -632,7 +632,7 @@ function StaffModal({ staff, canEdit, onClose }) {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#1B4F72] flex items-center justify-center text-white font-semibold text-sm overflow-hidden shrink-0">
               {photo
-                ? <img src={photo} className="w-full h-full object-cover" alt="" />
+                ? <img src={photo} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
                 : initials(staff.full_name)}
             </div>
             <div>
@@ -833,20 +833,26 @@ function NewLeaveModal({ staffList, onClose }) {
 function StaffDirectoryTab({ canEdit, canCreateAccount }) {
   const [search, setSearch] = useState('')
   const [desigFilter, setDesigFilter] = useState('')
+  const [page, setPage] = useState(1)
   const [selected, setSelected] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['staff', search],
-    queryFn: () => getStaff({ search: search || undefined }),
+    // designation is now filtered server-side (staff/views.py StaffViewSet)
+    // instead of fetched-then-.filter()'d client-side, and `page` is wired
+    // through so the directory isn't silently capped to page 1.
+    queryKey: ['staff', search, desigFilter, page],
+    queryFn: () => getStaff({ search: search || undefined, designation: desigFilter || undefined, page }),
+    placeholderData: (prev) => prev,
   })
   const staff = data?.results ?? []
   const total = data?.count ?? 0
+  const displayed = staff
 
-  const displayed = desigFilter ? staff.filter(s => s.designation === desigFilter) : staff
-
-  const teachers = staff.filter(s => s.designation === 'TEACHER').length
-  const hods = staff.filter(s => s.designation === 'HOD').length
+  const { teachers, hods } = useMemo(() => ({
+    teachers: staff.filter(s => s.designation === 'TEACHER').length,
+    hods: staff.filter(s => s.designation === 'HOD').length,
+  }), [staff])
 
   return (
     <div>
@@ -881,13 +887,13 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
             className="w-full border border-gray-300 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]"
             placeholder="Search by name, employee ID, TSC…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
           />
         </div>
         <select
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 w-full sm:w-44"
           value={desigFilter}
-          onChange={e => setDesigFilter(e.target.value)}
+          onChange={e => { setDesigFilter(e.target.value); setPage(1) }}
         >
           <option value="">All Designations</option>
           {DESIG.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -976,9 +982,30 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
             </tbody>
           </table>
         )}
-        {!isLoading && total > staff.length && (
-          <div className="px-4 py-3 border-t text-xs text-gray-500 text-center bg-gray-50">
-            Showing {staff.length} of {total} staff members
+        {!isLoading && total > 0 && (
+          <div className="px-4 py-3 border-t flex items-center justify-between bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {staff.length ? (page - 1) * 20 + 1 : 0}
+              –{(page - 1) * 20 + staff.length} of {total} staff members
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={!data?.previous}
+                className="px-2.5 py-1 text-xs border border-gray-300 rounded-md text-gray-600
+                  hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={!data?.next}
+                className="px-2.5 py-1 text-xs border border-gray-300 rounded-md text-gray-600
+                  hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
