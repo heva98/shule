@@ -5,7 +5,7 @@ import {
   RefreshCw,
   Search,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { bulkMark, getAbsentees, getAttendance, getAttendanceSummary } from '../../api/attendance'
 import { getStudents } from '../../api/students'
@@ -73,6 +73,49 @@ function StatusButtons({ studentId, value, onChange }) {
   )
 }
 
+// Memoized per-row so marking one student's status/reason only re-renders
+// that row instead of the whole register — `row` only changes reference for
+// the student that was just edited (setStatus/setReason spread the top-level
+// register object but reuse other students' entries), so React.memo skips
+// every other row on each click/keystroke.
+const RegisterRow = memo(function RegisterRow({ student, index, row, onStatusChange, onReasonChange }) {
+  const showReason = row.status === 'ABSENT' || row.status === 'LATE'
+  return (
+    <tr
+      className={`transition-colors ${
+        row.status === 'ABSENT'  ? 'bg-red-50/40' :
+        row.status === 'LATE'    ? 'bg-orange-50/40' :
+        row.status === 'EXCUSED' ? 'bg-gray-50/60' : ''
+      }`}
+    >
+      <td className="px-4 py-2.5 text-xs text-gray-400 tabular-nums">{index + 1}</td>
+      <td className="px-4 py-2.5 font-medium text-gray-900">{student.full_name}</td>
+      <td className="px-4 py-2.5 font-mono text-xs text-gray-500 whitespace-nowrap">
+        {student.student_id}
+      </td>
+      <td className="px-4 py-2.5">
+        <StatusButtons
+          studentId={student.id}
+          value={row.status}
+          onChange={onStatusChange}
+        />
+      </td>
+      <td className="px-4 py-2.5">
+        {showReason && (
+          <input
+            type="text"
+            value={row.reason}
+            onChange={(e) => onReasonChange(student.id, e.target.value)}
+            placeholder="Reason (optional)"
+            className="w-full border border-gray-200 rounded-lg px-2.5 py-1 text-xs
+              focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+        )}
+      </td>
+    </tr>
+  )
+})
+
 function RegisterTab() {
   const { levelOptions } = useSchoolLevels()
   const [date,     setDate]     = useState(today)
@@ -110,19 +153,19 @@ function RegisterTab() {
     }
   }
 
-  function setStatus(studentId, status) {
+  const setStatus = useCallback((studentId, status) => {
     setRegister((r) => ({
       ...r,
       [studentId]: { ...r[studentId], status },
     }))
-  }
+  }, [])
 
-  function setReason(studentId, reason) {
+  const setReason = useCallback((studentId, reason) => {
     setRegister((r) => ({
       ...r,
       [studentId]: { ...r[studentId], reason },
     }))
-  }
+  }, [])
 
   async function submitRegister() {
     setSubmitting(true)
@@ -247,45 +290,16 @@ function RegisterTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {students.map((s, i) => {
-                    const row = register[s.id] ?? { status: 'PRESENT', reason: '' }
-                    const showReason = row.status === 'ABSENT' || row.status === 'LATE'
-                    return (
-                      <tr
-                        key={s.id}
-                        className={`transition-colors ${
-                          row.status === 'ABSENT'  ? 'bg-red-50/40' :
-                          row.status === 'LATE'    ? 'bg-orange-50/40' :
-                          row.status === 'EXCUSED' ? 'bg-gray-50/60' : ''
-                        }`}
-                      >
-                        <td className="px-4 py-2.5 text-xs text-gray-400 tabular-nums">{i + 1}</td>
-                        <td className="px-4 py-2.5 font-medium text-gray-900">{s.full_name}</td>
-                        <td className="px-4 py-2.5 font-mono text-xs text-gray-500 whitespace-nowrap">
-                          {s.student_id}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <StatusButtons
-                            studentId={s.id}
-                            value={row.status}
-                            onChange={setStatus}
-                          />
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {showReason && (
-                            <input
-                              type="text"
-                              value={row.reason}
-                              onChange={(e) => setReason(s.id, e.target.value)}
-                              placeholder="Reason (optional)"
-                              className="w-full border border-gray-200 rounded-lg px-2.5 py-1 text-xs
-                                focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                            />
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                  {students.map((s, i) => (
+                    <RegisterRow
+                      key={s.id}
+                      student={s}
+                      index={i}
+                      row={register[s.id] ?? { status: 'PRESENT', reason: '' }}
+                      onStatusChange={setStatus}
+                      onReasonChange={setReason}
+                    />
+                  ))}
                 </tbody>
               </table>
             </div>

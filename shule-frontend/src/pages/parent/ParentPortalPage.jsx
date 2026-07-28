@@ -146,7 +146,7 @@ function ChildCard({ child, selected, onClick }) {
         text-sm font-bold mb-2 mx-auto
         ${selected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'}`}>
         {child.photo
-          ? <img src={child.photo} alt={child.full_name} className="w-full h-full object-cover" />
+          ? <img src={child.photo} alt={child.full_name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           : initials(child.full_name)}
       </div>
       <p className="text-xs font-semibold text-gray-900 leading-tight line-clamp-2">
