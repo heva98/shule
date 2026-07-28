@@ -33,6 +33,8 @@ function StudentAvatar({ student }) {
       <img
         src={student.photo}
         alt=""
+        loading="lazy"
+        decoding="async"
         className="w-9 h-9 rounded-full object-cover shrink-0"
       />
     )

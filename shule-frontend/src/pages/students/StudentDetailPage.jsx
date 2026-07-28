@@ -960,6 +960,8 @@ export default function StudentDetailPage() {
               <img
                 src={student.photo}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="w-16 h-16 rounded-full object-cover shrink-0"
               />
             ) : (
