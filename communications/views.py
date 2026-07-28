@@ -230,17 +230,14 @@ class SendAbsenceAlertsView(APIView):
             date=today, sms_sent=False
         ).select_related('student').prefetch_related('student__guardians')
 
-        sent = 0
+        sent_ids = []
         failed = 0
         wa_urls = []
 
         for alert in alerts:
             result = NotificationService.send_absence_alert(alert.student, today)
             if result.get('success'):
-                alert.sms_sent = True
-                alert.sent_at = timezone.now()
-                alert.save(update_fields=['sms_sent', 'sent_at'])
-                sent += 1
+                sent_ids.append(alert.pk)
                 if result.get('wa_url'):
                     wa_urls.append(
                         {
@@ -252,10 +249,15 @@ class SendAbsenceAlertsView(APIView):
             else:
                 failed += 1
 
+        if sent_ids:
+            AbsenceAlert.objects.filter(pk__in=sent_ids).update(
+                sms_sent=True, sent_at=timezone.now()
+            )
+
         return Response(
             {
                 'date': str(today),
-                'sent': sent,
+                'sent': len(sent_ids),
                 'failed': failed,
                 'wa_urls': wa_urls,
             }

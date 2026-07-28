@@ -73,11 +73,16 @@ class StaffProfile(models.Model):
 
     @property
     def current_class_assignment(self):
-        """Return the active ClassTeacherAssignment for the current academic year, or None."""
-        return self.class_assignments.filter(
-            is_active=True,
-            academic_year__is_current=True,
-        ).first()
+        """
+        Return the active ClassTeacherAssignment for the current academic year, or None.
+        Iterates the (typically prefetched via 'class_assignments__academic_year')
+        cache instead of `.filter(...)`, which would issue a fresh query even
+        when the relation was already prefetched by the caller's queryset.
+        """
+        for assignment in self.class_assignments.all():
+            if assignment.is_active and assignment.academic_year.is_current:
+                return assignment
+        return None
 
 
 @receiver(post_save, sender=StaffProfile)

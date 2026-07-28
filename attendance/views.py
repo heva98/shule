@@ -289,9 +289,12 @@ class AbsenteesView(APIView):
         result = []
         for record in qs.order_by('student__last_name'):
             student = record.student
-            primary = (
-                student.guardians.filter(is_primary_contact=True).first()
-                or student.guardians.first()
+            # Reuse the prefetched 'student__guardians' cache — `.filter().first()`
+            # would issue a fresh query per row despite the prefetch above.
+            guardians = list(student.guardians.all())
+            primary = next(
+                (g for g in guardians if g.is_primary_contact),
+                guardians[0] if guardians else None,
             )
             result.append({
                 'student_id':    student.student_id,

@@ -122,9 +122,7 @@ class NotificationService:
         Notify the primary guardian that their child was absent.
         Returns {'channel': ..., 'success': bool, 'wa_url': str|None}.
         """
-        guardian = student.guardians.filter(is_primary_contact=True).first()
-        if not guardian:
-            guardian = student.guardians.first()
+        guardian = _primary_guardian(student)
         if not guardian:
             logger.warning('No guardian for student %s', student.student_id)
             return {'success': False, 'reason': 'no guardian'}
@@ -166,19 +164,14 @@ class NotificationService:
                 sent_by_id=None,
                 total_recipients=1,
             )
-            ok = _send_email(email_msg, guardian.email, guardian.full_name)
-            if ok:
-                email_msg.delivered_count = 1
-                email_msg.save(update_fields=['delivered_count'])
+            _queue_email(email_msg, guardian.email, guardian.full_name)
 
         return result
 
     @staticmethod
     def send_fee_reminder(invoice) -> dict:
         """Send a fee balance reminder to the student's primary guardian."""
-        guardian = invoice.student.guardians.filter(is_primary_contact=True).first()
-        if not guardian:
-            guardian = invoice.student.guardians.first()
+        guardian = _primary_guardian(invoice.student)
         if not guardian:
             return {'success': False, 'reason': 'no guardian'}
 
@@ -219,10 +212,7 @@ class NotificationService:
                 sent_by_id=None,
                 total_recipients=1,
             )
-            ok = _send_email(email_msg, guardian.email, guardian.full_name)
-            if ok:
-                email_msg.delivered_count = 1
-                email_msg.save(update_fields=['delivered_count'])
+            _queue_email(email_msg, guardian.email, guardian.full_name)
 
         return result
 
@@ -267,10 +257,7 @@ class NotificationService:
                 sent_by=None,
                 total_recipients=1,
             )
-            ok = _send_email(email_msg, user.email, user.full_name)
-            if ok:
-                email_msg.delivered_count = 1
-                email_msg.save(update_fields=['delivered_count'])
+            _queue_email(email_msg, user.email, user.full_name)
 
         return result
 
@@ -298,35 +285,48 @@ class NotificationService:
         total = 0
         delivered = 0
         wa_urls = []
+        wa_logs = []
+        is_email = message_obj.message_type == 'EMAIL'
 
         for student in qs:
-            guardian = (
-                student.guardians.filter(is_primary_contact=True).first()
-                or student.guardians.first()
-            )
+            guardian = _primary_guardian(student)
             if not guardian:
                 continue
 
             total += 1
 
-            if message_obj.message_type == 'EMAIL' and guardian.email:
-                ok = _send_email(message_obj, guardian.email, guardian.full_name)
-                if ok:
-                    delivered += 1
+            if is_email and guardian.email:
+                # Real SMTP calls are the slow part of a broadcast — hand each
+                # one to Celery instead of blocking the request per recipient.
+                _queue_email(message_obj, guardian.email, guardian.full_name)
 
             elif message_obj.message_type in ('WHATSAPP', 'SMS'):
                 phone = guardian.whatsapp_phone or guardian.phone
                 if phone:
-                    wa_url = _send_whatsapp(message_obj, phone, guardian.full_name)
+                    wa_url = build_whatsapp_url(phone, message_obj.body)
                     wa_urls.append({'student': student.student_id, 'url': wa_url})
+                    wa_logs.append(MessageLog(
+                        message=message_obj,
+                        recipient_phone=phone,
+                        recipient_name=guardian.full_name,
+                        status=DeliveryStatus.SENT,
+                        whatsapp_url=wa_url,
+                        provider_response={'channel': 'whatsapp', 'url_generated': True},
+                    ))
                     delivered += 1
 
+        if wa_logs:
+            # One INSERT for the whole audience instead of one per recipient.
+            MessageLog.objects.bulk_create(wa_logs)
+
         message_obj.total_recipients = total
-        message_obj.delivered_count = delivered
+        # For email, delivered_count starts at 0 and is incremented by
+        # send_email_task as each send actually completes.
+        message_obj.delivered_count = 0 if is_email else delivered
         message_obj.save(update_fields=['total_recipients', 'delivered_count'])
 
         return {
             'total_recipients': total,
-            'delivered': delivered,
+            'delivered': message_obj.delivered_count,
             'wa_urls': wa_urls,
         }
