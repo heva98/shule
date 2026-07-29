@@ -121,7 +121,7 @@ class BroadcastView(APIView):
 class FeeReminderView(APIView):
     """
     POST /api/communications/fee-reminders/
-    Send a WhatsApp/email fee reminder for one student's oldest outstanding invoice.
+    Email a fee reminder for one student's oldest outstanding invoice.
     Body: {"student_id": "SHULE-2024-0001"}
     """
     permission_classes = [IsAuthenticated]
@@ -161,7 +161,6 @@ class FeeReminderView(APIView):
         result = NotificationService.send_fee_reminder(invoice)
         return Response({
             'success': result.get('success', False),
-            'wa_url': result.get('wa_url'),
             'student_id': student_id,
         }, status=status.HTTP_200_OK)
 
@@ -169,7 +168,7 @@ class FeeReminderView(APIView):
 class BulkFeeReminderView(APIView):
     """
     POST /api/communications/bulk-fee-reminders/
-    Send one fee reminder per student who has any outstanding invoice.
+    Email one fee reminder per student who has any outstanding invoice.
     """
     permission_classes = [IsAuthenticated]
 
@@ -232,20 +231,11 @@ class SendAbsenceAlertsView(APIView):
 
         sent_ids = []
         failed = 0
-        wa_urls = []
 
         for alert in alerts:
             result = NotificationService.send_absence_alert(alert.student, today)
             if result.get('success'):
                 sent_ids.append(alert.pk)
-                if result.get('wa_url'):
-                    wa_urls.append(
-                        {
-                            'student_id': alert.student.student_id,
-                            'student_name': alert.student.full_name,
-                            'url': result['wa_url'],
-                        }
-                    )
             else:
                 failed += 1
 
@@ -259,6 +249,5 @@ class SendAbsenceAlertsView(APIView):
                 'date': str(today),
                 'sent': len(sent_ids),
                 'failed': failed,
-                'wa_urls': wa_urls,
             }
         )

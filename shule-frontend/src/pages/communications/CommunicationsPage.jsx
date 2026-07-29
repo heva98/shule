@@ -34,7 +34,8 @@ import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CHANNELS = [
-  { value: 'WHATSAPP', label: 'WhatsApp', Icon: MessageCircle, enabled: true },
+  { value: 'WHATSAPP', label: 'WhatsApp', Icon: MessageCircle, enabled: false,
+    badge: 'Not connected yet' },
   { value: 'EMAIL',    label: 'Email',    Icon: Mail,           enabled: true },
   { value: 'SMS',      label: 'SMS',      Icon: Smartphone,     enabled: false,
     badge: "Africa's Talking — coming soon" },
@@ -236,7 +237,7 @@ function ComposeTab() {
   const queryClient = useQueryClient()
   const { levelOptions } = useSchoolLevels()
 
-  const [channel,           setChannel]           = useState('WHATSAPP')
+  const [channel,           setChannel]           = useState('EMAIL')
   const [audience,          setAudience]          = useState('SCHOOL')
   const [targetLevel,       setTargetLevel]       = useState('')
   const [targetStream,      setTargetStream]      = useState('')
@@ -309,13 +310,11 @@ function ComposeTab() {
     setQuickLoading((p) => ({ ...p, absentees: true }))
     try {
       const r = await sendAbsenceAlerts()
-      const urls = r.wa_urls ?? []
-      if (r.sent === 0 && urls.length === 0) {
+      if (r.sent === 0) {
         toast('No unsent absence alerts for today.')
       } else {
-        toast.success(`${r.sent || urls.length} absence alert${(r.sent || urls.length) !== 1 ? 's' : ''} sent.`)
+        toast.success(`${r.sent} absence alert${r.sent !== 1 ? 's' : ''} sent.`)
       }
-      if (urls.length) setWaUrls(urls)
       queryClient.invalidateQueries({ queryKey: ['msg-history'] })
     } catch {
       toast.error('Could not send absence alerts.')

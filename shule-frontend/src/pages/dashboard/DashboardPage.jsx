@@ -94,13 +94,8 @@ export default function DashboardPage() {
   async function sendReminder(studentId) {
     setSendingId(studentId)
     try {
-      const data = await sendFeeReminder(studentId)
-      if (data.wa_url) {
-        window.open(data.wa_url, '_blank', 'noopener,noreferrer')
-        toast.success('WhatsApp opened with pre-filled reminder.')
-      } else {
-        toast.success('Reminder sent via email.')
-      }
+      await sendFeeReminder(studentId)
+      toast.success('Reminder sent via email.')
     } catch (err) {
       toast.error(err.response?.data?.detail ?? 'Failed to send reminder. Try again.')
     } finally {

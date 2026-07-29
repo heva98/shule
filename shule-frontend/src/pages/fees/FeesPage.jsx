@@ -517,9 +517,8 @@ function DefaultersTab() {
 
   async function handleSendReminder(d) {
     try {
-      const res = await sendFeeReminder(d.student_id)
-      if (res.wa_url) window.open(res.wa_url, '_blank', 'noopener')
-      else toast.success(`Reminder sent for ${d.student_name}`)
+      await sendFeeReminder(d.student_id)
+      toast.success(`Reminder sent for ${d.student_name}`)
     } catch {
       toast.error(`Could not send reminder for ${d.student_name}`)
     }

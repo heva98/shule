@@ -43,6 +43,10 @@ class BroadcastSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
+        if attrs.get('message_type') == 'WHATSAPP':
+            raise serializers.ValidationError(
+                {'message_type': 'WhatsApp sending is not connected yet — use Email.'}
+            )
         audience = attrs.get('audience')
         if audience == 'LEVEL' and not attrs.get('target_level'):
             raise serializers.ValidationError(

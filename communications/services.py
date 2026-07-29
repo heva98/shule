@@ -120,7 +120,9 @@ class NotificationService:
     def send_absence_alert(student, date) -> dict:
         """
         Notify the primary guardian that their child was absent.
-        Returns {'channel': ..., 'success': bool, 'wa_url': str|None}.
+        Email-only for now — WhatsApp isn't actually wired up to a
+        provider yet, so we don't pretend to send it.
+        Returns {'success': bool, 'channel': 'email'|None}.
         """
         guardian = _primary_guardian(student)
         if not guardian:
@@ -134,46 +136,35 @@ class NotificationService:
             f"Tafadhali wasiliana nasi."
         )
 
-        # Create a transient Message record for logging
-        msg = Message.objects.create(
-            subject='Absence Alert',
+        if not guardian.email:
+            return {'success': False, 'reason': 'no email on file'}
+
+        email_msg = Message.objects.create(
+            subject='Absence Notification',
             body=body,
-            message_type='WHATSAPP',
+            message_type='EMAIL',
             audience='INDIVIDUAL',
             target_student=student,
-            sent_by_id=None,     # system-generated; set via service caller if needed
+            sent_by_id=None,
             total_recipients=1,
         )
+        _queue_email(email_msg, guardian.email, guardian.full_name)
 
-        result = {'success': False, 'wa_url': None}
-
-        if guardian.whatsapp_phone or guardian.phone:
-            phone = guardian.whatsapp_phone or guardian.phone
-            wa_url = _send_whatsapp(msg, phone, guardian.full_name)
-            msg.delivered_count = 1
-            msg.save(update_fields=['delivered_count'])
-            result = {'success': True, 'channel': 'whatsapp', 'wa_url': wa_url}
-
-        if guardian.email:
-            email_msg = Message.objects.create(
-                subject='Absence Notification',
-                body=body,
-                message_type='EMAIL',
-                audience='INDIVIDUAL',
-                target_student=student,
-                sent_by_id=None,
-                total_recipients=1,
-            )
-            _queue_email(email_msg, guardian.email, guardian.full_name)
-
-        return result
+        return {'success': True, 'channel': 'email'}
 
     @staticmethod
     def send_fee_reminder(invoice) -> dict:
-        """Send a fee balance reminder to the student's primary guardian."""
+        """
+        Send a fee balance reminder to the student's primary guardian.
+        Email-only for now — WhatsApp isn't actually wired up to a
+        provider yet, so we don't pretend to send it.
+        """
         guardian = _primary_guardian(invoice.student)
         if not guardian:
             return {'success': False, 'reason': 'no guardian'}
+
+        if not guardian.email:
+            return {'success': False, 'reason': 'no email on file'}
 
         body = (
             f"Dear {guardian.full_name}, "
@@ -184,37 +175,18 @@ class NotificationService:
             f"disruption. Thank you."
         )
 
-        result = {'success': False, 'wa_url': None}
+        email_msg = Message.objects.create(
+            subject='Fee Reminder',
+            body=body,
+            message_type='EMAIL',
+            audience='INDIVIDUAL',
+            target_student=invoice.student,
+            sent_by_id=None,
+            total_recipients=1,
+        )
+        _queue_email(email_msg, guardian.email, guardian.full_name)
 
-        if guardian.whatsapp_phone or guardian.phone:
-            phone = guardian.whatsapp_phone or guardian.phone
-            msg = Message.objects.create(
-                subject='Fee Reminder',
-                body=body,
-                message_type='WHATSAPP',
-                audience='INDIVIDUAL',
-                target_student=invoice.student,
-                sent_by_id=None,
-                total_recipients=1,
-            )
-            wa_url = _send_whatsapp(msg, phone, guardian.full_name)
-            msg.delivered_count = 1
-            msg.save(update_fields=['delivered_count'])
-            result = {'success': True, 'channel': 'whatsapp', 'wa_url': wa_url}
-
-        if guardian.email:
-            email_msg = Message.objects.create(
-                subject='Fee Reminder',
-                body=body,
-                message_type='EMAIL',
-                audience='INDIVIDUAL',
-                target_student=invoice.student,
-                sent_by_id=None,
-                total_recipients=1,
-            )
-            _queue_email(email_msg, guardian.email, guardian.full_name)
-
-        return result
+        return {'success': True, 'channel': 'email'}
 
     @staticmethod
     def notify_staff(staff_profile, title: str, body: str, category: str = 'GENERAL') -> dict:
