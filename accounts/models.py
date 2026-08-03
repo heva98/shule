@@ -195,7 +195,7 @@ class SchoolSettings(models.Model):
     # Which level groups this school operates — e.g. ["PRIMARY","OLEVEL","ALEVEL"]
     active_levels       = models.JSONField(
         default=list, blank=True,
-        help_text='Level groups the school runs: PRIMARY, OLEVEL, ALEVEL',
+        help_text='Level groups the school runs: NURSERY, PRIMARY, OLEVEL, ALEVEL',
     )
     established_year    = models.IntegerField(null=True, blank=True)
 

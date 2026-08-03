@@ -3,6 +3,7 @@ import { getSchoolConfig } from '../api/config'
 import { LEVEL_OPTIONS } from '../lib/constants'
 
 export const ALL_LEVEL_GROUPS = [
+  { value: 'NURSERY', label: 'Nursery (Baby – Senior)' },
   { value: 'PRIMARY', label: 'Standard 1 – 7' },
   { value: 'OLEVEL',  label: 'O-Level (Form 1 – 4)' },
   { value: 'ALEVEL',  label: 'A-Level (Form 5 – 6)' },
@@ -10,6 +11,7 @@ export const ALL_LEVEL_GROUPS = [
 
 // Which individual levels belong to each group
 const GROUP_LEVELS = {
+  NURSERY: ['N_BABY', 'N_MIDDLE', 'N_SENIOR'],
   PRIMARY: ['STD1', 'STD2', 'STD3', 'STD4', 'STD5', 'STD6', 'STD7'],
   OLEVEL:  ['FORM1', 'FORM2', 'FORM3', 'FORM4'],
   ALEVEL:  ['FORM5', 'FORM6'],

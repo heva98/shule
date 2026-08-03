@@ -8,6 +8,9 @@ from django.utils import timezone
 
 
 class Level(models.TextChoices):
+    NURSERY_BABY = 'N_BABY', 'Baby Class'
+    NURSERY_MIDDLE = 'N_MIDDLE', 'Middle Class'
+    NURSERY_SENIOR = 'N_SENIOR', 'Senior Class'
     STD1 = 'STD1', 'Standard 1'
     STD2 = 'STD2', 'Standard 2'
     STD3 = 'STD3', 'Standard 3'

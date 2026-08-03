@@ -4,6 +4,8 @@ from django.contrib.auth import authenticate
 from django.utils import timezone
 from rest_framework import serializers
 
+from exams.models import LevelGroup
+
 from .models import AuditLog, Role, SchoolSettings, User
 from .utils import log_action
 
@@ -179,8 +181,10 @@ class SchoolSettingsSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Invalid format for active_levels.')
         if not isinstance(value, list):
             raise serializers.ValidationError('active_levels must be a list.')
-        valid = {'PRIMARY', 'OLEVEL', 'ALEVEL'}
+        valid = set(LevelGroup.values)
         for item in value:
             if item not in valid:
-                raise serializers.ValidationError(f'Invalid level: {item}. Must be PRIMARY, OLEVEL, or ALEVEL.')
+                raise serializers.ValidationError(
+                    f'Invalid level: {item}. Must be one of: {", ".join(LevelGroup.values)}.'
+                )
         return value

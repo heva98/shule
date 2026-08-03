@@ -20,6 +20,7 @@ const SCHOOL_TYPES = [
 ]
 
 const LEVEL_GROUPS = [
+  { value: 'NURSERY', label: 'Nursery (Baby – Senior)', desc: 'Baby, Middle & Senior classes' },
   { value: 'PRIMARY', label: 'Standard 1 – 7', desc: 'Primary school levels' },
   { value: 'OLEVEL',  label: 'O-Level (Form 1 – 4)', desc: 'Ordinary level secondary' },
   { value: 'ALEVEL',  label: 'A-Level (Form 5 – 6)', desc: 'Advanced level secondary' },

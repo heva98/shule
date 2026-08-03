@@ -28,12 +28,15 @@ from .utils import get_grade, get_form4_division, get_psle_aggregate
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+NURSERY_LEVELS = {'N_BABY', 'N_MIDDLE', 'N_SENIOR'}
 PRIMARY_LEVELS = {'STD1', 'STD2', 'STD3', 'STD4', 'STD5', 'STD6', 'STD7'}
 OLEVEL_LEVELS  = {'FORM1', 'FORM2', 'FORM3', 'FORM4'}
 ALEVEL_LEVELS  = {'FORM5', 'FORM6'}
 
 
 def _level_group(level: str) -> str:
+    if level in NURSERY_LEVELS:
+        return LevelGroup.NURSERY
     if level in PRIMARY_LEVELS:
         return LevelGroup.PRIMARY
     if level in OLEVEL_LEVELS:

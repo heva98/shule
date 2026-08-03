@@ -10,6 +10,7 @@ from .utils import get_grade
 
 
 class LevelGroup(models.TextChoices):
+    NURSERY = 'NURSERY', 'Nursery (Baby-Senior)'
     PRIMARY = 'PRIMARY', 'Primary (Std 1-7)'
     OLEVEL = 'OLEVEL', 'O-Level (Form 1-4)'
     ALEVEL = 'ALEVEL', 'A-Level (Form 5-6)'

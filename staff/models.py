@@ -54,7 +54,7 @@ class StaffProfile(models.Model):
     # Level groups this staff member is associated with — [] means all levels
     taught_levels  = models.JSONField(
         default=list, blank=True,
-        help_text='Level groups: PRIMARY, OLEVEL, ALEVEL. Empty = all levels.',
+        help_text='Level groups: NURSERY, PRIMARY, OLEVEL, ALEVEL. Empty = all levels.',
     )
     hire_date      = models.DateField()
     contract_type  = models.CharField(max_length=10, choices=ContractType.choices)

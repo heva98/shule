@@ -1,4 +1,7 @@
 export const LEVEL_OPTIONS = [
+  { value: 'N_BABY', label: 'Baby Class' },
+  { value: 'N_MIDDLE', label: 'Middle Class' },
+  { value: 'N_SENIOR', label: 'Senior Class' },
   { value: 'STD1', label: 'Standard 1' },
   { value: 'STD2', label: 'Standard 2' },
   { value: 'STD3', label: 'Standard 3' },
