@@ -33,7 +33,7 @@ The **Academic Teacher** role is responsible for academic coordination across th
 Your dashboard shows:
 - **Total Students**, **Fees Collected** (read-only view), **Outstanding Fees**, **Today's Attendance**
 - **Monthly Revenue chart** — fee collection trends
-- **Top Defaulters** — you can send a fee reminder via WhatsApp from here
+- **Top Defaulters** — you can email a fee reminder from here
 
 ---
 
@@ -113,7 +113,7 @@ You can view all staff profiles but cannot add or remove staff members — that 
 1. Click **Communications**.
 2. Click **+ New Message**.
 3. Choose:
-   - **Channel**: WhatsApp or Email
+   - **Channel**: **Email** (WhatsApp is listed but disabled — not connected yet)
    - **Audience**: All Students, By Level, By Class, or Individual
    - Enter **Subject** and **Message**.
 4. Click **Send**.

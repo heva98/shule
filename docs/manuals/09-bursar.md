@@ -36,7 +36,7 @@ Your Dashboard shows the most important financial metrics at a glance:
 
 **Monthly Revenue Chart** — bar chart showing fee collection per month. Use this to spot slow months and plan follow-up campaigns.
 
-**Top Fee Defaulters** — the 5 students with the highest outstanding balance. Click **Send Reminder** to open a pre-filled WhatsApp message to the guardian, or the system will send an email if configured.
+**Top Fee Defaulters** — the 5 students with the highest outstanding balance. Click **Send Reminder** to email the guardian a reminder (requires an email address on file for the guardian).
 
 ---
 
@@ -89,13 +89,13 @@ Fee structures define how much each level is charged per quarter.
 2. Click **+ Add Structure**.
 3. Fill in:
    - **Academic Year** — e.g. 2025
-   - **Level** — e.g. Form 2, Std 5
+   - **Level** — e.g. Form 2, Std 5, or a nursery class (Baby/Middle/Senior)
    - **Term** — Term 1 or Term 2
    - **Quarter** — Q1, Q2, Q3, or Q4 (Quarter list updates based on your Term selection)
    - **Amount (TZS)** — the fee for this level/quarter
 4. Click **Save**.
 
-> Repeat this process for every level and quarter. For example, if you have 7 primary levels and 4 secondary levels across 4 quarters, you will create 44 fee structures for the year.
+> Repeat this process for every level and quarter. For example, with 3 nursery levels, 7 primary levels, and 6 secondary levels across 4 quarters, you will create 64 fee structures for the year.
 
 #### Editing a Fee Structure
 Click the **edit icon** on any row to update the amount. Changes do not affect already-generated invoices — only new invoices going forward.
@@ -171,8 +171,8 @@ The Defaulters tab lists all students with outstanding balances.
 
 #### Sending a Fee Reminder
 1. Click **Send Reminder** on a defaulter's row.
-2. If the guardian has a WhatsApp number, a pre-filled WhatsApp message opens. Send it from your phone or computer.
-3. If the guardian has only an email, a reminder email is sent automatically.
+2. If the guardian has an email address on file, a reminder email is sent automatically.
+3. If the guardian has no email on file, the reminder cannot be sent — contact them by phone instead. (WhatsApp reminders are not available; that channel is not connected yet.)
 
 > The system also runs an automatic fee reminder every Monday morning for all overdue invoices. You can trigger it manually from the Dashboard's **Send Reminder** button on the defaulters card.
 

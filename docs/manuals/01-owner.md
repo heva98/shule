@@ -30,7 +30,7 @@ The blue sidebar on the left contains all menu items:
 | Attendance | Daily attendance register and reports |
 | Exams | Create exams, enter marks, view results |
 | Staff | Staff profiles, leave requests, class assignments |
-| Communications | Send messages to parents via WhatsApp or email |
+| Communications | Send messages to parents via email |
 | **Admin Panel** | System configuration (see Section 9) |
 
 ---
@@ -47,7 +47,7 @@ The Dashboard loads automatically after login and shows a live snapshot of schoo
 
 **Monthly Revenue chart** — bar chart of fee collections per month.
 
-**Top Fee Defaulters** — the 5 students with the highest outstanding balance. Click **Send Reminder** on any row to open a pre-filled WhatsApp message to the student's guardian.
+**Top Fee Defaulters** — the 5 students with the highest outstanding balance. Click **Send Reminder** on any row to email the student's guardian a fee reminder.
 
 ---
 
@@ -63,8 +63,8 @@ The Dashboard loads automatically after login and shows a live snapshot of schoo
 1. Click **Students → New Student** (or the **+ Add Student** button).
 2. Fill in all required fields:
    - **Personal:** First name, last name, date of birth, gender
-   - **Academic:** Level (Std 1–7 or Form 1–6), stream, admission date
-   - **Guardian:** Full name, relationship, phone, email, WhatsApp number
+   - **Academic:** Level (Baby/Middle/Senior Class for nursery, Std 1–7, or Form 1–6), stream, admission date
+   - **Guardian:** Full name, relationship, phone, email, WhatsApp number (captured for reference — not currently used to send notifications)
 3. Click **Save**. The system auto-generates a student ID (e.g. `SHULE-2025-0042`).
 
 ### Student Detail Page
@@ -110,7 +110,7 @@ Fee structures define how much each level is charged per quarter.
 ### Viewing Defaulters
 The **Defaulters** tab lists all students with unpaid or partially-paid invoices.
 - Use **Term** and **Quarter** filters to view defaulters for a specific period.
-- Click **Send Reminder** to open a WhatsApp message to the student's guardian.
+- Click **Send Reminder** to email a reminder to the student's guardian.
 
 ---
 
@@ -129,7 +129,7 @@ The **Defaulters** tab lists all students with unpaid or partially-paid invoices
 - The **Daily Summary** card shows the school-wide attendance rate for today.
 
 ### Absence Notifications
-When a student is marked **Absent**, the system can automatically notify the primary guardian by WhatsApp or email. This runs automatically each morning via a scheduled task, or you can trigger it manually from **Admin Panel → System Health → Run Absence Alerts Now**.
+When a student is marked **Absent**, the system can automatically email the primary guardian (only if an email address is on file). This runs automatically each morning via a scheduled task, or you can trigger it manually from **Admin Panel → System Health → Run Absence Alerts Now**.
 
 ---
 
@@ -195,12 +195,10 @@ When a student is marked **Absent**, the system can automatically notify the pri
 ### Sending a Broadcast Message
 1. Click **Communications** in the sidebar.
 2. Click **+ New Message**.
-3. Select the **channel**: WhatsApp (wa.me link) or Email.
+3. Select the **channel**: **Email** (WhatsApp and SMS are shown in the channel list but are not yet connected — WhatsApp is disabled and SMS is "coming soon").
 4. Select the **audience**: All Students, By Level, By Class, or Individual.
 5. Type your subject and message body.
 6. Click **Send**.
-
-For WhatsApp messages, the system generates a link that opens WhatsApp with a pre-filled message. You click **Open** for each recipient.
 
 ---
 

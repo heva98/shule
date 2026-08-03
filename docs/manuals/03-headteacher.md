@@ -40,7 +40,7 @@ The Dashboard shows a snapshot of school performance:
 - **Outstanding Fees** — unpaid balances
 - **Today's Attendance** — present percentage for today
 
-Scroll down to see the **Monthly Revenue** chart and the **Top Fee Defaulters** list. You can send a WhatsApp fee reminder directly from the defaulters list by clicking **Send Reminder**.
+Scroll down to see the **Monthly Revenue** chart and the **Top Fee Defaulters** list. You can email a fee reminder directly from the defaulters list by clicking **Send Reminder**.
 
 ---
 
@@ -49,7 +49,7 @@ Scroll down to see the **Monthly Revenue** chart and the **Top Fee Defaulters** 
 ### Finding a Student
 1. Click **Students** in the sidebar.
 2. Type a name, student ID, or phone number in the search bar.
-3. Filter by **Level** (Std 1–6 or Form 1–6) or **Status** (Active, Transferred, etc.).
+3. Filter by **Level** (Nursery: Baby/Middle/Senior Class, Std 1–7, or Form 1–6) or **Status** (Active, Transferred, etc.).
 4. Click a row to open the student's full profile.
 
 ### Enrolling a New Student
@@ -57,7 +57,7 @@ Scroll down to see the **Monthly Revenue** chart and the **Top Fee Defaulters** 
 2. Complete all sections:
    - **Personal details** — names, date of birth, gender
    - **Academic details** — level, stream, admission date
-   - **Guardian details** — name, relationship, phone, email, WhatsApp
+   - **Guardian details** — name, relationship, phone, email, WhatsApp number (contact info only — not currently used for notifications)
 3. Click **Save**. A student ID is assigned automatically.
 
 ### Student Profile Tabs
@@ -94,7 +94,7 @@ Scroll down to see the **Monthly Revenue** chart and the **Top Fee Defaulters** 
 4. Click **Save**. A receipt number is generated.
 
 ### Defaulters
-The **Defaulters** tab shows students with unpaid or partial invoices. Use the Term/Quarter filters to view a specific period. Click **Send Reminder** to trigger a WhatsApp or email notification to the guardian.
+The **Defaulters** tab shows students with unpaid or partial invoices. Use the Term/Quarter filters to view a specific period. Click **Send Reminder** to email a notification to the guardian.
 
 ---
 
@@ -177,12 +177,10 @@ Use the **Absentees** view (filter by date) to see all absent students with thei
 1. Click **Communications** in the sidebar.
 2. Click **+ New Message**.
 3. Select:
-   - **Channel** — WhatsApp or Email
+   - **Channel** — **Email** (WhatsApp is listed but disabled — sending is not connected yet; SMS is coming soon)
    - **Audience** — All Students, By Level, By Class, or Individual Student
    - **Subject** and **Message body**
 4. Click **Send**.
-
-For WhatsApp, a wa.me link is generated. Click **Open WhatsApp** for each recipient to send the message from your phone or computer.
 
 ---
 
@@ -206,4 +204,4 @@ For WhatsApp, a wa.me link is generated. Click **Open WhatsApp** for each recipi
 **Following up on absentees:**
 1. Go to **Attendance** and filter for today's date.
 2. Use the **Absentees** view to see all absent students and their guardian phone numbers.
-3. Call or send a WhatsApp message to each guardian.
+3. Call each guardian, or go to **Communications → + New Message**, select **Individual Student**, and email them directly.

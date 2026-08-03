@@ -76,7 +76,7 @@ Consistent absenteeism or lateness can be an indicator of conduct issues. To ide
 
 ## 6. Notifications
 
-When a Class Teacher or Headteacher records a disciplinary incident and refers it to you, you will receive an **in-app notification**. Look for the notification badge in the top bar (if visible), or check your email/WhatsApp if the system is configured to send notifications.
+When a Class Teacher or Headteacher records a disciplinary incident and refers it to you, you will receive an **in-app notification**. Look for the notification badge in the top bar.
 
 ---
 

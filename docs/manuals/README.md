@@ -30,10 +30,12 @@ This folder contains one user manual per staff role. Give each staff member only
 - **Term 1** → Q1 (Jan–Mar) + Q2 (Apr–Jun)  
 - **Term 2** → Q3 (Jul–Sep) + Q4 (Oct–Nov)
 
+**Levels:** Nursery (Baby Class, Middle Class, Senior Class), Standard 1–7, Form 1–6
+
 **Currency:** All amounts in Tanzanian Shillings (TZS)
 
-**WhatsApp notifications:** Active via wa.me links — click to open WhatsApp with a pre-filled message  
-**Email notifications:** Active if SMTP is configured (check with System Administrator)
+**WhatsApp notifications:** Not connected yet — the WhatsApp channel is disabled in Communications and fee/absence reminders no longer generate wa.me links. Guardian WhatsApp numbers are still captured on student profiles for future use.  
+**Email notifications:** Active if SMTP is configured (check with System Administrator) — this is currently the only working channel for reminders and alerts
 
 ---
 

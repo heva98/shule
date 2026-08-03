@@ -45,7 +45,7 @@ MANUALS = [
             ("Attendance", "Mark and review the daily register for any class. View per-student summaries and school-wide daily rates.", "attendance"),
             ("Exams", "Create exams, enter marks, and view results. Report cards are generated automatically.", "exams"),
             ("Staff", "Manage staff profiles, approve leave requests, assign class teachers, and record disciplinary incidents.", "staff"),
-            ("Communications", "Send WhatsApp or email broadcast messages to parents by level, class, or individually.", "communications"),
+            ("Communications", "Send email broadcast messages to parents by level, class, or individually. WhatsApp is listed but not yet connected.", "communications"),
             ("Admin Dashboard", "The System Admin panel shows user stats, quick actions, and a live activity feed.", "admin_dash"),
             ("User Management", "Create, edit, deactivate, and bulk-import user accounts.", "admin_users"),
             ("School Settings", "Update school name, logo, contact details, and notification channel status.", "admin_settings"),
@@ -65,7 +65,7 @@ MANUALS = [
             ("Academic Year Setup", "Create academic years with Q1–Q4 date ranges. Set the current active year.", "admin_years"),
             ("School Settings", "Update school identity (logo, name, motto), contact details, and Tanzania region. View notification channel status.", "admin_settings"),
             ("Audit Logs", "Timeline of every admin action: who did what, when, and from which IP address. Filterable and exportable to CSV.", "admin_audit"),
-            ("System Health", "Live service status: Database (with latency), Celery worker, Email (SMTP), WhatsApp, SMS. Auto-refreshes every 30 seconds.", "admin_health"),
+            ("System Health", "Live service status: Database (with latency), Celery worker, Email (SMTP), WhatsApp, SMS. Auto-refreshes every 30 seconds. Note: the WhatsApp indicator is cosmetic — that channel is disabled system-wide, so email is the only working notification channel.", "admin_health"),
         ],
     },
     # ── 4. Headteacher ────────────────────────────────────────────────────────
@@ -74,13 +74,13 @@ MANUALS = [
         "label": "Headteacher",
         "intro": "The Headteacher has full oversight of school operations — students, fees, attendance, exams, staff management, and parent communications.",
         "sections": [
-            ("Dashboard", "School-wide metrics and top defaulters list with one-click WhatsApp fee reminders.", "dashboard"),
+            ("Dashboard", "School-wide metrics and top defaulters list with one-click email fee reminders.", "dashboard"),
             ("Students", "Enrol new students, view and edit profiles, access guardian contact details.", "students"),
             ("Fees", "View fee structures, generate invoices, record payments, and manage defaulters.", "fees"),
             ("Attendance", "Mark attendance for any class, view daily summaries and per-student attendance rates.", "attendance"),
             ("Exams", "Create exams, supervise mark entry, view results and report cards.", "exams"),
             ("Staff", "View and edit staff profiles, approve leave requests, assign class teachers, review disciplinary incidents.", "staff"),
-            ("Communications", "Send WhatsApp or email messages to parents — by level, class, or individually.", "communications"),
+            ("Communications", "Send email messages to parents — by level, class, or individually. (WhatsApp is not yet connected.)", "communications"),
         ],
     },
     # ── 5. Academic Teacher ────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ MANUALS = [
             ("Attendance", "Mark attendance for any class. View school-wide patterns and absentee lists.", "attendance"),
             ("Exams", "Create exams for any level. Enter marks for any exam. Review all results.", "exams"),
             ("Staff", "View staff profiles and class assignments.", "staff"),
-            ("Communications", "Send messages to parents by level, class, or individually.", "communications"),
+            ("Communications", "Send email messages to parents by level, class, or individually. WhatsApp is not yet connected.", "communications"),
         ],
     },
     # ── 6. Discipline Teacher ─────────────────────────────────────────────────
@@ -149,7 +149,7 @@ MANUALS = [
         "label": "Bursar",
         "intro": "The Bursar manages all fee operations — structures, invoices, payments, and defaulters. They have read access to student records.",
         "sections": [
-            ("Dashboard", "Fees Collected, Outstanding Fees, and the Top Defaulters list with direct WhatsApp reminder buttons.", "dashboard"),
+            ("Dashboard", "Fees Collected, Outstanding Fees, and the Top Defaulters list with one-click email reminder buttons.", "dashboard"),
             ("Students", "View student records and their complete fee history.", "students"),
             ("Fees", "Manage fee structures per level/quarter, generate invoices, record payments (including partial), and chase defaulters.", "fees"),
         ],

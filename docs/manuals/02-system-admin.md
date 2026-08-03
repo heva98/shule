@@ -68,12 +68,12 @@ The last 10 audit log entries. Each shows what was done, by whom, and how long a
 2. Fill in:
    - **Full Name** (required)
    - **Email** (required, must be unique)
-   - **Phone** (optional, used for WhatsApp notifications)
+   - **Phone** (optional — contact info only; WhatsApp notifications are not currently sent by the system)
    - **Role** — select from the role cards (see Section 4.5 for role descriptions)
    - **Password** — auto-generate is on by default. Click **Refresh** to generate a new one.
 3. Click **Create User**.
 4. A success dialog shows the generated password. Click **Copy Password** before closing.
-5. Share the password with the new user securely (WhatsApp or in person).
+5. Share the password with the new user securely (in person or via a secure channel of your choice).
 
 ### Editing a User
 1. Find the user in the table.
@@ -156,7 +156,7 @@ The Role Assignment page gives you a focused two-column interface for changing u
 2. Enter:
    - **Subject Name** — e.g. "Kiswahili"
    - **Code** — short code, e.g. "KSW" (auto-uppercased)
-   - **Level Group** — Primary, O-Level, or A-Level
+   - **Level Group** — Nursery, Primary, O-Level, or A-Level
    - **Compulsory** — tick if all students at this level must sit the subject
 3. Click **Add Subject**.
 
@@ -213,11 +213,11 @@ The Classes tab shows a grid of all classes derived from active student enrolmen
 ### Notification Channels
 The **Notification Channels** section shows the status of each channel:
 
-| Channel | Status | How to configure |
-|---|---|---|
-| **Email (SMTP)** | Configured / Not configured | Edit `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` in the server `.env` file |
-| **WhatsApp** | Always active | Works via wa.me deep-links — no configuration needed |
-| **SMS** | Coming soon | Africa's Talking integration is planned |
+| Channel | Status | How to configure | Notes |
+|---|---|---|---|
+| **Email (SMTP)** | Configured / Not configured | Edit `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` in the server `.env` file | The only working notification channel |
+| **WhatsApp** | Shown as active (wa.me deep-links) | No configuration available | The badge here is a leftover — actual WhatsApp sending is disabled system-wide. Broadcasts, fee reminders, and absence alerts are all email-only regardless of this indicator |
+| **SMS** | Coming soon | Africa's Talking integration is planned | Not usable yet |
 
 ---
 
@@ -254,7 +254,7 @@ The System Health page **auto-refreshes every 30 seconds** and shows the real-ti
 | **Database** | PostgreSQL is responding | Connection error — restart Django service |
 | **Celery Worker** | Background tasks are running | Worker is offline — restart with `celery -A shule worker` |
 | **Email (SMTP)** | EMAIL_HOST is configured | Email not configured in `.env` |
-| **WhatsApp** | Always green | wa.me links always work |
+| **WhatsApp** | Always green | This card is cosmetic — WhatsApp sending is disabled system-wide, so it stays green regardless of anything happening on the backend |
 | **SMS** | Coming soon | — |
 
 The **DB Latency** figure shows how fast the database is responding (normal is < 10ms).
@@ -263,7 +263,7 @@ The **DB Latency** figure shows how fast the database is responding (normal is <
 Shows: active users, total students, storage used (MB), and current DB latency.
 
 ### Manual Actions
-**Run Absence Alerts Now** — triggers the absence notification job immediately. This sends WhatsApp/email alerts to guardians of all students marked absent today. Normally runs automatically at 09:00 daily; use this button if it did not run or needs to be re-sent.
+**Run Absence Alerts Now** — triggers the absence notification job immediately. This emails guardians (with an email on file) of all students marked absent today; guardians without an email address on file are skipped. Normally runs automatically at 09:00 daily; use this button if it did not run or needs to be re-sent.
 
 ---
 
@@ -273,7 +273,7 @@ Shows: active users, total students, storage used (MB), and current DB latency.
 1. Go to **User Management → + Add User**.
 2. Select the appropriate role (CLASS_TEACHER, SUBJECT_TEACHER, etc.).
 3. Copy the generated password.
-4. Share credentials with the teacher via WhatsApp or in person.
+4. Share credentials with the teacher in person or via a secure channel of your choice.
 5. Ask them to log in and change their password.
 
 **Start of academic year:**
