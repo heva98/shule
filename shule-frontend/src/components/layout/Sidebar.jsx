@@ -11,6 +11,7 @@ import {
   CreditCard,
   GraduationCap,
   Heart,
+  HelpCircle,
   LayoutDashboard,
   Library,
   LogOut,
@@ -143,6 +144,15 @@ export default function Sidebar({ onClose }) {
             {ROLE_LABEL[role] ?? role}
           </span>
         </div>
+        <a
+          href="/manual"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors w-full"
+        >
+          <HelpCircle size={15} />
+          User Manual
+        </a>
         <button
           onClick={logout}
           className="flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors w-full"

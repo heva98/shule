@@ -5,7 +5,8 @@ Run AFTER capture_screenshots.py has completed.
 Usage:
     python docs/build_manual.py
 Output:
-    docs/Shule_SMS_User_Manual.html   — single-file manual (open in any browser, print to PDF)
+    docs/Shule_SMS_User_Manual.html                  — single-file manual (open in any browser, print to PDF)
+    shule-frontend/public/manual.html                — same file, served in-app at /manual
 """
 
 import base64
@@ -15,6 +16,7 @@ from pathlib import Path
 
 SCREENSHOT_DIR = Path(__file__).parent / "screenshots"
 OUT_FILE       = Path(__file__).parent / "Shule_SMS_User_Manual.html"
+FRONTEND_COPY  = Path(__file__).parent.parent / "shule-frontend" / "public" / "manual.html"
 
 TODAY = date.today().strftime("%d %B %Y")
 
@@ -365,7 +367,12 @@ def build():
     OUT_FILE.write_text(html, encoding="utf-8")
     size_kb = round(OUT_FILE.stat().st_size / 1024)
     print(f"Manual written to: {OUT_FILE}  ({size_kb} KB)")
-    print("Open in Chrome/Edge and use File → Print → Save as PDF to get the PDF.")
+
+    FRONTEND_COPY.parent.mkdir(parents=True, exist_ok=True)
+    FRONTEND_COPY.write_text(html, encoding="utf-8")
+    print(f"Copied to: {FRONTEND_COPY}  (served in-app at /manual)")
+
+    print("Open in Chrome/Edge and use File -> Print -> Save as PDF to get the PDF.")
 
 
 if __name__ == "__main__":

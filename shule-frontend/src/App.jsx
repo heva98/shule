@@ -42,6 +42,7 @@ const AcademicYearPage = lazy(() => import('./pages/sysadmin/AcademicYearPage'))
 const SchoolSettingsPage = lazy(() => import('./pages/sysadmin/SchoolSettingsPage'))
 const AuditLogPage = lazy(() => import('./pages/sysadmin/AuditLogPage'))
 const SystemHealthPage = lazy(() => import('./pages/sysadmin/SystemHealthPage'))
+const ManualPage = lazy(() => import('./pages/ManualPage'))
 
 const queryClient = new QueryClient()
 
@@ -319,6 +320,16 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={FEATURE_ROLES.PARENT}>
                   <ParentPortalPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Staff user manual — standalone layout, any authenticated role */}
+            <Route
+              path="/manual"
+              element={
+                <ProtectedRoute>
+                  <ManualPage />
                 </ProtectedRoute>
               }
             />
