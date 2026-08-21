@@ -68,6 +68,17 @@ class SubjectViewSet(ModelViewSet):
             return None
         return super().paginate_queryset(queryset)
 
+    # GET /api/exams/subjects/mine/ — subjects assigned to the current
+    # subject teacher, for scoping report/mark-entry pickers to what they
+    # actually teach instead of the full subject list.
+    @action(detail=False, methods=['get'], url_path='mine')
+    def mine(self, request):
+        try:
+            subjects = request.user.staff_profile.subjects.all()
+        except Exception:
+            subjects = Subject.objects.none()
+        return Response(SubjectSerializer(subjects, many=True).data)
+
 
 # ── Exams ─────────────────────────────────────────────────────────────────────
 
@@ -91,6 +102,11 @@ class ExamViewSet(ModelViewSet):
         if p.get('quarter'):
             qs = qs.filter(quarter=p['quarter'])
         return qs
+
+    def paginate_queryset(self, queryset):
+        if self.request.query_params.get('all') == 'true':
+            return None
+        return super().paginate_queryset(queryset)
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -269,11 +285,13 @@ class ExamViewSet(ModelViewSet):
         rows.sort(key=lambda r: r['_sort_key'], reverse=True)
 
         position = 1
+        prev_key = None
         for i, row in enumerate(rows):
-            if i > 0 and row['_sort_key'] == rows[i - 1]['_sort_key']:
+            if i > 0 and row['_sort_key'] == prev_key:
                 row['position'] = rows[i - 1]['position']
             else:
                 row['position'] = position
+            prev_key = row['_sort_key']
             position += 1
             del row['_sort_key']
 
@@ -350,8 +368,25 @@ class ReportCardView(APIView):
             aggregate, _ = get_psle_aggregate(entries)
 
         from accounts.models import User
-        headteacher   = User.objects.filter(role=Role.HEADTEACHER, is_active=True).first()
-        class_teacher = User.objects.filter(role=Role.CLASS_TEACHER, is_active=True).first()
+        from staff.models import ClassTeacherAssignment
+
+        headteacher = User.objects.filter(role=Role.HEADTEACHER, is_active=True).first()
+
+        # The actual class teacher for *this* student's class/year, not just
+        # any active user with the CLASS_TEACHER role — a school with more
+        # than one class teacher would otherwise get an arbitrary name here.
+        assignment = (
+            ClassTeacherAssignment.objects
+            .filter(
+                level=student.level,
+                stream__iexact=student.stream,
+                academic_year=exam.academic_year,
+                is_active=True,
+            )
+            .select_related('teacher__user')
+            .first()
+        )
+        class_teacher = assignment.teacher.user if assignment else None
 
         return Response({
             'student': {
@@ -506,8 +541,8 @@ class ClassPerformanceView(APIView):
             rows.append({
                 'student_id':   student.student_id,
                 'full_name':    student.full_name,
-                'photo':        request.build_absolute_uri(student.profile_photo.url)
-                                if student.profile_photo else None,
+                'photo':        request.build_absolute_uri(student.photo.url)
+                                if student.photo else None,
                 'subjects': [
                     {
                         'code':  e.subject.code,
@@ -526,11 +561,13 @@ class ClassPerformanceView(APIView):
         # Sort by total descending, assign positions
         rows.sort(key=lambda r: r['_sort_total'], reverse=True)
         position = 1
+        prev_total = None
         for i, row in enumerate(rows):
-            if i > 0 and row['_sort_total'] == rows[i - 1]['_sort_total']:
+            if i > 0 and row['_sort_total'] == prev_total:
                 row['position'] = rows[i - 1]['position']
             else:
                 row['position'] = position
+            prev_total = row['_sort_total']
             position += 1
             del row['_sort_total']
 
@@ -540,6 +577,143 @@ class ClassPerformanceView(APIView):
             'stream':   stream or '',
             'students': rows,
             'count':    len(rows),
+        })
+
+
+# ── Subject Performance ────────────────────────────────────────────────────────
+
+class SubjectPerformanceView(APIView):
+    """
+    GET /api/exams/subject-performance/?exam_id=&subject_id=&level=&stream=
+    Shows how a class/level performed in a single subject for one exam —
+    per-student scores plus subject-wide stats (average, high/low, grade
+    distribution, pass rate).
+
+    For SUBJECT_TEACHER: subject_id must be one of their assigned subjects.
+    For CLASS_TEACHER: auto-filters to their assigned class (level+stream).
+    For OWNER / HEADTEACHER / ACADEMIC_TEACHER: level query param is required
+    (stream optional) since they aren't tied to one class.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        role = user.role
+
+        allowed_roles = {
+            Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER,
+            Role.CLASS_TEACHER, Role.SUBJECT_TEACHER,
+        }
+        if role not in allowed_roles:
+            raise PermissionDenied('You do not have permission to view subject performance.')
+
+        exam_id = request.query_params.get('exam_id')
+        subject_id = request.query_params.get('subject_id')
+        if not exam_id:
+            return Response(
+                {'detail': 'exam_id query param is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not subject_id:
+            return Response(
+                {'detail': 'subject_id query param is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        exam = get_object_or_404(Exam, pk=exam_id)
+        subject = get_object_or_404(Subject, pk=subject_id)
+
+        if role == Role.SUBJECT_TEACHER:
+            try:
+                allowed_subject_ids = set(
+                    user.staff_profile.subjects.values_list('id', flat=True)
+                )
+            except Exception:
+                raise PermissionDenied('No staff profile found for subject restriction.')
+            if subject.id not in allowed_subject_ids:
+                raise PermissionDenied(
+                    f'You are not assigned to teach "{subject.name}" ({subject.code}).'
+                )
+
+        if role == Role.CLASS_TEACHER:
+            try:
+                assignment = user.staff_profile.current_class_assignment
+            except Exception:
+                return Response(
+                    {'detail': 'No staff profile found.'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            if not assignment:
+                return Response(
+                    {'detail': 'No active class assignment for the current academic year.'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            level, stream = assignment.level, assignment.stream
+        else:
+            level = request.query_params.get('level')
+            stream = request.query_params.get('stream')
+            if not level:
+                return Response(
+                    {'detail': 'level query param is required.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        student_qs = Student.objects.filter(level=level)
+        if stream:
+            student_qs = student_qs.filter(stream__iexact=stream)
+
+        entries = list(
+            MarkEntry.objects
+            .filter(exam=exam, subject=subject, student__in=student_qs)
+            .select_related('student')
+        )
+
+        rows = [
+            {
+                'student_id':  e.student.student_id,
+                'full_name':   e.student.full_name,
+                'score':       str(e.score),
+                'grade':       e.grade,
+                'remarks':     e.remarks,
+                '_sort_score': e.score,
+            }
+            for e in entries
+        ]
+        rows.sort(key=lambda r: r['_sort_score'], reverse=True)
+        position = 1
+        prev_score = None
+        for i, row in enumerate(rows):
+            if i > 0 and row['_sort_score'] == prev_score:
+                row['position'] = rows[i - 1]['position']
+            else:
+                row['position'] = position
+            prev_score = row['_sort_score']
+            position += 1
+            del row['_sort_score']
+
+        scores = [e.score for e in entries]
+        grade_counts = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0}
+        for e in entries:
+            grade_counts[e.grade] = grade_counts.get(e.grade, 0) + 1
+        pass_count = sum(1 for s in scores if s >= 45)
+
+        stats = {
+            'count':              len(entries),
+            'average':            str(round(sum(scores) / len(scores), 2)) if scores else None,
+            'highest':            str(max(scores)) if scores else None,
+            'lowest':             str(min(scores)) if scores else None,
+            'pass_count':         pass_count,
+            'pass_rate':          round(pass_count / len(scores) * 100, 1) if scores else 0,
+            'grade_distribution': grade_counts,
+        }
+
+        return Response({
+            'exam':     ExamSerializer(exam).data,
+            'subject':  SubjectSerializer(subject).data,
+            'level':    level,
+            'stream':   stream or '',
+            'students': rows,
+            'stats':    stats,
         })
 
 

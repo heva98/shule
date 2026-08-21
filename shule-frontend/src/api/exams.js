@@ -22,6 +22,15 @@ export const getResults = (examId) =>
 export const getRanking = (examId) =>
   api.get(`/exams/${examId}/ranking/`).then((r) => r.data)
 
+export const getClassPerformance = (params = {}) =>
+  api.get('/exams/class-performance/', { params }).then((r) => r.data)
+
+export const getSubjectPerformance = (params = {}) =>
+  api.get('/exams/subject-performance/', { params }).then((r) => r.data)
+
+export const getMySubjects = () =>
+  api.get('/exams/subjects/mine/').then((r) => r.data)
+
 // Report card lives at the students endpoint — single source of truth in students.js
 export { getStudentReportCard as getReportCard } from './students'
 

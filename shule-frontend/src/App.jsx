@@ -30,6 +30,7 @@ const HomePackagesPage = lazy(() => import('./pages/homepackages/HomePackagesPag
 const ExamsPage = lazy(() => import('./pages/exams/ExamsPage'))
 const MarkEntryPage = lazy(() => import('./pages/exams/MarkEntryPage'))
 const ResultsPage = lazy(() => import('./pages/exams/ResultsPage'))
+const ExamReportsPage = lazy(() => import('./pages/exams/ReportsPage'))
 const StaffPage = lazy(() => import('./pages/staff/StaffPage'))
 const CommunicationsPage = lazy(() => import('./pages/communications/CommunicationsPage'))
 const SchoolCalendarPage = lazy(() => import('./pages/calendar/SchoolCalendarPage'))
@@ -214,6 +215,14 @@ export default function App() {
                   element={
                     <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS}>
                       <ResultsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/exams/reports"
+                  element={
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAM_REPORTS}>
+                      <ExamReportsPage />
                     </ProtectedRoute>
                   }
                 />
