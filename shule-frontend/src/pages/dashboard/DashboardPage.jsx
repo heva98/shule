@@ -22,6 +22,7 @@ import { getStudents } from '../../api/students'
 import { getFeeSummary, getMonthlyRevenue, getDefaulters } from '../../api/fees'
 import { getDailySummary } from '../../api/attendance'
 import { sendFeeReminder } from '../../api/communications'
+import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { formatTZS } from '../../lib/format'
 
 // ── Skeleton helpers ──────────────────────────────────────────────────────────
@@ -75,18 +76,21 @@ function ErrorBanner({ message }) {
 
 export default function DashboardPage() {
   const [sendingId, setSendingId] = useState(null)
+  const { enabledModules, modulesLoading } = useEnabledModules()
+  const feesEnabled = !modulesLoading && enabledModules.includes('fees')
+  const attendanceEnabled = !modulesLoading && enabledModules.includes('attendance')
 
   const studentsQ = useQuery({ queryKey: ['dash-students'], queryFn: () => getStudents({ status: 'ACTIVE' }) })
-  const feeQ = useQuery({ queryKey: ['dash-fees'], queryFn: () => getFeeSummary({ term: 'current' }) })
-  const attQ = useQuery({ queryKey: ['dash-attendance'], queryFn: () => getDailySummary() })
-  const defaultersQ = useQuery({ queryKey: ['dash-defaulters'], queryFn: () => getDefaulters({ limit: 5 }) })
-  const monthlyQ = useQuery({ queryKey: ['dash-monthly'], queryFn: () => getMonthlyRevenue() })
+  const feeQ = useQuery({ queryKey: ['dash-fees'], queryFn: () => getFeeSummary({ term: 'current' }), enabled: feesEnabled })
+  const attQ = useQuery({ queryKey: ['dash-attendance'], queryFn: () => getDailySummary(), enabled: attendanceEnabled })
+  const defaultersQ = useQuery({ queryKey: ['dash-defaulters'], queryFn: () => getDefaulters({ limit: 5 }), enabled: feesEnabled })
+  const monthlyQ = useQuery({ queryKey: ['dash-monthly'], queryFn: () => getMonthlyRevenue(), enabled: feesEnabled })
 
   const failedEndpoints = [
     studentsQ.isError && 'Students (/api/students/)',
-    feeQ.isError && 'Fee Summary (/api/fees/summary/)',
-    attQ.isError && 'Attendance (/api/attendance/daily-summary/)',
-    defaultersQ.isError && 'Defaulters (/api/fees/defaulters/)',
+    feesEnabled && feeQ.isError && 'Fee Summary (/api/fees/summary/)',
+    attendanceEnabled && attQ.isError && 'Attendance (/api/attendance/daily-summary/)',
+    feesEnabled && defaultersQ.isError && 'Defaulters (/api/fees/defaulters/)',
   ].filter(Boolean)
 
   const anyError = failedEndpoints.length > 0
@@ -141,7 +145,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {feeQ.isLoading ? (
+        {feesEnabled && (feeQ.isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -155,9 +159,9 @@ export default function DashboardPage() {
                 : 'Current year'
             }
           />
-        )}
+        ))}
 
-        {feeQ.isLoading ? (
+        {feesEnabled && (feeQ.isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -167,9 +171,9 @@ export default function DashboardPage() {
             color="bg-danger"
             subtitle="Unpaid + partial invoices"
           />
-        )}
+        ))}
 
-        {attQ.isLoading ? (
+        {attendanceEnabled && (attQ.isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -187,10 +191,11 @@ export default function DashboardPage() {
                 : 'No records today'
             }
           />
-        )}
+        ))}
       </div>
 
       {/* ── Charts + defaulters grid ── */}
+      {feesEnabled && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Revenue bar chart */}
@@ -315,6 +320,7 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }

@@ -3,7 +3,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from accounts.permissions import SENIOR_STAFF_ROLES
+from accounts.permissions import SENIOR_STAFF_ROLES, ModuleEnabled
 
 from .models import Period, TimetableEntry
 from .serializers import PeriodSerializer, TimetableEntrySerializer
@@ -17,9 +17,10 @@ _MANAGE_ROLES = SENIOR_STAFF_ROLES
 
 class PeriodViewSet(ModelViewSet):
     """CRUD for the school's daily period slots (shared across all classes)."""
+    module = 'timetable'
     queryset = Period.objects.all()
     serializer_class = PeriodSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -33,8 +34,9 @@ class TimetableEntryViewSet(ModelViewSet):
     Filter with ?academic_year=&level=&stream=&teacher=
     Pass ?mine=true to get the requesting teacher's own schedule.
     """
+    module = 'timetable'
     serializer_class = TimetableEntrySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = TimetableEntry.objects.select_related(

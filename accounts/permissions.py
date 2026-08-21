@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.permissions import BasePermission
 
 from .models import Role
@@ -120,3 +121,15 @@ class IsCalendarManagerOrReadOnly(BasePermission):
         if request.method in ('GET', 'HEAD', 'OPTIONS'):
             return True
         return request.user.role in self.MANAGER_ROLES
+
+
+class ModuleEnabled(BasePermission):
+    """
+    Blocks a view whose `module` isn't in settings.ENABLED_MODULES — the
+    server-side half of module visibility, so hiding a module from the nav
+    isn't the only thing standing between a disabled module and its data.
+    Views with no `module` attribute (core, always-on modules) are unaffected.
+    """
+    def has_permission(self, request, view):
+        module = getattr(view, 'module', None)
+        return module is None or module in settings.ENABLED_MODULES

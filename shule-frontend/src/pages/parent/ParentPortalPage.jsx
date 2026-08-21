@@ -27,6 +27,7 @@ import { getTransportAssignments } from '../../api/transport'
 import { getMyChildren } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
 import { useAuth } from '../../context/AuthContext'
+import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { GRADE_BADGE, INVOICE_BADGE, LEVEL_LABEL } from '../../lib/constants'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -663,16 +664,23 @@ function AnnouncementsSection({ level, userId }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { key: 'fees',       label: 'Fees',       Icon: Wallet },
-  { key: 'results',    label: 'Results',    Icon: BookOpen },
-  { key: 'attendance', label: 'Attendance', Icon: Calendar },
-  { key: 'packages',   label: 'Packages',   Icon: Package },
+  { key: 'fees',       label: 'Fees',       Icon: Wallet,   module: 'fees' },
+  { key: 'results',    label: 'Results',    Icon: BookOpen, module: 'reports' },
+  { key: 'attendance', label: 'Attendance', Icon: Calendar, module: 'attendance' },
+  { key: 'packages',   label: 'Packages',   Icon: Package,  module: 'homepackages' },
 ]
 
 export default function ParentPortalPage() {
   const { user, logout } = useAuth()
+  const { enabledModules, modulesLoading } = useEnabledModules()
+  const visibleTabs = TABS.filter(
+    t => !modulesLoading && enabledModules.includes(t.module)
+  )
   const [selectedChildId, setSelectedChildId] = useState(null)
   const [activeTab, setActiveTab]             = useState('fees')
+  const effectiveTab = visibleTabs.some(t => t.key === activeTab)
+    ? activeTab
+    : visibleTabs[0]?.key
 
   const { data: childrenData, isLoading: childrenLoading } = useQuery({
     queryKey: ['my-children'],
@@ -773,18 +781,18 @@ export default function ParentPortalPage() {
                 </div>
               </div>
 
-              <BoardingBadge child={selectedChild} />
-              <TransportBadge child={selectedChild} />
+              {enabledModules.includes('boarding') && <BoardingBadge child={selectedChild} />}
+              {enabledModules.includes('transport') && <TransportBadge child={selectedChild} />}
 
               {/* Tab bar */}
               <div className="flex border-b border-gray-100">
-                {TABS.map(({ key, label, Icon }) => (
+                {visibleTabs.map(({ key, label, Icon }) => (
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
                     className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium
                       transition-colors min-h-[52px]
-                      ${activeTab === key
+                      ${effectiveTab === key
                         ? 'border-b-2 border-primary text-primary bg-primary/3'
                         : 'text-gray-400 hover:text-gray-600'}`}
                   >
@@ -796,20 +804,22 @@ export default function ParentPortalPage() {
 
               {/* Tab content */}
               <div className="p-4">
-                {activeTab === 'fees'       && <FeesTab       child={selectedChild} />}
-                {activeTab === 'results'    && <ResultsTab    child={selectedChild} />}
-                {activeTab === 'attendance' && <AttendanceTab child={selectedChild} />}
-                {activeTab === 'packages'   && <PackagesTab   child={selectedChild} />}
+                {effectiveTab === 'fees'       && <FeesTab       child={selectedChild} />}
+                {effectiveTab === 'results'    && <ResultsTab    child={selectedChild} />}
+                {effectiveTab === 'attendance' && <AttendanceTab child={selectedChild} />}
+                {effectiveTab === 'packages'   && <PackagesTab   child={selectedChild} />}
               </div>
             </div>
           </section>
         )}
 
         {/* Announcements */}
-        <AnnouncementsSection
-          level={selectedChild?.level}
-          userId={user?.id}
-        />
+        {enabledModules.includes('communications') && (
+          <AnnouncementsSection
+            level={selectedChild?.level}
+            userId={user?.id}
+          />
+        )}
       </main>
     </div>
   )

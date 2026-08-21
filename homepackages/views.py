@@ -2,7 +2,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from accounts.permissions import CONTENT_CREATOR_ROLES, SENIOR_STAFF_ROLES
+from accounts.permissions import CONTENT_CREATOR_ROLES, SENIOR_STAFF_ROLES, ModuleEnabled
 
 from .models import HomePackage
 from .serializers import HomePackageSerializer
@@ -18,8 +18,9 @@ class HomePackageViewSet(ModelViewSet):
     CRUD for holiday home packages.
     Filter with ?academic_year=&quarter=&level=&stream=&subject=
     """
+    module = 'homepackages'
     serializer_class = HomePackageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = HomePackage.objects.select_related('subject', 'posted_by', 'academic_year')

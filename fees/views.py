@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from accounts.models import Role
+from accounts.permissions import ModuleEnabled
 from students.models import Student, StudentStatus
 
 from .models import AcademicYear, FeeStructure, Invoice, InvoiceStatus, Payment
@@ -46,8 +47,9 @@ class AcademicYearViewSet(ModelViewSet):
 
 
 class FeeStructureViewSet(ModelViewSet):
+    module = 'fees'
     serializer_class = FeeStructureSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -66,8 +68,9 @@ class FeeStructureViewSet(ModelViewSet):
 
 
 class InvoiceViewSet(ModelViewSet):
+    module = 'fees'
     serializer_class = InvoiceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -166,8 +169,9 @@ class InvoiceViewSet(ModelViewSet):
 
 
 class PaymentViewSet(ModelViewSet):
+    module = 'fees'
     serializer_class = PaymentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -196,7 +200,8 @@ class _DefaultersPagination(PageNumberPagination):
 
 
 class DefaultersView(APIView):
-    permission_classes = [IsAuthenticated]
+    module = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -246,7 +251,8 @@ class DefaultersView(APIView):
 
 class FeeMonthlyView(APIView):
     """GET /api/fees/summary/monthly/?year=YYYY — revenue bar chart data."""
-    permission_classes = [IsAuthenticated]
+    module = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -272,7 +278,8 @@ class FeeMonthlyView(APIView):
 
 
 class FeeSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    module = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)

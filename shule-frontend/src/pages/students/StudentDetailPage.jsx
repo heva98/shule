@@ -36,6 +36,7 @@ import Modal from '../../components/ui/Modal'
 import Skeleton from '../../components/ui/Skeleton'
 import Tabs from '../../components/ui/Tabs'
 import { useAuth } from '../../context/AuthContext'
+import { useEnabledModules } from '../../hooks/useEnabledModules'
 import {
   ATT_BADGE,
   GRADE_BADGE,
@@ -888,20 +889,22 @@ function DocumentsTab({ studentId }) {
 
 const BASE_TABS = [
   { id: 'overview',    label: 'Overview' },
-  { id: 'fees',        label: 'Fees' },
-  { id: 'attendance',  label: 'Attendance' },
-  { id: 'results',     label: 'Results' },
+  { id: 'fees',        label: 'Fees',       module: 'fees' },
+  { id: 'attendance',  label: 'Attendance', module: 'attendance' },
+  { id: 'results',     label: 'Results',    module: 'reports' },
 ]
 
 export default function StudentDetailPage() {
   const { id }    = useParams()
   const navigate  = useNavigate()
   const { user }  = useAuth()
+  const { enabledModules, modulesLoading } = useEnabledModules()
   const readOnly  = READ_ONLY_ROLES.includes(user?.role)
   const canSeeDocuments = DOCUMENT_ROLES.includes(user?.role)
-  const TABS = canSeeDocuments
-    ? [...BASE_TABS, { id: 'documents', label: 'Documents' }]
-    : BASE_TABS
+    && !modulesLoading && enabledModules.includes('documents')
+  const TABS = BASE_TABS
+    .filter(t => !t.module || (!modulesLoading && enabledModules.includes(t.module)))
+    .concat(canSeeDocuments ? [{ id: 'documents', label: 'Documents' }] : [])
 
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -1001,9 +1004,9 @@ export default function StudentDetailPage() {
       {/* ── Tab panels ── */}
       <div>
         {activeTab === 'overview'   && <OverviewTab student={student} canManage={!readOnly} />}
-        {activeTab === 'fees'       && <FeesTab studentId={student.id} />}
-        {activeTab === 'attendance' && <AttendanceTab studentId={student.id} />}
-        {activeTab === 'results'    && <ResultsTab student={student} />}
+        {activeTab === 'fees'       && enabledModules.includes('fees')       && <FeesTab studentId={student.id} />}
+        {activeTab === 'attendance' && enabledModules.includes('attendance') && <AttendanceTab studentId={student.id} />}
+        {activeTab === 'results'    && enabledModules.includes('reports')    && <ResultsTab student={student} />}
         {activeTab === 'documents'  && canSeeDocuments && <DocumentsTab studentId={student.id} />}
       </div>
 

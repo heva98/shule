@@ -12,7 +12,13 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import Role
-from accounts.permissions import CONTENT_CREATOR_ROLES, SENIOR_STAFF_ROLES, IsAcademicStaff, IsSeniorStaff
+from accounts.permissions import (
+    CONTENT_CREATOR_ROLES,
+    SENIOR_STAFF_ROLES,
+    IsAcademicStaff,
+    IsSeniorStaff,
+    ModuleEnabled,
+)
 from attendance.views import _is_own_child
 from students.models import Student
 
@@ -47,8 +53,9 @@ def _level_group(level: str) -> str:
 # ── Subjects ──────────────────────────────────────────────────────────────────
 
 class SubjectViewSet(ModelViewSet):
+    module              = 'exams'
     serializer_class   = SubjectSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -89,8 +96,9 @@ _EXAM_DELETE_ROLES = SENIOR_STAFF_ROLES
 
 
 class ExamViewSet(ModelViewSet):
+    module              = 'exams'
     serializer_class   = ExamSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = Exam.objects.select_related('academic_year', 'created_by')
@@ -310,7 +318,8 @@ _REPORT_CARD_STAFF_ROLES = {
 
 
 class ReportCardView(APIView):
-    permission_classes = [IsAuthenticated]
+    module              = 'reports'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get(self, request, public_id):
         student = get_object_or_404(Student, public_id=public_id)
@@ -430,7 +439,8 @@ class ClassPerformanceView(APIView):
     For CLASS_TEACHER: auto-filters to their assigned class.
     For ACADEMIC_TEACHER / HEADTEACHER / OWNER: add ?level=&stream= query params.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'reports'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get(self, request):
         user = request.user
@@ -594,7 +604,8 @@ class SubjectPerformanceView(APIView):
     For OWNER / HEADTEACHER / ACADEMIC_TEACHER: level query param is required
     (stream optional) since they aren't tied to one class.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'reports'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get(self, request):
         user = request.user

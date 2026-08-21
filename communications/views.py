@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from accounts.models import Role
+from accounts.permissions import ModuleEnabled
 from attendance.models import AbsenceAlert
 
 from .models import Audience, Message
@@ -45,7 +46,8 @@ class AnnouncementsView(APIView):
     GET /api/communications/announcements/?level=FORM1
     School-wide and level broadcasts visible to parents.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'communications'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get(self, request):
         level = request.query_params.get('level')
@@ -70,8 +72,9 @@ class AnnouncementsView(APIView):
 
 class MessageHistoryViewSet(ReadOnlyModelViewSet):
     """GET /api/communications/history/"""
+    module              = 'communications'
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -92,7 +95,8 @@ class MessageHistoryViewSet(ReadOnlyModelViewSet):
 
 class BroadcastView(APIView):
     """POST /api/communications/broadcast/"""
-    permission_classes = [IsAuthenticated]
+    module              = 'communications'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -124,7 +128,8 @@ class FeeReminderView(APIView):
     Email a fee reminder for one student's oldest outstanding invoice.
     Body: {"student_id": "SHULE-2024-0001"}
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -170,7 +175,8 @@ class BulkFeeReminderView(APIView):
     POST /api/communications/bulk-fee-reminders/
     Email one fee reminder per student who has any outstanding invoice.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -216,7 +222,8 @@ class SendAbsenceAlertsView(APIView):
     Manually trigger absence alerts for today's unsent AbsenceAlerts.
     Also used as a fallback if the Celery beat task hasn't run.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'attendance'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -123,3 +124,15 @@ class SchoolConfigView(APIView):
             'school_logo':   request.build_absolute_uri(s.school_logo.url) if s.school_logo else None,
             'active_levels': s.active_levels or [],
         })
+
+
+class ModuleConfigView(APIView):
+    """
+    Which optional modules are enabled for this deployment. Fetched once at
+    frontend boot to filter the nav and guard routes — not gated behind a
+    module flag itself, since the frontend needs it to know what to hide.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({'enabled_modules': settings.ENABLED_MODULES})

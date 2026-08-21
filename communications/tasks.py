@@ -1,5 +1,6 @@
 import logging
 from celery import shared_task
+from django.conf import settings
 from django.db.models import F
 from django.utils import timezone
 
@@ -60,6 +61,9 @@ def send_daily_absence_alerts(self):
 
     Scheduled via django-celery-beat to run at 09:00 Africa/Dar_es_Salaam daily.
     """
+    if 'attendance' not in settings.ENABLED_MODULES:
+        return {'sent': 0, 'failed': 0, 'skipped': 'attendance module disabled'}
+
     from attendance.models import AbsenceAlert
     from .services import NotificationService
 
@@ -112,6 +116,9 @@ def send_fee_reminders_for_overdue():
     Send fee reminders for all OVERDUE invoices.
     Intended to be scheduled weekly by celery-beat.
     """
+    if 'fees' not in settings.ENABLED_MODULES:
+        return {'sent': 0, 'skipped': 'fees module disabled'}
+
     from fees.models import Invoice, InvoiceStatus
     from .services import NotificationService
 

@@ -118,7 +118,7 @@ export default function App() {
                 <Route
                   path="/fees"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES} requiredModule="fees">
                       <FeesPage />
                     </ProtectedRoute>
                   }
@@ -126,7 +126,7 @@ export default function App() {
                 <Route
                   path="/fees/invoices"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES} requiredModule="fees">
                       <InvoicesPage />
                     </ProtectedRoute>
                   }
@@ -134,7 +134,7 @@ export default function App() {
                 <Route
                   path="/fees/payments/new"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES} requiredModule="fees">
                       <RecordPaymentPage />
                     </ProtectedRoute>
                   }
@@ -143,7 +143,7 @@ export default function App() {
                 <Route
                   path="/attendance"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.ATTENDANCE}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.ATTENDANCE} requiredModule="attendance">
                       <AttendancePage />
                     </ProtectedRoute>
                   }
@@ -152,7 +152,7 @@ export default function App() {
                 <Route
                   path="/timetable"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.TIMETABLE}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.TIMETABLE} requiredModule="timetable">
                       <TimetablePage />
                     </ProtectedRoute>
                   }
@@ -161,7 +161,7 @@ export default function App() {
                 <Route
                   path="/transport"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.TRANSPORT}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.TRANSPORT} requiredModule="transport">
                       <TransportPage />
                     </ProtectedRoute>
                   }
@@ -170,7 +170,7 @@ export default function App() {
                 <Route
                   path="/boarding"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.BOARDING}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.BOARDING} requiredModule="boarding">
                       <BoardingPage />
                     </ProtectedRoute>
                   }
@@ -179,7 +179,7 @@ export default function App() {
                 <Route
                   path="/library"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.LIBRARY}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.LIBRARY} requiredModule="library">
                       <LibraryPage />
                     </ProtectedRoute>
                   }
@@ -188,7 +188,7 @@ export default function App() {
                 <Route
                   path="/home-packages"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.HOME_PACKAGES}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.HOME_PACKAGES} requiredModule="homepackages">
                       <HomePackagesPage />
                     </ProtectedRoute>
                   }
@@ -197,7 +197,7 @@ export default function App() {
                 <Route
                   path="/exams"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS} requiredModule="exams">
                       <ExamsPage />
                     </ProtectedRoute>
                   }
@@ -205,7 +205,7 @@ export default function App() {
                 <Route
                   path="/exams/:id/marks"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS} requiredModule="exams">
                       <MarkEntryPage />
                     </ProtectedRoute>
                   }
@@ -213,7 +213,7 @@ export default function App() {
                 <Route
                   path="/exams/:id/results"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAMS} requiredModule="exams">
                       <ResultsPage />
                     </ProtectedRoute>
                   }
@@ -221,7 +221,7 @@ export default function App() {
                 <Route
                   path="/exams/reports"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAM_REPORTS}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAM_REPORTS} requiredModule="reports">
                       <ExamReportsPage />
                     </ProtectedRoute>
                   }
@@ -239,7 +239,7 @@ export default function App() {
                 <Route
                   path="/communications"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.COMMUNICATIONS}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.COMMUNICATIONS} requiredModule="communications">
                       <CommunicationsPage />
                     </ProtectedRoute>
                   }
@@ -248,7 +248,7 @@ export default function App() {
                 <Route
                   path="/school-calendar"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.SCHOOL_CALENDAR}>
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.SCHOOL_CALENDAR} requiredModule="school_calendar">
                       <SchoolCalendarPage />
                     </ProtectedRoute>
                   }

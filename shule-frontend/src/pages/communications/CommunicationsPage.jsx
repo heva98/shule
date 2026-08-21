@@ -29,6 +29,7 @@ import {
 } from '../../api/communications'
 import { getStudents } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
+import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -236,6 +237,9 @@ const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
 function ComposeTab() {
   const queryClient = useQueryClient()
   const { levelOptions } = useSchoolLevels()
+  const { enabledModules } = useEnabledModules()
+  const feesEnabled = enabledModules.includes('fees')
+  const attendanceEnabled = enabledModules.includes('attendance')
 
   const [channel,           setChannel]           = useState('EMAIL')
   const [audience,          setAudience]          = useState('SCHOOL')
@@ -568,30 +572,36 @@ function ComposeTab() {
       )}
 
       {/* 8 · Quick actions */}
+      {(attendanceEnabled || feesEnabled) && (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <Zap size={15} className="text-accent shrink-0" />
           <h2 className="text-sm font-semibold text-gray-700">Quick Actions</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <QuickActionBtn
-            label="Alert Today's Absentees"
-            desc="Notify parents of all students absent today"
-            Icon={Bell}
-            loading={quickLoading.absentees}
-            onClick={handleAbsenteeAlerts}
-            variant="amber"
-          />
-          <QuickActionBtn
-            label="Remind Fee Defaulters"
-            desc="Send fee reminders to all families with outstanding balances"
-            Icon={AlertTriangle}
-            loading={quickLoading.defaulters}
-            onClick={handleFeeReminders}
-            variant="red"
-          />
+          {attendanceEnabled && (
+            <QuickActionBtn
+              label="Alert Today's Absentees"
+              desc="Notify parents of all students absent today"
+              Icon={Bell}
+              loading={quickLoading.absentees}
+              onClick={handleAbsenteeAlerts}
+              variant="amber"
+            />
+          )}
+          {feesEnabled && (
+            <QuickActionBtn
+              label="Remind Fee Defaulters"
+              desc="Send fee reminders to all families with outstanding balances"
+              Icon={AlertTriangle}
+              loading={quickLoading.defaulters}
+              onClick={handleFeeReminders}
+              variant="red"
+            />
+          )}
         </div>
       </div>
+      )}
 
     </div>
   )

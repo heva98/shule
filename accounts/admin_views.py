@@ -22,7 +22,7 @@ from fees.models import AcademicYear, SchoolCalendarEvent
 from fees.serializers import SchoolCalendarEventSerializer
 
 from .models import AuditLog, Role, SchoolSettings, User
-from .permissions import IsCalendarManager, IsCalendarManagerOrReadOnly, IsSystemAdmin
+from .permissions import IsCalendarManager, IsCalendarManagerOrReadOnly, IsSystemAdmin, ModuleEnabled
 from .serializers import (
     AdminDeactivateUserSerializer,
     AdminPasswordResetSerializer,
@@ -589,7 +589,8 @@ class AdminAcademicYearSetCurrentView(APIView):
 # ── School calendar events ────────────────────────────────────────────────────
 
 class SchoolCalendarEventListView(APIView):
-    permission_classes = [IsAuthenticated, IsCalendarManagerOrReadOnly]
+    module              = 'school_calendar'
+    permission_classes = [IsAuthenticated, IsCalendarManagerOrReadOnly, ModuleEnabled]
 
     def get(self, request):
         year_id = request.query_params.get('year_id')
@@ -614,7 +615,8 @@ class SchoolCalendarEventListView(APIView):
 
 
 class SchoolCalendarEventDetailView(APIView):
-    permission_classes = [IsAuthenticated, IsCalendarManager]
+    module              = 'school_calendar'
+    permission_classes = [IsAuthenticated, IsCalendarManager, ModuleEnabled]
 
     def _get(self, pk):
         try:

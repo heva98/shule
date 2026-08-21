@@ -4,6 +4,8 @@ from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
 
+from accounts.views import ModuleConfigView
+
 
 def api_root(request):
     return JsonResponse({
@@ -36,6 +38,7 @@ admin.site.index_title = "School Management Panel"
 urlpatterns = [
     path('', api_root, name='api-root'),
     path('admin/', admin.site.urls),
+    path('api/config/',         ModuleConfigView.as_view(), name='module-config'),
     path('api/auth/',           include('accounts.urls')),
     path('api/students/',       include('students.urls')),
     path('api/fees/',           include('fees.urls')),

@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import Role
+from accounts.permissions import ModuleEnabled
 
 from .models import BoardingAssignment, Dormitory
 from .serializers import BoardingAssignmentSerializer, DormitorySerializer
@@ -17,9 +18,10 @@ _MANAGE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.DISCIPLINE_TEACHER, Role.WAR
 
 
 class DormitoryViewSet(ModelViewSet):
+    module = 'boarding'
     queryset = Dormitory.objects.all()
     serializer_class = DormitorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = Dormitory.objects.select_related('warden__user').prefetch_related('assignments')
@@ -39,8 +41,9 @@ class BoardingAssignmentViewSet(ModelViewSet):
     CRUD for boarding assignments.
     Filter with ?academic_year=&dormitory=&student=&active=true
     """
+    module = 'boarding'
     serializer_class = BoardingAssignmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = BoardingAssignment.objects.select_related(

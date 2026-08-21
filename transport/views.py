@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import Role
+from accounts.permissions import ModuleEnabled
 
 from .models import PickupPoint, Route, RouteFee, TransportAssignment
 from .serializers import (
@@ -22,8 +23,9 @@ _MANAGE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.BURSAR}
 
 
 class RouteViewSet(ModelViewSet):
+    module = 'transport'
     serializer_class = RouteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = Route.objects.prefetch_related('pickup_points', 'assignments')
@@ -39,8 +41,9 @@ class RouteViewSet(ModelViewSet):
 
 
 class PickupPointViewSet(ModelViewSet):
+    module = 'transport'
     serializer_class = PickupPointSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = PickupPoint.objects.select_related('route')
@@ -56,8 +59,9 @@ class PickupPointViewSet(ModelViewSet):
 
 
 class RouteFeeViewSet(ModelViewSet):
+    module = 'transport'
     serializer_class = RouteFeeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = RouteFee.objects.select_related('route', 'academic_year')
@@ -79,8 +83,9 @@ class TransportAssignmentViewSet(ModelViewSet):
     CRUD for student transport assignments.
     Filter with ?academic_year=&route=&student=&active=true
     """
+    module = 'transport'
     serializer_class = TransportAssignmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = TransportAssignment.objects.select_related(

@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from accounts.models import Role
+from accounts.permissions import ModuleEnabled
 
 from .models import AbsenceAlert, AttendanceRecord, AttendanceStatus
 from .serializers import (
@@ -47,8 +48,9 @@ class AttendanceViewSet(ReadOnlyModelViewSet):
     GET /api/attendance/        — list with filters
     GET /api/attendance/{id}/   — single record
     """
+    module              = 'attendance'
     serializer_class   = AttendanceRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -95,7 +97,8 @@ class BulkAttendanceView(APIView):
     Accepts a full class register in one request.
     Class teachers may only mark attendance for their assigned class.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'attendance'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     @transaction.atomic
     def post(self, request):
@@ -208,7 +211,8 @@ class BulkAttendanceView(APIView):
 
 class AttendanceSummaryView(APIView):
     """GET /api/attendance/summary/?student=&month=&year="""
-    permission_classes = [IsAuthenticated]
+    module              = 'attendance'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get(self, request):
         student_pk = request.query_params.get('student')
@@ -264,7 +268,8 @@ class AttendanceDailySummaryView(APIView):
     Bursar's dashboard — so Bursar is allowed here even though they're not
     in the general attendance _VIEW_ROLES.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'attendance'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)
@@ -296,7 +301,8 @@ class AbsenteesView(APIView):
     GET /api/attendance/absentees/?date=&level=
     Returns absent students with primary guardian contact for SMS trigger.
     """
-    permission_classes = [IsAuthenticated]
+    module              = 'attendance'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def check_permissions(self, request):
         super().check_permissions(request)

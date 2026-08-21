@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import Role
+from accounts.permissions import ModuleEnabled
 
 from .models import Book, BorrowRecord, BorrowStatus
 from .serializers import BookSerializer, BorrowRecordSerializer
@@ -17,8 +18,9 @@ _MANAGE_ROLES = {Role.OWNER, Role.HEADTEACHER, Role.LIBRARIAN}
 
 
 class BookViewSet(ModelViewSet):
+    module = 'library'
     serializer_class = BookSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = Book.objects.all()
@@ -41,8 +43,9 @@ class BorrowRecordViewSet(ModelViewSet):
     CRUD for book loans.
     Filter with ?book=&student=&status=&overdue=true
     """
+    module = 'library'
     serializer_class = BorrowRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = BorrowRecord.objects.select_related('book', 'student', 'issued_by')

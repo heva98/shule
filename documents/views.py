@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from accounts.permissions import SENIOR_STAFF_ROLES
+from accounts.permissions import SENIOR_STAFF_ROLES, ModuleEnabled
 
 from .models import StudentDocument
 from .serializers import StudentDocumentSerializer
@@ -24,8 +24,9 @@ class StudentDocumentViewSet(ModelViewSet):
     CRUD for per-student document attachments.
     Filter with ?student=&category=
     """
+    module = 'documents'
     serializer_class = StudentDocumentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get_queryset(self):
         qs = StudentDocument.objects.select_related('student', 'uploaded_by')
@@ -56,7 +57,8 @@ class StudentDocumentDownloadView(APIView):
     nginx via X-Accel-Redirect (fast, but only reachable after this check
     passes). In dev there's no nginx in front, so it streams the file itself.
     """
-    permission_classes = [IsAuthenticated]
+    module = 'documents'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get(self, request, pk):
         doc = get_object_or_404(StudentDocument.objects.select_related('student'), pk=pk)

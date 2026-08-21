@@ -28,6 +28,15 @@ THIRD_PARTY_APPS = [
     'django_celery_beat',
 ]
 
+ENABLED_MODULES = config(
+    'ENABLED_MODULES',
+    default=(
+        'exams,reports,fees,attendance,timetable,boarding,transport,'
+        'library,homepackages,communications,documents,school_calendar'
+    ),
+    cast=lambda s: [m.strip() for m in s.split(',') if m.strip()]
+)
+
 LOCAL_APPS = [
     'accounts',
     'students',
