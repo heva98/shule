@@ -1,11 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import {
   FileBarChart2,
+  FileSpreadsheet,
+  FileText,
   Printer,
   Trophy,
   Users,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { getSchoolConfig } from '../../api/config'
 import {
   getClassPerformance,
   getExams,
@@ -86,6 +89,173 @@ function printReport(html) {
   setTimeout(() => { w.print() }, 400)
 }
 
+function slugify(s) {
+  return (s || 'report').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+// Cross-origin school logos (served by the backend, possibly a different
+// origin in dev) can't always be read back off a canvas without CORS
+// headers — resolves to null rather than throwing, so a missing/blocked
+// logo just means the PDF renders without one instead of failing outright.
+function loadImageAsDataURL(url) {
+  return new Promise((resolve) => {
+    if (!url) { resolve(null); return }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        canvas.getContext('2d').drawImage(img, 0, 0)
+        resolve({ dataUrl: canvas.toDataURL('image/png'), width: img.naturalWidth, height: img.naturalHeight })
+      } catch {
+        resolve(null)
+      }
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
+// ── PDF export — school logo + name at the top, then the same
+// title/meta/table/summary shape the print view already builds ────────────────
+
+async function downloadReportPDF({ title, subtitle, metaLines, columns, rows, summaryLines }, school) {
+  const { default: jsPDF } = await import('jspdf')
+  const { default: autoTable } = await import('jspdf-autotable')
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+  let y = 12
+
+  const logo = await loadImageAsDataURL(school?.logoUrl)
+  if (logo) {
+    const maxW = 28, maxH = 16
+    const ratio = Math.min(maxW / logo.width, maxH / logo.height)
+    const w = logo.width * ratio
+    const h = logo.height * ratio
+    doc.addImage(logo.dataUrl, 'PNG', pageW / 2 - w / 2, y, w, h)
+    y += h + 4
+  }
+
+  doc.setFontSize(15)
+  doc.setFont('helvetica', 'bold')
+  doc.text(school?.name || 'Shule SMS', pageW / 2, y + 4, { align: 'center' })
+  y += 10
+
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(90)
+  doc.text(subtitle, pageW / 2, y, { align: 'center' })
+  doc.setTextColor(0)
+  y += 6
+
+  doc.setDrawColor(210)
+  doc.line(14, y, pageW - 14, y)
+  y += 6
+
+  doc.setFontSize(9.5)
+  doc.text(metaLines.map(([k, v]) => `${k}: ${v}`).join('     '), 14, y)
+  y += 4
+
+  autoTable(doc, {
+    startY: y,
+    head: [columns.map((c) => c.label)],
+    body: rows.map((r) => columns.map((c) => String(r[c.key] ?? '—'))),
+    styles: { fontSize: 8.5 },
+    headStyles: { fillColor: [27, 79, 114] },
+    columnStyles: columns.reduce((acc, c, i) => {
+      if (c.center) acc[i] = { halign: 'center' }
+      return acc
+    }, {}),
+    margin: { left: 14, right: 14 },
+  })
+
+  if (summaryLines?.length) {
+    doc.setFontSize(9.5)
+    doc.setFont('helvetica', 'bold')
+    doc.text(summaryLines.map(([k, v]) => `${k}: ${v}`).join('     '), 14, doc.lastAutoTable.finalY + 8)
+  }
+
+  const pageCount = doc.internal.getNumberOfPages()
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(150)
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.text(
+      `Generated ${new Date().toLocaleDateString('en-TZ', { day: 'numeric', month: 'short', year: 'numeric' })}  •  Page ${i} of ${pageCount}`,
+      pageW / 2,
+      doc.internal.pageSize.getHeight() - 8,
+      { align: 'center' },
+    )
+  }
+
+  doc.save(`${slugify(title)}.pdf`)
+}
+
+// ── Excel export — an HTML table saved with a .xls extension/MIME type,
+// which Excel (and Sheets/LibreOffice) open natively. Avoids pulling in a
+// binary-XLSX library for what's fundamentally the same table the print
+// and PDF views already render. ─────────────────────────────────────────────
+
+function downloadReportExcel({ title, subtitle, metaLines, columns, rows, summaryLines }, school) {
+  const span = columns.length
+
+  const headRow = columns
+    .map((c) => `<th style="background:#1B4F72;color:#fff;padding:6px 8px;text-align:${c.center ? 'center' : 'left'};">${escapeHtml(c.label)}</th>`)
+    .join('')
+  const bodyRows = rows
+    .map((r) => `<tr>${columns
+      .map((c) => `<td style="padding:5px 8px;text-align:${c.center ? 'center' : 'left'};border:1px solid #eee;">${escapeHtml(r[c.key] ?? '—')}</td>`)
+      .join('')}</tr>`)
+    .join('')
+  const summaryRows = summaryLines?.length
+    ? `<tr><td colspan="${span}">&nbsp;</td></tr>` + summaryLines
+      .map(([k, v]) => `<tr><td colspan="${span}"><b>${escapeHtml(k)}:</b> ${escapeHtml(v)}</td></tr>`)
+      .join('')
+    : ''
+
+  const html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head>
+<meta charset="utf-8">
+<!--[if gte mso 9]><xml>
+<x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>${escapeHtml(title).slice(0, 31)}</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>
+</xml><![endif]-->
+<style>table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; } td, th { font-size: 12px; }</style>
+</head>
+<body>
+<table>
+<tr><td colspan="${span}" style="font-size:16px;font-weight:bold;text-align:center;padding:8px;">${escapeHtml(school?.name || 'Shule SMS')}</td></tr>
+<tr><td colspan="${span}" style="font-size:12px;text-align:center;color:#555;padding-bottom:6px;">${escapeHtml(subtitle)}</td></tr>
+<tr><td colspan="${span}" style="font-size:11px;padding-bottom:8px;">${metaLines.map(([k, v]) => `<b>${escapeHtml(k)}:</b> ${escapeHtml(v)}`).join('&nbsp;&nbsp;&nbsp;')}</td></tr>
+<tr><td colspan="${span}">&nbsp;</td></tr>
+<tr>${headRow}</tr>
+${bodyRows}
+${summaryRows}
+</table>
+</body>
+</html>`
+
+  const blob = new Blob(['﻿', html], { type: 'application/vnd.ms-excel' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${slugify(title)}.xls`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 // ── Shared filter controls ────────────────────────────────────────────────────
 
 function FiltersBar({ children }) {
@@ -103,7 +273,7 @@ function Field({ label, children }) {
 
 // ── Class Performance report ──────────────────────────────────────────────────
 
-function ClassPerformanceReport({ role, exams, levelOptions }) {
+function ClassPerformanceReport({ role, exams, levelOptions, school }) {
   const isClassTeacher = role === 'CLASS_TEACHER'
   const [examId, setExamId] = useState('')
   const [level, setLevel] = useState('')
@@ -130,8 +300,8 @@ function ClassPerformanceReport({ role, exams, levelOptions }) {
     return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
   }, [data])
 
-  function handlePrint() {
-    if (!data) return
+  function getReportData() {
+    if (!data) return null
     const exam = data.exam ?? {}
     const columns = [
       { key: 'position', label: 'Pos', center: true },
@@ -153,7 +323,7 @@ function ClassPerformanceReport({ role, exams, levelOptions }) {
         attendance_pct: `${s.attendance_pct}%`,
       }
     })
-    printReport(buildReportPrintHtml({
+    return {
       title: `Class Performance — ${exam.name ?? ''}`,
       subtitle: 'Class Performance Report',
       metaLines: [
@@ -164,7 +334,22 @@ function ClassPerformanceReport({ role, exams, levelOptions }) {
       columns,
       rows,
       summaryLines: [['Students', String(data.count)]],
-    }))
+    }
+  }
+
+  function handlePrint() {
+    const rd = getReportData()
+    if (rd) printReport(buildReportPrintHtml(rd))
+  }
+
+  function handlePDF() {
+    const rd = getReportData()
+    if (rd) downloadReportPDF(rd, school)
+  }
+
+  function handleExcel() {
+    const rd = getReportData()
+    if (rd) downloadReportExcel(rd, school)
   }
 
   return (
@@ -190,14 +375,32 @@ function ClassPerformanceReport({ role, exams, levelOptions }) {
           </>
         )}
         {data && (
-          <button
-            onClick={handlePrint}
-            className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
-              text-sm font-medium hover:bg-secondary transition-colors"
-          >
-            <Printer size={14} />
-            Print
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={handleExcel}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
+                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <FileSpreadsheet size={14} />
+              Excel
+            </button>
+            <button
+              onClick={handlePDF}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
+                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <FileText size={14} />
+              PDF
+            </button>
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
+                text-sm font-medium hover:bg-secondary transition-colors"
+            >
+              <Printer size={14} />
+              Print
+            </button>
+          </div>
         )}
       </FiltersBar>
 
@@ -266,7 +469,7 @@ function ClassPerformanceReport({ role, exams, levelOptions }) {
 
 // ── Subject Performance report ────────────────────────────────────────────────
 
-function SubjectPerformanceReport({ role, exams, levelOptions }) {
+function SubjectPerformanceReport({ role, exams, levelOptions, school }) {
   const isSubjectTeacher = role === 'SUBJECT_TEACHER'
   const isClassTeacher = role === 'CLASS_TEACHER'
   const [examId, setExamId] = useState('')
@@ -292,11 +495,11 @@ function SubjectPerformanceReport({ role, exams, levelOptions }) {
     enabled: canQuery,
   })
 
-  function handlePrint() {
-    if (!data) return
+  function getReportData() {
+    if (!data) return null
     const exam = data.exam ?? {}
     const stats = data.stats ?? {}
-    printReport(buildReportPrintHtml({
+    return {
       title: `Subject Performance — ${data.subject?.name ?? ''}`,
       subtitle: 'Subject Performance Report',
       metaLines: [
@@ -325,7 +528,22 @@ function SubjectPerformanceReport({ role, exams, levelOptions }) {
         ['Lowest', stats.lowest ?? '—'],
         ['Pass Rate', `${stats.pass_rate ?? 0}%`],
       ],
-    }))
+    }
+  }
+
+  function handlePrint() {
+    const rd = getReportData()
+    if (rd) printReport(buildReportPrintHtml(rd))
+  }
+
+  function handlePDF() {
+    const rd = getReportData()
+    if (rd) downloadReportPDF(rd, school)
+  }
+
+  function handleExcel() {
+    const rd = getReportData()
+    if (rd) downloadReportExcel(rd, school)
   }
 
   return (
@@ -357,14 +575,32 @@ function SubjectPerformanceReport({ role, exams, levelOptions }) {
           </>
         )}
         {data && (
-          <button
-            onClick={handlePrint}
-            className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
-              text-sm font-medium hover:bg-secondary transition-colors"
-          >
-            <Printer size={14} />
-            Print
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={handleExcel}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
+                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <FileSpreadsheet size={14} />
+              Excel
+            </button>
+            <button
+              onClick={handlePDF}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
+                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <FileText size={14} />
+              PDF
+            </button>
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
+                text-sm font-medium hover:bg-secondary transition-colors"
+            >
+              <Printer size={14} />
+              Print
+            </button>
+          </div>
         )}
       </FiltersBar>
 
@@ -488,6 +724,15 @@ export default function ReportsPage() {
   })
   const exams = examsData?.results ?? examsData ?? []
 
+  // Same ['school-config'] queryKey the sidebar/nav use — shares that cache
+  // instead of firing a second request for the school name/logo.
+  const { data: schoolConfig } = useQuery({
+    queryKey: ['school-config'],
+    queryFn: getSchoolConfig,
+    staleTime: 5 * 60 * 1000,
+  })
+  const school = { name: schoolConfig?.school_name, logoUrl: schoolConfig?.school_logo }
+
   return (
     <div className="space-y-5">
       <div>
@@ -522,9 +767,9 @@ export default function ReportsPage() {
       {examsLoading ? (
         <ReportSkeleton />
       ) : tab === 'class' && canClass ? (
-        <ClassPerformanceReport role={role} exams={exams} levelOptions={levelOptions} />
+        <ClassPerformanceReport role={role} exams={exams} levelOptions={levelOptions} school={school} />
       ) : tab === 'subject' && canSubject ? (
-        <SubjectPerformanceReport role={role} exams={exams} levelOptions={levelOptions} />
+        <SubjectPerformanceReport role={role} exams={exams} levelOptions={levelOptions} school={school} />
       ) : (
         <EmptyHint text="You do not have access to any report type." />
       )}
