@@ -4,10 +4,10 @@ from django.test import TransactionTestCase
 from rest_framework.test import APIClient
 
 from accounts.models import Role
-from shule.factories import make_academic_year, make_student, make_subject, make_user
+from shule.factories import make_academic_year, make_staff, make_student, make_subject, make_user
 from students.models import Guardian, Relationship
 
-from .models import Exam, ExamType
+from .models import Exam, ExamType, MarkEntry
 
 
 class ExamPermissionTests(TransactionTestCase):
@@ -153,3 +153,132 @@ class SubjectPermissionTests(TransactionTestCase):
         client.force_authenticate(user=student)
         resp = client.get('/api/exams/subjects/')
         self.assertEqual(resp.status_code, 200)
+
+
+class SchoolPerformanceTests(TransactionTestCase):
+    """
+    Dashboard snapshot for Owner/Headteacher/Academic Teacher — ranks
+    classes and subjects by average score for the most recent exam with
+    marks. The ranking math is exactly the kind of thing that breaks
+    silently on a refactor, so it's worth pinning down with real numbers.
+    """
+
+    def setUp(self):
+        self.academic_year = make_academic_year()
+        self.owner = make_user(role=Role.OWNER)
+        self.math = make_subject(level_group='PRIMARY', name='Basic Mathematics', code='MATHS')
+        self.eng = make_subject(level_group='PRIMARY', name='English', code='ENG')
+
+        self.exam = Exam.objects.create(
+            name='Combined Exam', academic_year=self.academic_year, term='TERM1', quarter='Q1',
+            level='STD3', stream='', exam_type=ExamType.WEEKLY,
+            start_date=datetime.date.today(), end_date=datetime.date.today(),
+            created_by=self.owner,
+        )
+
+        # Stream A: Maths avg 90, English avg 70 (avg for the class: 80).
+        # Stream B: English avg 50 only (avg for the class: 50).
+        # English deliberately appears in both classes at different levels
+        # of performance — the per-class scoping should keep them as two
+        # separate ranked rows rather than blending into one "English" average.
+        for score in [90, 90, 90]:
+            student = make_student(level='STD3', stream='A')
+            MarkEntry.objects.create(exam=self.exam, student=student, subject=self.math, score=score, entered_by=self.owner)
+        for score in [70, 70, 70]:
+            student = make_student(level='STD3', stream='A')
+            MarkEntry.objects.create(exam=self.exam, student=student, subject=self.eng, score=score, entered_by=self.owner)
+        for score in [50, 50, 50]:
+            student = make_student(level='STD3', stream='B')
+            MarkEntry.objects.create(exam=self.exam, student=student, subject=self.eng, score=score, entered_by=self.owner)
+
+    def test_ranks_classes_and_subjects_by_average(self):
+        client = APIClient()
+        client.force_authenticate(user=self.owner)
+        resp = client.get('/api/exams/school-performance/')
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertEqual(resp.data['exam']['id'], self.exam.id)
+        self.assertEqual(resp.data['top_classes'][0]['stream'], 'A')
+        self.assertEqual(resp.data['top_classes'][0]['average'], '80.00')
+        self.assertEqual(resp.data['bottom_classes'][0]['stream'], 'B')
+        self.assertEqual(resp.data['bottom_classes'][0]['average'], '50.00')
+
+        self.assertEqual(resp.data['top_subjects'][0]['code'], 'MATHS')
+        self.assertEqual(resp.data['top_subjects'][0]['stream'], 'A')
+        self.assertEqual(resp.data['bottom_subjects'][0]['code'], 'ENG')
+        self.assertEqual(resp.data['bottom_subjects'][0]['stream'], 'B')
+
+        # English must appear twice — once per class — never blended into
+        # a single school-wide "English" average.
+        eng_entries = [
+            s for s in resp.data['top_subjects'] + resp.data['bottom_subjects']
+            if s['code'] == 'ENG'
+        ]
+        self.assertEqual({e['stream'] for e in eng_entries}, {'A', 'B'})
+        eng_a = next(e for e in eng_entries if e['stream'] == 'A')
+        eng_b = next(e for e in eng_entries if e['stream'] == 'B')
+        self.assertEqual(eng_a['average'], '70.00')
+        self.assertEqual(eng_b['average'], '50.00')
+
+    def test_forbidden_for_roles_outside_owner_headteacher_academic(self):
+        bursar = make_user(role=Role.BURSAR)
+        client = APIClient()
+        client.force_authenticate(user=bursar)
+        resp = client.get('/api/exams/school-performance/')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_empty_when_no_exam_has_marks(self):
+        MarkEntry.objects.all().delete()
+        client = APIClient()
+        client.force_authenticate(user=self.owner)
+        resp = client.get('/api/exams/school-performance/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.data['exam'])
+        self.assertEqual(resp.data['top_classes'], [])
+
+
+class MySubjectPerformanceTests(TransactionTestCase):
+    """Dashboard snapshot for a teacher: top/bottom students in one of
+    their assigned subjects, for the most recent exam with marks in it."""
+
+    def setUp(self):
+        self.academic_year = make_academic_year()
+        owner = make_user(role=Role.OWNER)
+        self.subject_teacher = make_staff(role=Role.SUBJECT_TEACHER)
+        self.math = make_subject(level_group='PRIMARY', name='Basic Mathematics', code='MATHS')
+        self.subject_teacher.subjects.add(self.math)
+
+        self.exam = Exam.objects.create(
+            name='Weekly Test', academic_year=self.academic_year, term='TERM1', quarter='Q1',
+            level='STD1', stream='', exam_type=ExamType.WEEKLY,
+            start_date=datetime.date.today(), end_date=datetime.date.today(),
+            created_by=owner,
+        )
+        for score in [95, 40]:
+            student = make_student(level='STD1')
+            MarkEntry.objects.create(exam=self.exam, student=student, subject=self.math, score=score, entered_by=owner)
+
+    def test_returns_top_and_bottom_students_for_assigned_subject(self):
+        client = APIClient()
+        client.force_authenticate(user=self.subject_teacher.user)
+        resp = client.get('/api/exams/subject-performance/mine/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['subject']['code'], 'MATHS')
+        self.assertEqual(resp.data['top_students'][0]['score'], '95.00')
+        self.assertEqual(resp.data['bottom_students'][0]['score'], '40.00')
+
+    def test_rejects_a_subject_not_assigned_to_this_teacher(self):
+        other_subject = make_subject(level_group='PRIMARY', name='Science', code='SCI')
+        client = APIClient()
+        client.force_authenticate(user=self.subject_teacher.user)
+        resp = client.get(f'/api/exams/subject-performance/mine/?subject_id={other_subject.id}')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_empty_for_a_teacher_with_no_assigned_subjects(self):
+        bare_teacher = make_staff(role=Role.TEACHER)
+        client = APIClient()
+        client.force_authenticate(user=bare_teacher.user)
+        resp = client.get('/api/exams/subject-performance/mine/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['subjects'], [])
+        self.assertIsNone(resp.data['subject'])

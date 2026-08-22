@@ -21,6 +21,7 @@ import {
   Users,
 } from 'lucide-react'
 import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
+import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformancePanels'
 import StatCard from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
@@ -262,6 +263,8 @@ export default function DashboardPage() {
           />
         ))}
       </div>
+
+      <SchoolPerformancePanels role={role} enabledModules={enabledModules} />
 
       {/* ── Upcoming exams + quick links ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

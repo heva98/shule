@@ -31,6 +31,12 @@ export const getSubjectPerformance = (params = {}) =>
 export const getMySubjects = () =>
   api.get('/exams/subjects/mine/').then((r) => r.data)
 
+export const getSchoolPerformance = () =>
+  api.get('/exams/school-performance/').then((r) => r.data)
+
+export const getMySubjectPerformance = (params = {}) =>
+  api.get('/exams/subject-performance/mine/', { params }).then((r) => r.data)
+
 // Report card lives at the students endpoint — single source of truth in students.js
 export { getStudentReportCard as getReportCard } from './students'
 

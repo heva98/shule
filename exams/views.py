@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Avg, Count
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
@@ -693,6 +694,156 @@ class SubjectPerformanceView(APIView):
             'stream':   stream or '',
             'students': rows,
             'stats':    stats,
+        })
+
+
+# ── School Performance (dashboard snapshot) ────────────────────────────────────
+
+class SchoolPerformanceView(APIView):
+    """
+    GET /api/exams/school-performance/
+    Dashboard snapshot for Owner/Headteacher/Academic Teacher: top/bottom
+    performing classes and subjects for the most recent exam that actually
+    has marks entered, school-wide. Not exam-selectable — this is a glance
+    widget, not a report; use Exam Reports for anything more specific.
+
+    Subject rows are scoped per class (English — Std 3A is a different row
+    from English — Std 1B), not blended into one school-wide subject
+    average — a single "English" average across every level would compare
+    classes sitting completely different papers.
+    """
+    module              = 'reports'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
+
+    def get(self, request):
+        if request.user.role not in {Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER}:
+            raise PermissionDenied('You do not have permission to view school performance.')
+
+        exam = (
+            Exam.objects
+            .filter(mark_entries__isnull=False)
+            .order_by('-start_date', '-id')
+            .distinct()
+            .first()
+        )
+        if not exam:
+            return Response({
+                'exam': None,
+                'top_classes': [], 'bottom_classes': [],
+                'top_subjects': [], 'bottom_subjects': [],
+            })
+
+        class_rows = list(
+            MarkEntry.objects
+            .filter(exam=exam)
+            .values('student__level', 'student__stream')
+            .annotate(average=Avg('score'), student_count=Count('student', distinct=True))
+            .order_by('-average')
+        )
+        classes = [
+            {
+                'level':         r['student__level'],
+                'stream':        r['student__stream'] or '',
+                'average':       str(round(r['average'], 2)),
+                'student_count': r['student_count'],
+            }
+            for r in class_rows
+        ]
+
+        subject_rows = list(
+            MarkEntry.objects
+            .filter(exam=exam)
+            .values('subject__code', 'subject__name', 'student__level', 'student__stream')
+            .annotate(average=Avg('score'), student_count=Count('student', distinct=True))
+            .order_by('-average')
+        )
+        subjects = [
+            {
+                'code':          r['subject__code'],
+                'name':          r['subject__name'],
+                'level':         r['student__level'],
+                'stream':        r['student__stream'] or '',
+                'average':       str(round(r['average'], 2)),
+                'student_count': r['student_count'],
+            }
+            for r in subject_rows
+        ]
+
+        return Response({
+            'exam':           ExamSerializer(exam).data,
+            'top_classes':    classes[:5],
+            'bottom_classes': list(reversed(classes[-5:])),
+            'top_subjects':   subjects[:5],
+            'bottom_subjects': list(reversed(subjects[-5:])),
+        })
+
+
+class MySubjectPerformanceView(APIView):
+    """
+    GET /api/exams/subject-performance/mine/?subject_id=
+    Dashboard snapshot for a teacher: top 5 / bottom 5 students in one of
+    their assigned subjects, for the most recent exam with marks for that
+    subject. Defaults to their first assigned subject if subject_id is
+    omitted — the frontend switches subjects by re-calling with a new id.
+    """
+    module              = 'reports'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
+
+    def get(self, request):
+        try:
+            my_subjects = list(request.user.staff_profile.subjects.all())
+        except Exception:
+            my_subjects = []
+
+        if not my_subjects:
+            return Response({
+                'subjects': [], 'subject': None, 'exam': None,
+                'top_students': [], 'bottom_students': [],
+            })
+
+        subject_id = request.query_params.get('subject_id')
+        if subject_id:
+            subject = next((s for s in my_subjects if str(s.id) == str(subject_id)), None)
+            if subject is None:
+                raise PermissionDenied('You are not assigned to teach this subject.')
+        else:
+            subject = my_subjects[0]
+
+        exam = (
+            Exam.objects
+            .filter(mark_entries__subject=subject)
+            .order_by('-start_date', '-id')
+            .distinct()
+            .first()
+        )
+
+        top_students, bottom_students, exam_data = [], [], None
+        if exam:
+            entries = list(
+                MarkEntry.objects
+                .filter(exam=exam, subject=subject)
+                .select_related('student')
+                .order_by('-score')
+            )
+
+            def _row(e):
+                return {
+                    'student_id': e.student.student_id,
+                    'full_name':  e.student.full_name,
+                    'score':      str(e.score),
+                    'grade':      e.grade,
+                }
+
+            top_students = [_row(e) for e in entries[:5]]
+            bottom_students = [_row(e) for e in entries[-5:][::-1]]
+            exam_data = ExamSerializer(exam).data
+
+        return Response({
+            'subjects':        SubjectSerializer(my_subjects, many=True).data,
+            'subject':         SubjectSerializer(subject).data,
+            'exam':            exam_data,
+            'top_students':    top_students,
+            'bottom_students': bottom_students,
         })
 
 

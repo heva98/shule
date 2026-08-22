@@ -7,7 +7,9 @@ import {
   ShieldAlert,
   Users,
 } from 'lucide-react'
+import MySubjectPerformancePanels from '../../components/dashboard/MySubjectPerformancePanels'
 import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
+import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformancePanels'
 import StatCard from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
@@ -400,6 +402,12 @@ export default function TeacherDashboard() {
           </div>
         )}
       </div>
+
+      {/* ── Academic Teacher also gets the school-wide snapshot ── */}
+      <SchoolPerformancePanels role={role} enabledModules={enabledModules} />
+
+      {/* ── Every teaching role: their own subjects' top/bottom performers ── */}
+      <MySubjectPerformancePanels enabledModules={enabledModules} />
     </div>
   )
 }
