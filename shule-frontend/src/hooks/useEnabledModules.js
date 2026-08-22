@@ -1,22 +1,20 @@
-import { useQuery } from '@tanstack/react-query'
-import { getModuleConfig } from '../api/config'
+import { useAuth } from '../context/AuthContext'
 
 /**
- * Which optional modules this deployment has turned on, fetched once at
- * boot. `modulesLoading` stays true until the first fetch resolves, so
- * callers can hold off rendering module-gated nav/routes/UI instead of
- * flashing them before the real list is known.
+ * Which optional modules this deployment has turned on. Rides along on the
+ * /auth/login/ and /auth/me/ responses (see UserSerializer.enabled_modules)
+ * instead of a separate /api/config/ fetch — that used to make every
+ * module-gated dashboard query wait on an extra network round trip for data
+ * that's static per deployment. `modulesLoading` mirrors auth's own loading
+ * state, so callers can still hold off rendering module-gated nav/routes/UI
+ * until the real list is known.
  */
 export function useEnabledModules() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['module-config'],
-    queryFn: getModuleConfig,
-    staleTime: 5 * 60 * 1000,
-  })
+  const { enabledModules, loading } = useAuth()
 
   return {
-    enabledModules: data?.enabled_modules ?? [],
-    modulesLoading: isLoading,
+    enabledModules,
+    modulesLoading: loading,
   }
 }
 

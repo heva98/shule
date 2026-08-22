@@ -94,6 +94,12 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD', default=''),
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='5432'),
+        # Reuse connections across requests instead of opening a fresh TCP +
+        # auth handshake per request — the dashboard alone fires 7+ parallel
+        # API calls, so without this every page load pays for that handshake
+        # that many times over.
+        'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
+        'CONN_HEALTH_CHECKS': True,
     }
 }
 

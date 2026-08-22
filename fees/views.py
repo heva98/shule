@@ -190,6 +190,88 @@ class PaymentViewSet(ModelViewSet):
         return Response(ReceiptSerializer(payment).data)
 
 
+def defaulters_queryset(term=None, level=None):
+    """Base queryset for outstanding invoices, shared by DefaultersView and
+    the combined dashboard-summary endpoint so both stay in sync."""
+    qs = Invoice.objects.filter(
+        status__in=[InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE]
+    ).select_related('student')
+    if term:
+        qs = qs.filter(term=term)
+    if level:
+        qs = qs.filter(student__level=level)
+    return qs.order_by('student__last_name')
+
+
+def serialize_defaulter(inv):
+    return {
+        'student_id': inv.student.student_id,
+        'student_name': inv.student.full_name,
+        'level': inv.student.level,
+        'term': inv.term,
+        'quarter': inv.quarter,
+        'amount_due': str(inv.amount_due),
+        'amount_paid': str(inv.amount_paid),
+        'balance': str(inv.balance),
+        'due_date': str(inv.due_date),
+        'status': inv.status,
+    }
+
+
+def monthly_revenue_data(year):
+    """List of {month, collected} for the given year, shared by
+    FeeMonthlyView and the combined dashboard-summary endpoint."""
+    MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    rows = (
+        Payment.objects
+        .filter(paid_at__year=year)
+        .annotate(m=TruncMonth('paid_at'))
+        .values('m')
+        .annotate(total=Sum('amount'))
+        .order_by('m')
+    )
+    return [
+        {'month': MONTHS[row['m'].month - 1], 'collected': str(row['total'])}
+        for row in rows
+    ]
+
+
+def fee_summary_data(term=None, year=None):
+    """total_invoiced/collected/outstanding + collection rate, shared by
+    FeeSummaryView and the combined dashboard-summary endpoint."""
+    qs = Invoice.objects.all()
+    if term == 'current':
+        try:
+            current_year = AcademicYear.objects.get(is_current=True)
+            qs = qs.filter(academic_year=current_year)
+        except AcademicYear.DoesNotExist:
+            pass
+    elif term:
+        qs = qs.filter(term=term)
+    if year:
+        qs = qs.filter(academic_year__year=year)
+
+    agg = qs.aggregate(
+        total_invoiced=Sum('amount_due'),
+        total_collected=Sum('amount_paid'),
+    )
+    total_invoiced = agg['total_invoiced'] or Decimal('0')
+    total_collected = agg['total_collected'] or Decimal('0')
+    total_outstanding = total_invoiced - total_collected
+    collection_rate = (
+        round((total_collected / total_invoiced) * 100, 2)
+        if total_invoiced > 0
+        else Decimal('0')
+    )
+    return {
+        'total_invoiced': str(total_invoiced),
+        'total_collected': str(total_collected),
+        'total_outstanding': str(total_outstanding),
+        'collection_rate_percent': str(collection_rate),
+    }
+
+
 class _DefaultersPagination(PageNumberPagination):
     page_size = 20
     # Keep the existing `?limit=N` contract callers already use
@@ -212,40 +294,13 @@ class DefaultersView(APIView):
         term = request.query_params.get('term')
         level = request.query_params.get('level')
 
-        qs = Invoice.objects.filter(
-            status__in=[InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE]
-        ).select_related('student')
-
-        if term:
-            qs = qs.filter(term=term)
-        if level:
-            qs = qs.filter(student__level=level)
-
-        # Flip invoices past their due date to OVERDUE in one UPDATE —
-        # `status__in` above already excludes PAID, so no extra exclude needed.
-        today = timezone.now().date()
-        qs.filter(due_date__lt=today).exclude(status=InvoiceStatus.OVERDUE).update(
-            status=InvoiceStatus.OVERDUE
-        )
-
-        qs = qs.order_by('student__last_name')
+        # Overdue status is flipped by the hourly fees.tasks.flip_overdue_invoices
+        # beat task, not here — this used to run that UPDATE inline on every GET,
+        # turning a read endpoint into a full-table write on every dashboard load.
+        qs = defaulters_queryset(term=term, level=level)
         paginator = _DefaultersPagination()
         page = paginator.paginate_queryset(qs, request, view=self)
-        data = [
-            {
-                'student_id': inv.student.student_id,
-                'student_name': inv.student.full_name,
-                'level': inv.student.level,
-                'term': inv.term,
-                'quarter': inv.quarter,
-                'amount_due': str(inv.amount_due),
-                'amount_paid': str(inv.amount_paid),
-                'balance': str(inv.balance),
-                'due_date': str(inv.due_date),
-                'status': inv.status,
-            }
-            for inv in page
-        ]
+        data = [serialize_defaulter(inv) for inv in page]
         return paginator.get_paginated_response(data)
 
 
@@ -261,20 +316,7 @@ class FeeMonthlyView(APIView):
 
     def get(self, request):
         year = request.query_params.get('year') or timezone.now().year
-        MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        rows = (
-            Payment.objects
-            .filter(paid_at__year=year)
-            .annotate(m=TruncMonth('paid_at'))
-            .values('m')
-            .annotate(total=Sum('amount'))
-            .order_by('m')
-        )
-        return Response([
-            {'month': MONTHS[row['m'].month - 1], 'collected': str(row['total'])}
-            for row in rows
-        ])
+        return Response(monthly_revenue_data(year))
 
 
 class FeeSummaryView(APIView):
@@ -289,37 +331,4 @@ class FeeSummaryView(APIView):
     def get(self, request):
         term = request.query_params.get('term')
         year = request.query_params.get('year')
-
-        qs = Invoice.objects.all()
-        if term == 'current':
-            try:
-                current_year = AcademicYear.objects.get(is_current=True)
-                qs = qs.filter(academic_year=current_year)
-            except AcademicYear.DoesNotExist:
-                pass
-        elif term:
-            qs = qs.filter(term=term)
-        if year:
-            qs = qs.filter(academic_year__year=year)
-
-        agg = qs.aggregate(
-            total_invoiced=Sum('amount_due'),
-            total_collected=Sum('amount_paid'),
-        )
-        total_invoiced = agg['total_invoiced'] or Decimal('0')
-        total_collected = agg['total_collected'] or Decimal('0')
-        total_outstanding = total_invoiced - total_collected
-        collection_rate = (
-            round((total_collected / total_invoiced) * 100, 2)
-            if total_invoiced > 0
-            else Decimal('0')
-        )
-
-        return Response(
-            {
-                'total_invoiced': str(total_invoiced),
-                'total_collected': str(total_collected),
-                'total_outstanding': str(total_outstanding),
-                'collection_rate_percent': str(collection_rate),
-            }
-        )
+        return Response(fee_summary_data(term=term, year=year))

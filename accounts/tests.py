@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -272,4 +272,86 @@ class AccountLockoutTests(TestCase):
         user.refresh_from_db()
         self.assertTrue(user.is_active)
         self.assertEqual(user.failed_login_attempts, 0)
+
+
+class UserSerializerEnabledModulesTests(TestCase):
+    """enabled_modules rides along on login/me so the frontend doesn't need
+    a separate /api/config/ round trip before it can fire dashboard queries."""
+
+    def setUp(self):
+        cache.clear()
+
+    def test_login_response_includes_enabled_modules(self):
+        make_user(role=Role.OWNER, email='owner-em@test.local', password='correct-pass123')
+        client = APIClient()
+        resp = client.post('/api/auth/login/', {
+            'email': 'owner-em@test.local', 'password': 'correct-pass123',
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('enabled_modules', resp.data['user'])
+        self.assertIn('fees', resp.data['user']['enabled_modules'])
+
+    def test_me_response_includes_enabled_modules(self):
+        user = make_user(role=Role.OWNER, email='owner-em2@test.local')
+        client = APIClient()
+        client.force_authenticate(user=user)
+        resp = client.get('/api/auth/me/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('enabled_modules', resp.data)
+
+
+class DashboardSummaryTests(TestCase):
+    """GET /api/dashboard/summary/ — the combined endpoint that replaced 7
+    separate parallel requests on DashboardPage.jsx."""
+
+    def test_requires_authentication(self):
+        client = APIClient()
+        resp = client.get('/api/dashboard/summary/')
+        self.assertEqual(resp.status_code, 401)
+
+    def test_teacher_role_forbidden(self):
+        user = make_user(role=Role.TEACHER)
+        client = APIClient()
+        client.force_authenticate(user=user)
+        resp = client.get('/api/dashboard/summary/')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_owner_gets_full_summary_with_all_modules_enabled(self):
+        user = make_user(role=Role.OWNER)
+        client = APIClient()
+        client.force_authenticate(user=user)
+        resp = client.get('/api/dashboard/summary/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('count', resp.data['students'])
+        self.assertIsNotNone(resp.data['staff'])
+        self.assertIsNotNone(resp.data['exams'])
+        self.assertIsNotNone(resp.data['fees'])
+        self.assertIsNotNone(resp.data['attendance'])
+        self.assertIsNotNone(resp.data['defaulters'])
+        self.assertIsNotNone(resp.data['monthly_revenue'])
+
+    def test_bursar_does_not_see_staff_section(self):
+        user = make_user(role=Role.BURSAR)
+        client = APIClient()
+        client.force_authenticate(user=user)
+        resp = client.get('/api/dashboard/summary/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.data['staff'])
+        # Bursar still gets the fee-related sections StaffViewSet would 403 them on.
+        self.assertIsNotNone(resp.data['fees'])
+
+    @override_settings(ENABLED_MODULES=['exams', 'reports', 'communications'])
+    def test_reduced_module_deployment_omits_fees_and_attendance(self):
+        """Mirrors the Msewe pilot's module set — fees/attendance sections
+        must be absent, not error out, when those modules are off."""
+        user = make_user(role=Role.HEADTEACHER)
+        client = APIClient()
+        client.force_authenticate(user=user)
+        resp = client.get('/api/dashboard/summary/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.data['fees'])
+        self.assertIsNone(resp.data['attendance'])
+        self.assertIsNone(resp.data['defaulters'])
+        self.assertIsNone(resp.data['monthly_revenue'])
+        self.assertIsNotNone(resp.data['exams'])
         self.assertIsNone(user.locked_until)

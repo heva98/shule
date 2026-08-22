@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from rest_framework import serializers
@@ -26,14 +27,23 @@ def validate_tz_phone(value: str) -> str:
 
 
 class UserSerializer(serializers.ModelSerializer):
+    # Piggybacks settings.ENABLED_MODULES onto the user payload so the
+    # frontend gets it for free on login/me instead of waiting on a separate
+    # /api/config/ round trip before it can fire any module-gated queries —
+    # see useEnabledModules.js. Static per-deployment list, no extra query.
+    enabled_modules = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id', 'email', 'full_name', 'phone',
             'role', 'profile_photo', 'is_active',
-            'date_joined', 'last_login',
+            'date_joined', 'last_login', 'enabled_modules',
         ]
         read_only_fields = fields
+
+    def get_enabled_modules(self, obj):
+        return settings.ENABLED_MODULES
 
 
 class LoginSerializer(serializers.Serializer):

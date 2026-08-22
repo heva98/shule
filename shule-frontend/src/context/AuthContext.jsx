@@ -53,6 +53,11 @@ export function AuthProvider({ children }) {
     return profile
   }, [])
 
+  // `user.enabled_modules` rides along on /auth/login/ and /auth/me/ (see
+  // UserSerializer) so module-gated dashboard queries don't have to wait on
+  // a separate /api/config/ round trip before they can even start.
+  const enabledModules = user?.enabled_modules ?? []
+
   const logout = useCallback(async () => {
     const refresh = localStorage.getItem('shule_refresh')
     // Revoke the refresh token server-side so it can't be reused (stolen
@@ -74,8 +79,8 @@ export function AuthProvider({ children }) {
   // without it, every consumer of useAuth() re-renders on every AuthProvider
   // render since the object literal would be a new reference each time.
   const value = useMemo(
-    () => ({ user, accessToken, loading, login, logout }),
-    [user, accessToken, loading, login, logout]
+    () => ({ user, accessToken, loading, login, logout, enabledModules }),
+    [user, accessToken, loading, login, logout, enabledModules]
   )
 
   return (

@@ -25,11 +25,7 @@ import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformanc
 import StatCard from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
-import { getStudents } from '../../api/students'
-import { getStaff } from '../../api/staff'
-import { getExams } from '../../api/exams'
-import { getFeeSummary, getMonthlyRevenue, getDefaulters } from '../../api/fees'
-import { getDailySummary } from '../../api/attendance'
+import { getDashboardSummary } from '../../api/dashboard'
 import { sendFeeReminder } from '../../api/communications'
 import { LEVEL_LABEL } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
@@ -106,31 +102,17 @@ export default function DashboardPage() {
   const examsEnabled = !modulesLoading && enabledModules.includes('exams')
   // Staff records include salary/national ID — StaffViewSet itself is
   // restricted to Owner/Headteacher/Academic Teacher, so Bursar never
-  // queries it (would 403).
+  // queries it (would 403). DashboardSummaryView mirrors this server-side.
   const canSeeStaff = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'].includes(role)
 
-  const studentsQ = useQuery({ queryKey: ['dash-students'], queryFn: () => getStudents({ status: 'ACTIVE' }) })
-  const staffQ = useQuery({ queryKey: ['dash-staff'], queryFn: () => getStaff(), enabled: canSeeStaff })
-  const examsQ = useQuery({
-    queryKey: ['dash-upcoming-exams'],
-    queryFn: () => getExams({ all: 'true' }),
-    enabled: examsEnabled,
-  })
-  const feeQ = useQuery({ queryKey: ['dash-fees'], queryFn: () => getFeeSummary({ term: 'current' }), enabled: feesEnabled })
-  const attQ = useQuery({ queryKey: ['dash-attendance'], queryFn: () => getDailySummary(), enabled: attendanceEnabled })
-  const defaultersQ = useQuery({ queryKey: ['dash-defaulters'], queryFn: () => getDefaulters({ limit: 5 }), enabled: feesEnabled })
-  const monthlyQ = useQuery({ queryKey: ['dash-monthly'], queryFn: () => getMonthlyRevenue(), enabled: feesEnabled })
-
-  const failedEndpoints = [
-    studentsQ.isError && 'Students (/api/students/)',
-    canSeeStaff && staffQ.isError && 'Staff (/api/staff/)',
-    examsEnabled && examsQ.isError && 'Exams (/api/exams/)',
-    feesEnabled && feeQ.isError && 'Fee Summary (/api/fees/summary/)',
-    attendanceEnabled && attQ.isError && 'Attendance (/api/attendance/daily-summary/)',
-    feesEnabled && defaultersQ.isError && 'Defaulters (/api/fees/defaulters/)',
-  ].filter(Boolean)
-
-  const anyError = failedEndpoints.length > 0
+  // One combined request instead of 7 separate parallel ones — see
+  // accounts.views.DashboardSummaryView. Each section is null when its
+  // module is disabled for this deployment, so the `*Enabled` flags above
+  // still control whether a card/panel renders at all.
+  const summaryQ = useQuery({ queryKey: ['dash-summary'], queryFn: getDashboardSummary })
+  const data = summaryQ.data
+  const isLoading = summaryQ.isLoading
+  const isError = summaryQ.isError
 
   async function sendReminder(studentId) {
     setSendingId(studentId)
@@ -146,40 +128,37 @@ export default function DashboardPage() {
 
   // ── Derived stat values ───────────────────────────────────────────────────
 
-  const totalStudents = studentsQ.data?.count ?? null
-  const totalStaff = staffQ.data?.count ?? null
-  const feesCollected = feeQ.data?.total_collected ?? null
-  const feesOutstanding = feeQ.data?.total_outstanding ?? null
-  const attendanceRate = attQ.data?.rate_percent ?? null
+  const totalStudents = data?.students?.count ?? null
+  const totalStaff = data?.staff?.count ?? null
+  const feesCollected = data?.fees?.total_collected ?? null
+  const feesOutstanding = data?.fees?.total_outstanding ?? null
+  const attendanceRate = data?.attendance?.rate_percent ?? null
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const upcomingExams = (examsQ.data?.results ?? examsQ.data ?? [])
-    .filter((e) => new Date(e.end_date) >= today)
-    .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+  // Already filtered to "ends today or later", sorted by start_date, and
+  // capped at 5 server-side — see DashboardSummaryView.
+  const upcomingExams = data?.exams?.upcoming ?? []
+  const upcomingExamsCount = data?.exams?.upcoming_count ?? 0
 
-  const monthlyData = (monthlyQ.data ?? []).map((row) => ({
+  const monthlyData = (data?.monthly_revenue ?? []).map((row) => ({
     ...row,
     collected: parseFloat(row.collected) || 0,
   }))
 
-  const defaulters = Array.isArray(defaultersQ.data)
-    ? defaultersQ.data
-    : defaultersQ.data?.results ?? []
+  const defaulters = data?.defaulters ?? []
 
   const showQuickLinksBeside = examsEnabled
 
   return (
     <div className="space-y-6">
-      {anyError && (
+      {isError && (
         <ErrorBanner
-          message={`Failed to load: ${failedEndpoints.join(' · ')}. Check that the Django server is running and restart it if you recently changed backend code.`}
+          message="Failed to load dashboard data. Check that the Django server is running and restart it if you recently changed backend code."
         />
       )}
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {studentsQ.isLoading ? (
+        {isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -191,7 +170,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {canSeeStaff && (staffQ.isLoading ? (
+        {canSeeStaff && (isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -203,19 +182,19 @@ export default function DashboardPage() {
           />
         ))}
 
-        {examsEnabled && (examsQ.isLoading ? (
+        {examsEnabled && (isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
             title="Upcoming Exams"
-            value={String(upcomingExams.length)}
+            value={String(upcomingExamsCount)}
             icon={ClipboardList}
             color="bg-accent"
             subtitle={upcomingExams[0] ? `Next: ${upcomingExams[0].name}` : 'None scheduled'}
           />
         ))}
 
-        {feesEnabled && (feeQ.isLoading ? (
+        {feesEnabled && (isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -224,14 +203,14 @@ export default function DashboardPage() {
             icon={CreditCard}
             color="bg-success"
             subtitle={
-              feeQ.data?.collection_rate_percent
-                ? `${feeQ.data.collection_rate_percent}% collection rate`
+              data?.fees?.collection_rate_percent
+                ? `${data.fees.collection_rate_percent}% collection rate`
                 : 'Current year'
             }
           />
         ))}
 
-        {feesEnabled && (feeQ.isLoading ? (
+        {feesEnabled && (isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -243,7 +222,7 @@ export default function DashboardPage() {
           />
         ))}
 
-        {attendanceEnabled && (attQ.isLoading ? (
+        {attendanceEnabled && (isLoading ? (
           <StatCardSkeleton />
         ) : (
           <StatCard
@@ -256,8 +235,8 @@ export default function DashboardPage() {
             icon={CalendarCheck}
             color="bg-secondary"
             subtitle={
-              attQ.data?.total_records
-                ? `${attQ.data.present} present of ${attQ.data.total_records}`
+              data?.attendance?.total_records
+                ? `${data.attendance.present} present of ${data.attendance.total_records}`
                 : 'No records today'
             }
           />
@@ -277,7 +256,7 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {examsQ.isLoading ? (
+            {isLoading ? (
               <div className="space-y-2">
                 {[...Array(4)].map((_, i) => (
                   <Skeleton key={i} className="h-10 w-full" />
@@ -287,7 +266,7 @@ export default function DashboardPage() {
               <EmptyState icon={ClipboardList} message="No upcoming exams scheduled." />
             ) : (
               <div className="space-y-2">
-                {upcomingExams.slice(0, 5).map((exam) => (
+                {upcomingExams.map((exam) => (
                   <div key={exam.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-gray-50/70">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{exam.name}</p>
@@ -319,13 +298,13 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             Monthly Revenue ({new Date().getFullYear()})
           </h2>
-          {monthlyQ.isLoading ? (
+          {isLoading ? (
             <div className="space-y-2">
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="h-6 w-full" />
               ))}
             </div>
-          ) : monthlyQ.isError ? (
+          ) : isError ? (
             <ErrorBanner message="Could not load chart data." />
           ) : monthlyData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-gray-400 text-sm">
@@ -367,7 +346,7 @@ export default function DashboardPage() {
             Top Fee Defaulters
           </h2>
 
-          {defaultersQ.isLoading ? (
+          {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -377,7 +356,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : defaultersQ.isError ? (
+          ) : isError ? (
             <ErrorBanner message="Could not load defaulters list." />
           ) : defaulters.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-gray-400 text-sm">

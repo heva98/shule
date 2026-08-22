@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
 
-from accounts.views import ModuleConfigView
+from accounts.views import DashboardSummaryView, ModuleConfigView
 
 
 def api_root(request):
@@ -39,6 +39,7 @@ urlpatterns = [
     path('', api_root, name='api-root'),
     path('admin/', admin.site.urls),
     path('api/config/',         ModuleConfigView.as_view(), name='module-config'),
+    path('api/dashboard/summary/', DashboardSummaryView.as_view(), name='dashboard-summary'),
     path('api/auth/',           include('accounts.urls')),
     path('api/students/',       include('students.urls')),
     path('api/fees/',           include('fees.urls')),

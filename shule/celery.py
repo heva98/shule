@@ -20,5 +20,11 @@ app.conf.beat_schedule = {
         'task': 'communications.tasks.send_fee_reminders_for_overdue',
         'schedule': crontab(hour=8, minute=0, day_of_week=1),
     },
+    # Hourly — flip UNPAID/PARTIAL invoices past due_date to OVERDUE. Must
+    # run before weekly-fee-reminders picks up newly-overdue invoices.
+    'flip-overdue-invoices': {
+        'task': 'fees.tasks.flip_overdue_invoices',
+        'schedule': crontab(minute=0),
+    },
 }
 app.conf.timezone = 'Africa/Dar_es_Salaam'

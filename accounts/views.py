@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db.models import Count, Q
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -9,7 +10,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import SchoolSettings, UserNotification
+from .models import Role, SchoolSettings, UserNotification
 from .serializers import LoginSerializer, UserSerializer
 
 
@@ -136,3 +137,82 @@ class ModuleConfigView(APIView):
 
     def get(self, request):
         return Response({'enabled_modules': settings.ENABLED_MODULES})
+
+
+class DashboardSummaryView(APIView):
+    """
+    GET /api/dashboard/summary/
+    Everything the Owner/Headteacher/Bursar dashboard (DashboardPage.jsx)
+    needs in one round trip, instead of the 7 separate parallel requests it
+    used to fire on every load (students, staff, exams, fee summary,
+    attendance, defaulters, monthly revenue). Each section is computed with
+    the same query the standalone endpoint uses (see fees.views /
+    attendance.views helpers) and omitted (null) when its module is off, so
+    behaviour matches what the individual endpoints already returned.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        role = request.user.role
+        if role not in {Role.OWNER, Role.HEADTEACHER, Role.BURSAR}:
+            raise PermissionDenied('This dashboard summary is for Owner, Headteacher, or Bursar.')
+
+        from django.utils import timezone as tz
+
+        from attendance.views import daily_summary_data
+        from exams.models import Exam
+        from fees.views import (
+            defaulters_queryset,
+            fee_summary_data,
+            monthly_revenue_data,
+            serialize_defaulter,
+        )
+        from staff.models import StaffProfile
+        from students.models import Student, StudentStatus
+
+        enabled = settings.ENABLED_MODULES
+
+        data = {
+            'students': {
+                'count': Student.objects.filter(status=StudentStatus.ACTIVE).count(),
+            },
+            'staff': None,
+            'exams': None,
+            'fees': None,
+            'attendance': None,
+            'defaulters': None,
+            'monthly_revenue': None,
+        }
+
+        if role in {Role.OWNER, Role.HEADTEACHER}:
+            data['staff'] = {'count': StaffProfile.objects.count()}
+
+        if 'exams' in enabled:
+            today = tz.localdate()
+            exam_qs = Exam.objects.filter(end_date__gte=today).order_by('start_date', 'id')
+            data['exams'] = {
+                'upcoming_count': exam_qs.count(),
+                'upcoming': [
+                    {
+                        'id': e.id,
+                        'name': e.name,
+                        'level': e.level,
+                        'stream': e.stream,
+                        'exam_type': e.exam_type,
+                        'start_date': str(e.start_date),
+                    }
+                    for e in exam_qs[:5]
+                ],
+            }
+
+        if 'fees' in enabled:
+            data['fees'] = fee_summary_data(term='current')
+            data['monthly_revenue'] = monthly_revenue_data(tz.now().year)
+            data['defaulters'] = [
+                serialize_defaulter(inv) for inv in defaulters_queryset()[:5]
+            ]
+
+        if 'attendance' in enabled:
+            data['attendance'] = daily_summary_data(str(tz.localdate()))
+
+        return Response(data)

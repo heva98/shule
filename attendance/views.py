@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
@@ -260,6 +260,29 @@ class AttendanceSummaryView(APIView):
         })
 
 
+def daily_summary_data(date_str):
+    """Aggregate present/absent/excused counts for one day, shared by
+    AttendanceDailySummaryView and the combined dashboard-summary endpoint."""
+    counts = AttendanceRecord.objects.filter(date=date_str).aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status__in=[AttendanceStatus.PRESENT, AttendanceStatus.LATE])),
+        absent=Count('id', filter=Q(status=AttendanceStatus.ABSENT)),
+        excused=Count('id', filter=Q(status=AttendanceStatus.EXCUSED)),
+    )
+    total, present, absent, excused = (
+        counts['total'], counts['present'], counts['absent'], counts['excused']
+    )
+    rate = round(present / total * 100, 1) if total > 0 else 0
+    return {
+        'date':          date_str,
+        'total_records': total,
+        'present':       present,
+        'absent':        absent,
+        'excused':       excused,
+        'rate_percent':  str(rate),
+    }
+
+
 class AttendanceDailySummaryView(APIView):
     """
     GET /api/attendance/daily-summary/?date=YYYY-MM-DD
@@ -278,22 +301,7 @@ class AttendanceDailySummaryView(APIView):
 
     def get(self, request):
         date_str = request.query_params.get('date') or str(timezone.localdate())
-        qs       = AttendanceRecord.objects.filter(date=date_str)
-        total    = qs.count()
-        present  = qs.filter(
-            status__in=[AttendanceStatus.PRESENT, AttendanceStatus.LATE]
-        ).count()
-        absent   = qs.filter(status=AttendanceStatus.ABSENT).count()
-        excused  = qs.filter(status=AttendanceStatus.EXCUSED).count()
-        rate     = round(present / total * 100, 1) if total > 0 else 0
-        return Response({
-            'date':          date_str,
-            'total_records': total,
-            'present':       present,
-            'absent':        absent,
-            'excused':       excused,
-            'rate_percent':  str(rate),
-        })
+        return Response(daily_summary_data(date_str))
 
 
 class AbsenteesView(APIView):
