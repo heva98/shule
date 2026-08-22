@@ -19,6 +19,7 @@ class LevelGroup(models.TextChoices):
 class ExamType(models.TextChoices):
     CA1 = 'CA1', 'Continuous Assessment 1'
     CA2 = 'CA2', 'Continuous Assessment 2'
+    WEEKLY = 'WEEKLY', 'Weekly Test'
     MIDTERM = 'MIDTERM', 'Mid-Term'
     TERMINAL = 'TERMINAL', 'Terminal'
     MOCK = 'MOCK', 'Mock'

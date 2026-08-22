@@ -7,8 +7,10 @@ import {
   ShieldAlert,
   Users,
 } from 'lucide-react'
+import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
 import StatCard from '../../components/ui/StatCard'
 import { useAuth } from '../../context/AuthContext'
+import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { getPeriods, getTimetableEntries } from '../../api/timetable'
 import { getHomePackages } from '../../api/homepackages'
 import { getExams } from '../../api/exams'
@@ -53,17 +55,23 @@ function EmptyState({ icon: Icon, message }) {
 export default function TeacherDashboard() {
   const { user } = useAuth()
   const role = user?.role
+  const { enabledModules, modulesLoading } = useEnabledModules()
+  const timetableEnabled = !modulesLoading && enabledModules.includes('timetable')
+  const homepackagesEnabled = !modulesLoading && enabledModules.includes('homepackages')
+  const examsEnabled = !modulesLoading && enabledModules.includes('exams')
 
   const timetableQ = useQuery({
     queryKey: ['dash-my-timetable'],
     queryFn: () => getTimetableEntries({ mine: 'true' }),
+    enabled: timetableEnabled,
   })
-  const periodsQ = useQuery({ queryKey: ['dash-periods'], queryFn: getPeriods })
+  const periodsQ = useQuery({ queryKey: ['dash-periods'], queryFn: getPeriods, enabled: timetableEnabled })
   const homePackagesQ = useQuery({
     queryKey: ['dash-my-homepackages'],
     queryFn: () => getHomePackages({ posted_by: 'me' }),
+    enabled: homepackagesEnabled,
   })
-  const examsQ = useQuery({ queryKey: ['dash-upcoming-exams'], queryFn: () => getExams() })
+  const examsQ = useQuery({ queryKey: ['dash-upcoming-exams'], queryFn: () => getExams(), enabled: examsEnabled })
   const myClassQ = useQuery({
     queryKey: ['dash-my-class'],
     queryFn: getMyClass,
@@ -98,8 +106,10 @@ export default function TeacherDashboard() {
 
   const openIncidents = disciplineQ.data?.results ?? []
 
-  // ── Fourth stat card, role-dependent ──
-  let fourthCard
+  // ── Fourth stat card, role-dependent — omitted entirely (rather than
+  // shown with a misleading zero) when its only source is a disabled
+  // module, e.g. "This Week's Lessons" with the timetable module off.
+  let fourthCard = null
   if (role === 'CLASS_TEACHER') {
     fourthCard = {
       title: 'My Class',
@@ -118,7 +128,7 @@ export default function TeacherDashboard() {
       color: 'bg-danger',
       loading: disciplineQ.isLoading,
     }
-  } else {
+  } else if (timetableEnabled) {
     fourthCard = {
       title: "This Week's Lessons",
       value: String(allMyEntries.length),
@@ -128,6 +138,9 @@ export default function TeacherDashboard() {
       loading: timetableQ.isLoading,
     }
   }
+
+  const showTimetablePanel = timetableEnabled
+  const showExamsPanel = examsEnabled
 
   return (
     <div className="space-y-6">
@@ -142,7 +155,7 @@ export default function TeacherDashboard() {
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {timetableQ.isLoading ? (
+        {timetableEnabled && (timetableQ.isLoading ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
@@ -160,9 +173,9 @@ export default function TeacherDashboard() {
                 : 'No lessons today'
             }
           />
-        )}
+        ))}
 
-        {homePackagesQ.isLoading ? (
+        {homepackagesEnabled && (homePackagesQ.isLoading ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
@@ -176,9 +189,9 @@ export default function TeacherDashboard() {
             color="bg-success"
             subtitle="By you"
           />
-        )}
+        ))}
 
-        {examsQ.isLoading ? (
+        {examsEnabled && (examsQ.isLoading ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
@@ -192,9 +205,9 @@ export default function TeacherDashboard() {
             color="bg-accent"
             subtitle={upcomingExams[0] ? `Next: ${upcomingExams[0].name}` : 'None scheduled'}
           />
-        )}
+        ))}
 
-        {fourthCard.loading ? (
+        {fourthCard && (fourthCard.loading ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
@@ -208,11 +221,13 @@ export default function TeacherDashboard() {
             color={fourthCard.color}
             subtitle={fourthCard.subtitle}
           />
-        )}
+        ))}
       </div>
 
       {/* ── Today's timetable + upcoming exams ── */}
+      {(showTimetablePanel || showExamsPanel) && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {showTimetablePanel && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">Today's Timetable</h2>
@@ -255,7 +270,10 @@ export default function TeacherDashboard() {
             </div>
           )}
         </div>
+        )}
 
+        {showExamsPanel && (
+        <div className={showTimetablePanel ? '' : 'lg:col-span-2'}>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">Upcoming Exams</h2>
@@ -290,10 +308,14 @@ export default function TeacherDashboard() {
             </div>
           )}
         </div>
+        </div>
+        )}
       </div>
+      )}
 
-      {/* ── Home packages + discipline (role-dependent) ── */}
+      {/* ── Home packages + discipline/quick-links (role-dependent) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {homepackagesEnabled && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">My Home Packages</h2>
@@ -328,6 +350,7 @@ export default function TeacherDashboard() {
             </div>
           )}
         </div>
+        )}
 
         {role === 'DISCIPLINE_TEACHER' ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -372,34 +395,8 @@ export default function TeacherDashboard() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-gray-700 mb-4">Quick Links</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <Link
-                to="/students"
-                className="px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
-              >
-                Students
-              </Link>
-              <Link
-                to="/exams"
-                className="px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
-              >
-                Exams &amp; Marks
-              </Link>
-              <Link
-                to="/homepackages"
-                className="px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
-              >
-                Home Packages
-              </Link>
-              <Link
-                to="/timetable"
-                className="px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
-              >
-                Timetable
-              </Link>
-            </div>
+          <div className={homepackagesEnabled ? '' : 'lg:col-span-2'}>
+            <QuickLinksPanel role={role} enabledModules={enabledModules} />
           </div>
         )}
       </div>

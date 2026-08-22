@@ -309,7 +309,6 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
       ...classSubjects.map((s) => ({ key: `sub_${s.code}`, label: s.code, center: true })),
       { key: 'total_marks', label: 'Total', center: true },
       { key: 'average', label: 'Avg', center: true },
-      { key: 'attendance_pct', label: 'Att %', center: true },
     ]
     const rows = data.students.map((s) => {
       const map = {}
@@ -320,7 +319,6 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
         ...map,
         total_marks: s.total_marks,
         average: s.average,
-        attendance_pct: `${s.attendance_pct}%`,
       }
     })
     return {
@@ -425,7 +423,6 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
                   ))}
                   <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide text-center">Total</th>
                   <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide text-center">Avg</th>
-                  <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide text-center">Att %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -454,7 +451,6 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
                       })}
                       <td className="px-3 py-2.5 text-center font-mono font-semibold text-gray-800">{parseFloat(s.total_marks).toFixed(0)}</td>
                       <td className="px-3 py-2.5 text-center font-mono text-gray-700">{parseFloat(s.average).toFixed(1)}</td>
-                      <td className="px-3 py-2.5 text-center text-gray-700">{s.attendance_pct}%</td>
                     </tr>
                   )
                 })}

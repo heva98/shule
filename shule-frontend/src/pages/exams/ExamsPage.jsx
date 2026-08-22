@@ -37,6 +37,7 @@ const QUARTER_MAP = {
 const EXAM_TYPES = [
   { value: 'CA1',      label: 'Continuous Assessment 1' },
   { value: 'CA2',      label: 'Continuous Assessment 2' },
+  { value: 'WEEKLY',   label: 'Weekly Test' },
   { value: 'MIDTERM',  label: 'Mid-Term' },
   { value: 'TERMINAL', label: 'Terminal' },
   { value: 'MOCK',     label: 'Mock' },
@@ -45,6 +46,7 @@ const EXAM_TYPES = [
 const TYPE_BADGE = {
   CA1:      'bg-blue-100 text-blue-700',
   CA2:      'bg-blue-100 text-blue-700',
+  WEEKLY:   'bg-teal-100 text-teal-700',
   MIDTERM:  'bg-purple-100 text-purple-700',
   TERMINAL: 'bg-primary/10 text-primary',
   MOCK:     'bg-gray-100 text-gray-600',

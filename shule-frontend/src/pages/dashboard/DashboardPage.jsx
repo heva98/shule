@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   Bar,
@@ -13,16 +14,23 @@ import {
 import {
   AlertCircle,
   CalendarCheck,
+  ClipboardList,
   CreditCard,
   TrendingDown,
+  UserCog,
   Users,
 } from 'lucide-react'
+import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
 import StatCard from '../../components/ui/StatCard'
+import { useAuth } from '../../context/AuthContext'
+import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { getStudents } from '../../api/students'
+import { getStaff } from '../../api/staff'
+import { getExams } from '../../api/exams'
 import { getFeeSummary, getMonthlyRevenue, getDefaulters } from '../../api/fees'
 import { getDailySummary } from '../../api/attendance'
 import { sendFeeReminder } from '../../api/communications'
-import { useEnabledModules } from '../../hooks/useEnabledModules'
+import { LEVEL_LABEL } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
 
 // ── Skeleton helpers ──────────────────────────────────────────────────────────
@@ -72,15 +80,41 @@ function ErrorBanner({ message }) {
   )
 }
 
+function EmptyState({ icon: Icon, message }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
+      <Icon size={28} className="mb-2 text-gray-200" />
+      {message}
+    </div>
+  )
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-TZ', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 // ── Main dashboard ────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { user } = useAuth()
+  const role = user?.role
   const [sendingId, setSendingId] = useState(null)
   const { enabledModules, modulesLoading } = useEnabledModules()
   const feesEnabled = !modulesLoading && enabledModules.includes('fees')
   const attendanceEnabled = !modulesLoading && enabledModules.includes('attendance')
+  const examsEnabled = !modulesLoading && enabledModules.includes('exams')
+  // Staff records include salary/national ID — StaffViewSet itself is
+  // restricted to Owner/Headteacher/Academic Teacher, so Bursar never
+  // queries it (would 403).
+  const canSeeStaff = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'].includes(role)
 
   const studentsQ = useQuery({ queryKey: ['dash-students'], queryFn: () => getStudents({ status: 'ACTIVE' }) })
+  const staffQ = useQuery({ queryKey: ['dash-staff'], queryFn: () => getStaff(), enabled: canSeeStaff })
+  const examsQ = useQuery({
+    queryKey: ['dash-upcoming-exams'],
+    queryFn: () => getExams({ all: 'true' }),
+    enabled: examsEnabled,
+  })
   const feeQ = useQuery({ queryKey: ['dash-fees'], queryFn: () => getFeeSummary({ term: 'current' }), enabled: feesEnabled })
   const attQ = useQuery({ queryKey: ['dash-attendance'], queryFn: () => getDailySummary(), enabled: attendanceEnabled })
   const defaultersQ = useQuery({ queryKey: ['dash-defaulters'], queryFn: () => getDefaulters({ limit: 5 }), enabled: feesEnabled })
@@ -88,6 +122,8 @@ export default function DashboardPage() {
 
   const failedEndpoints = [
     studentsQ.isError && 'Students (/api/students/)',
+    canSeeStaff && staffQ.isError && 'Staff (/api/staff/)',
+    examsEnabled && examsQ.isError && 'Exams (/api/exams/)',
     feesEnabled && feeQ.isError && 'Fee Summary (/api/fees/summary/)',
     attendanceEnabled && attQ.isError && 'Attendance (/api/attendance/daily-summary/)',
     feesEnabled && defaultersQ.isError && 'Defaulters (/api/fees/defaulters/)',
@@ -110,9 +146,16 @@ export default function DashboardPage() {
   // ── Derived stat values ───────────────────────────────────────────────────
 
   const totalStudents = studentsQ.data?.count ?? null
+  const totalStaff = staffQ.data?.count ?? null
   const feesCollected = feeQ.data?.total_collected ?? null
   const feesOutstanding = feeQ.data?.total_outstanding ?? null
   const attendanceRate = attQ.data?.rate_percent ?? null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const upcomingExams = (examsQ.data?.results ?? examsQ.data ?? [])
+    .filter((e) => new Date(e.end_date) >= today)
+    .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
 
   const monthlyData = (monthlyQ.data ?? []).map((row) => ({
     ...row,
@@ -122,6 +165,8 @@ export default function DashboardPage() {
   const defaulters = Array.isArray(defaultersQ.data)
     ? defaultersQ.data
     : defaultersQ.data?.results ?? []
+
+  const showQuickLinksBeside = examsEnabled
 
   return (
     <div className="space-y-6">
@@ -144,6 +189,30 @@ export default function DashboardPage() {
             subtitle="Active enrolments"
           />
         )}
+
+        {canSeeStaff && (staffQ.isLoading ? (
+          <StatCardSkeleton />
+        ) : (
+          <StatCard
+            title="Total Staff"
+            value={totalStaff !== null ? totalStaff.toLocaleString() : '—'}
+            icon={UserCog}
+            color="bg-secondary"
+            subtitle="Teaching & non-teaching"
+          />
+        ))}
+
+        {examsEnabled && (examsQ.isLoading ? (
+          <StatCardSkeleton />
+        ) : (
+          <StatCard
+            title="Upcoming Exams"
+            value={String(upcomingExams.length)}
+            icon={ClipboardList}
+            color="bg-accent"
+            subtitle={upcomingExams[0] ? `Next: ${upcomingExams[0].name}` : 'None scheduled'}
+          />
+        ))}
 
         {feesEnabled && (feeQ.isLoading ? (
           <StatCardSkeleton />
@@ -192,6 +261,50 @@ export default function DashboardPage() {
             }
           />
         ))}
+      </div>
+
+      {/* ── Upcoming exams + quick links ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {examsEnabled && (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-700">Upcoming Exams</h2>
+              <Link to="/exams" className="text-xs text-primary hover:underline">
+                View all
+              </Link>
+            </div>
+
+            {examsQ.isLoading ? (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : upcomingExams.length === 0 ? (
+              <EmptyState icon={ClipboardList} message="No upcoming exams scheduled." />
+            ) : (
+              <div className="space-y-2">
+                {upcomingExams.slice(0, 5).map((exam) => (
+                  <div key={exam.id} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-gray-50/70">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{exam.name}</p>
+                      <p className="text-xs text-gray-400">
+                        {LEVEL_LABEL[exam.level] ?? exam.level}{exam.stream ? ` ${exam.stream}` : ''} · {exam.exam_type}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0 text-xs text-gray-500">
+                      {fmtDate(exam.start_date)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className={showQuickLinksBeside ? '' : 'lg:col-span-2'}>
+          <QuickLinksPanel role={role} enabledModules={enabledModules} />
+        </div>
       </div>
 
       {/* ── Charts + defaulters grid ── */}
