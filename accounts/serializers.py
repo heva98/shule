@@ -43,7 +43,11 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_enabled_modules(self, obj):
-        return settings.ENABLED_MODULES
+        # Resolved list: the explicit ENABLED_MODULES when set, otherwise every
+        # optional module (matches shule.modules — unset means "all on", so the
+        # SPA and the server-side gates agree).
+        from shule.modules import enabled_modules
+        return sorted(enabled_modules())
 
 
 class LoginSerializer(serializers.Serializer):

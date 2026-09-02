@@ -119,16 +119,11 @@ class SchoolConfigView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from shule.modules import enabled_modules
-
         s = SchoolSettings.get_settings()
         return Response({
             'school_name':   s.school_name,
             'school_logo':   request.build_absolute_uri(s.school_logo.url) if s.school_logo else None,
             'active_levels': s.active_levels or [],
-            # Optional feature modules switched on for this deployment — the SPA
-            # hides routes / sidebar entries for anything not listed.
-            'enabled_modules': sorted(enabled_modules()),
         })
 
 

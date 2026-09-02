@@ -26,6 +26,7 @@ app.conf.beat_schedule = {
     'flip-overdue-invoices': {
         'task': 'fees.tasks.flip_overdue_invoices',
         'schedule': crontab(minute=0),
+    },
 
     # 07:00 daily — term closing/opening SMS reminders (5 days + 1 day before
     # each quarter boundary). No-op unless the school enables auto_term_dates.

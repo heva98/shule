@@ -9,14 +9,6 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
-# Optional feature modules this deployment has switched on. Empty / unset =
-# every module enabled (historical behaviour). See shule/modules.py.
-ENABLED_MODULES = [
-    m.strip().lower()
-    for m in config('ENABLED_MODULES', default='').split(',')
-    if m.strip()
-]
-
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -36,13 +28,16 @@ THIRD_PARTY_APPS = [
     'django_celery_beat',
 ]
 
+# Optional feature modules this deployment has switched on. Enforced server-side
+# (viewsets, Celery tasks) and surfaced to the SPA via UserSerializer so routes
+# and the sidebar hide what is off. See shule/modules.py.
 ENABLED_MODULES = config(
     'ENABLED_MODULES',
     default=(
-        'exams,reports,fees,attendance,timetable,boarding,transport,'
-        'library,homepackages,communications,documents,school_calendar'
+        'exams,reports,fees,attendance,timetable,staff,boarding,transport,'
+        'library,homepackages,communications,sms,documents,school_calendar'
     ),
-    cast=lambda s: [m.strip() for m in s.split(',') if m.strip()]
+    cast=lambda s: [m.strip().lower() for m in s.split(',') if m.strip()]
 )
 
 LOCAL_APPS = [

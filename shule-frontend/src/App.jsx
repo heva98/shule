@@ -249,7 +249,7 @@ export default function App() {
                 <Route
                   path="/sms"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.SMS} module="sms">
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.SMS} requiredModule="sms">
                       <SmsPage />
                     </ProtectedRoute>
                   }

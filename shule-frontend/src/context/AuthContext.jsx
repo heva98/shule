@@ -3,6 +3,10 @@ import api from '../lib/axios'
 
 const AuthContext = createContext(null)
 
+// Stable reference so `enabledModules` doesn't churn the context useMemo below
+// on every render when the user payload has no list yet.
+const NO_MODULES = []
+
 function decodeJwt(token) {
   try {
     return JSON.parse(atob(token.split('.')[1]))
@@ -56,7 +60,7 @@ export function AuthProvider({ children }) {
   // `user.enabled_modules` rides along on /auth/login/ and /auth/me/ (see
   // UserSerializer) so module-gated dashboard queries don't have to wait on
   // a separate /api/config/ round trip before they can even start.
-  const enabledModules = user?.enabled_modules ?? []
+  const enabledModules = user?.enabled_modules ?? NO_MODULES
 
   const logout = useCallback(async () => {
     const refresh = localStorage.getItem('shule_refresh')
