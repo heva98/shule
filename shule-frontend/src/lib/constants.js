@@ -162,6 +162,9 @@ export const FEATURE_ROLES = {
   EXAM_REPORTS:    ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER'],
   STAFF:           ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'],
   COMMUNICATIONS:  ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER'],
+  // SMS: class teachers send exam results for their own class; head/bursar
+  // send fee reminders and announcements. Server enforces the finer scope.
+  SMS:             ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'BURSAR', 'CLASS_TEACHER'],
   SCHOOL_CALENDAR: ['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER', 'BURSAR'],
   PARENT:          ['PARENT'],
 }

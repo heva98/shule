@@ -1,7 +1,16 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import DemoRequest, DeliveryStatus, Message, MessageLog
+from .models import (
+    DemoRequest,
+    DeliveryStatus,
+    Message,
+    MessageLog,
+    SmsBatch,
+    SmsConfiguration,
+    SmsMessage,
+    SmsTemplate,
+)
 
 
 class MessageLogInline(admin.TabularInline):
@@ -97,3 +106,91 @@ class DemoRequestAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     readonly_fields = ('full_name', 'email', 'phone', 'school_name', 'message', 'created_at')
     ordering = ('-created_at',)
+
+
+# ── SMS ─────────────────────────────────────────────────────────────────────
+
+@admin.register(SmsConfiguration)
+class SmsConfigurationAdmin(admin.ModelAdmin):
+    list_display = (
+        'language', 'allow_exam_results', 'allow_fee_reminders', 'allow_announcements',
+        'auto_payment_thank_you', 'auto_term_dates', 'updated_at',
+    )
+
+    def has_add_permission(self, request):
+        # Singleton — edit the one row (created on first access).
+        return not SmsConfiguration.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(SmsTemplate)
+class SmsTemplateAdmin(admin.ModelAdmin):
+    list_display = ('key', 'language', 'is_active', 'updated_at', 'updated_by')
+    list_filter = ('key', 'language', 'is_active')
+    search_fields = ('body',)
+    readonly_fields = ('updated_at',)
+
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+class SmsMessageInline(admin.TabularInline):
+    model = SmsMessage
+    extra = 0
+    can_delete = False
+    fields = (
+        'recipient_name', 'recipient_phone', 'status', 'skip_reason',
+        'segments', 'cost', 'provider_message_id', 'sent_at',
+    )
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(SmsBatch)
+class SmsBatchAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'kind', 'status', 'dry_run', 'created_by', 'created_at',
+        'total_recipients', 'sent_count', 'failed_count', 'skipped_count',
+        'total_segments', 'total_cost',
+    )
+    list_filter = ('kind', 'status', 'dry_run', 'created_at')
+    search_fields = ('created_by__full_name', 'idempotency_key', 'template_key')
+    date_hierarchy = 'created_at'
+    readonly_fields = (
+        'kind', 'status', 'template', 'template_key', 'language', 'sender_id',
+        'created_by', 'context', 'dry_run', 'idempotency_key',
+        'total_recipients', 'sent_count', 'failed_count', 'skipped_count',
+        'total_segments', 'total_cost', 'created_at', 'queued_at', 'completed_at',
+    )
+    inlines = [SmsMessageInline]
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(SmsMessage)
+class SmsMessageAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'batch', 'recipient_name', 'recipient_phone', 'status',
+        'segments', 'cost', 'provider_message_id', 'sent_at',
+    )
+    list_filter = ('status', 'created_at', 'batch__kind')
+    search_fields = ('recipient_phone', 'recipient_name', 'provider_message_id')
+    date_hierarchy = 'created_at'
+    readonly_fields = (
+        'batch', 'student', 'guardian', 'recipient_name', 'recipient_phone',
+        'body', 'sender_id', 'status', 'skip_reason', 'error_detail',
+        'provider_message_id', 'provider_status', 'provider_response',
+        'segments', 'cost', 'sent_by', 'created_at', 'sent_at', 'updated_at',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

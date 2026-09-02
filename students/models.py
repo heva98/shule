@@ -110,12 +110,30 @@ class Guardian(models.Model):
     national_id = models.CharField(max_length=50, blank=True)
 
     is_primary_contact = models.BooleanField(default=False)
+    # Staff-set suppression — a guardian who has asked not to receive SMS. There
+    # is no parent-facing opt-out; an admin ticks this. Honoured by every SMS
+    # send, fee reminders included.
+    sms_opt_out = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-is_primary_contact', 'full_name']
 
     def __str__(self):
         return f'{self.full_name} ({self.relationship}) — {self.student.student_id}'
+
+    def save(self, *args, **kwargs):
+        # Normalise to +255 E.164 on the way in, but only when the value can be
+        # parsed — an unrecognised string is left exactly as entered so nothing
+        # is silently lost. `normalize_guardian_phones` reports the leftovers.
+        from shule.phone import normalize_tz_phone
+
+        for field in ('phone', 'whatsapp_phone'):
+            current = getattr(self, field, '')
+            if current:
+                normalised = normalize_tz_phone(current)
+                if normalised:
+                    setattr(self, field, normalised)
+        super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=Student)

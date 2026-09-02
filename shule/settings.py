@@ -9,6 +9,14 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
+# Optional feature modules this deployment has switched on. Empty / unset =
+# every module enabled (historical behaviour). See shule/modules.py.
+ENABLED_MODULES = [
+    m.strip().lower()
+    for m in config('ENABLED_MODULES', default='').split(',')
+    if m.strip()
+]
+
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -88,7 +96,7 @@ WSGI_APPLICATION = 'shule.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
         'NAME': config('DB_NAME', default='shule_db'),
         'USER': config('DB_USER', default=''),
         'PASSWORD': config('DB_PASSWORD', default=''),
@@ -220,7 +228,31 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Dar_es_Salaam'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
-# ── Africa's Talking (future SMS integration) ─────────────────────────────────
+# ── SMS (Notify Africa) ──────────────────────────────────────────────────────
+# Backend selector, same pattern as EMAIL_BACKEND / the module flags.
+#   noop          — record SmsMessage rows, never call a provider (default; tests)
+#   console       — noop + print each message to the log
+#   notify_africa — real sends via api.notify.africa
+SMS_BACKEND = config('SMS_BACKEND', default='noop')
+
+NOTIFY_AFRICA_BASE_URL = config('NOTIFY_AFRICA_BASE_URL', default='https://api.notify.africa')
+NOTIFY_AFRICA_API_TOKEN = config('NOTIFY_AFRICA_API_TOKEN', default='')
+# Notify Africa sender-id reference (the numeric id of an approved sender name).
+NOTIFY_AFRICA_SENDER_ID = config('NOTIFY_AFRICA_SENDER_ID', default='')
+NOTIFY_AFRICA_TIMEOUT = config('NOTIFY_AFRICA_TIMEOUT', default=15, cast=int)
+
+# Guard rails. A per-school SmsConfiguration row can tighten these further but
+# never loosen them past the deployment ceiling set here.
+SMS_MAX_SEGMENTS = config('SMS_MAX_SEGMENTS', default=3, cast=int)
+SMS_BATCH_RECIPIENT_CAP = config('SMS_BATCH_RECIPIENT_CAP', default=500, cast=int)
+SMS_PROVIDER_CHUNK_SIZE = config('SMS_PROVIDER_CHUNK_SIZE', default=100, cast=int)
+# Seconds to pause between provider chunks (crude rate limiting). 0 in tests.
+SMS_PROVIDER_CHUNK_SLEEP = config('SMS_PROVIDER_CHUNK_SLEEP', default=1.0, cast=float)
+# TZS per 160-char (GSM-7) segment, shown to staff as an estimate before they
+# confirm a send. 0 = show segment counts only, no shilling estimate.
+SMS_PRICE_PER_SEGMENT = config('SMS_PRICE_PER_SEGMENT', default='0', cast=str)
+
+# ── Africa's Talking (legacy stub — unused) ──────────────────────────────────
 AFRICASTALKING_USERNAME = config('AFRICASTALKING_USERNAME', default='')
 AFRICASTALKING_API_KEY = config('AFRICASTALKING_API_KEY', default='')
 

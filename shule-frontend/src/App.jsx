@@ -33,6 +33,7 @@ const ResultsPage = lazy(() => import('./pages/exams/ResultsPage'))
 const ExamReportsPage = lazy(() => import('./pages/exams/ReportsPage'))
 const StaffPage = lazy(() => import('./pages/staff/StaffPage'))
 const CommunicationsPage = lazy(() => import('./pages/communications/CommunicationsPage'))
+const SmsPage = lazy(() => import('./pages/communications/SmsPage'))
 const SchoolCalendarPage = lazy(() => import('./pages/calendar/SchoolCalendarPage'))
 const ParentPortalPage = lazy(() => import('./pages/parent/ParentPortalPage'))
 const SysAdminDashboard = lazy(() => import('./pages/sysadmin/SysAdminDashboard'))
@@ -241,6 +242,15 @@ export default function App() {
                   element={
                     <ProtectedRoute allowedRoles={FEATURE_ROLES.COMMUNICATIONS} requiredModule="communications">
                       <CommunicationsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/sms"
+                  element={
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.SMS} module="sms">
+                      <SmsPage />
                     </ProtectedRoute>
                   }
                 />
