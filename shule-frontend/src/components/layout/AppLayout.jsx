@@ -1,5 +1,5 @@
 import { Menu } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from './Sidebar'
@@ -34,11 +34,31 @@ function resolveTitle(pathname) {
   return match?.[1] ?? 'Shule SMS'
 }
 
+// Shown only inside the content region while a lazy module chunk downloads —
+// the sidebar and topbar stay put so navigation never blanks the whole screen.
+function ContentFallback() {
+  return (
+    <>
+      <div className="route-loading-bar" />
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-primary rounded-full animate-spin" />
+      </div>
+    </>
+  )
+}
+
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user } = useAuth()
   const { pathname } = useLocation()
   const title = resolveTitle(pathname)
+  const mainRef = useRef(null)
+
+  // Reset scroll to the top of the content area on every route change so a new
+  // module never opens scrolled halfway down where the previous page was left.
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [pathname])
 
   return (
     <div className="flex h-screen bg-surface overflow-hidden">
@@ -84,8 +104,15 @@ export default function AppLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+        <main ref={mainRef} className="relative flex-1 overflow-y-auto p-4 md:p-6">
+          {/* Keyed so React remounts on module change → fade-in runs each time.
+              Suspense sits here (not around the whole app) so only this region
+              shows the loader while a module's chunk downloads. */}
+          <div key={pathname} className="route-transition">
+            <Suspense fallback={<ContentFallback />}>
+              <Outlet />
+            </Suspense>
+          </div>
         </main>
       </div>
     </div>

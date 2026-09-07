@@ -76,15 +76,19 @@ function NavItem({ item, onClose }) {
       end={item.path === '/admin-panel' || item.path === '/dashboard'}
       onClick={onClose}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+        `relative flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-lg text-sm transition-colors ${
           isActive
-            ? 'bg-white/20 text-white font-medium'
+            ? 'bg-white/20 text-white font-semibold shadow-sm before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-full before:bg-accent'
             : 'text-white/70 hover:bg-white/10 hover:text-white'
         }`
       }
     >
-      <Icon size={17} className="shrink-0" />
-      <span className="flex-1">{item.label}</span>
+      {({ isActive }) => (
+        <>
+          <Icon size={17} className={`shrink-0 ${isActive ? 'text-accent' : ''}`} />
+          <span className="flex-1">{item.label}</span>
+        </>
+      )}
     </NavLink>
   )
 }
