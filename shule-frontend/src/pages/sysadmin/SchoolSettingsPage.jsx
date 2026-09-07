@@ -293,21 +293,6 @@ export default function SchoolSettingsPage() {
           </p>
         </div>
 
-        {/* WhatsApp */}
-        <div className="border border-gray-100 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquare size={16} className="text-green-600" />
-              <span className="text-sm font-medium text-gray-700">WhatsApp</span>
-            </div>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
-          </div>
-          <p className="text-xs text-gray-500">
-            Active via <strong>wa.me deep-links</strong>. Clicking a WhatsApp action opens the app with a pre-filled message.
-          </p>
-          <p className="text-xs text-gray-400">Full WhatsApp Business Cloud API integration — coming soon.</p>
-        </div>
-
         {/* SMS */}
         <div className="border border-gray-100 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">

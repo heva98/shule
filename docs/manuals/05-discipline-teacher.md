@@ -50,7 +50,7 @@ When you open a student's profile you can see:
 - **Attendance** — their attendance history and rate
 - **Exams** — their academic performance (read-only for your role)
 
-> Guardian contact information (phone and WhatsApp) is visible on the student's Overview tab. Use this to contact parents when following up on disciplinary matters.
+> Guardian phone numbers are visible on the student's Overview tab. Use these to contact parents when following up on disciplinary matters.
 
 ---
 
@@ -94,8 +94,8 @@ When a Class Teacher or Headteacher records a disciplinary incident and refers i
 1. Go to **Students**, find the student.
 2. Open their **Attendance tab**.
 3. Check their monthly rate. Anything below 80% warrants a parent call.
-4. Open the **Overview tab** to get the guardian's WhatsApp number.
-5. Send or call to confirm the absences are known to the family.
+4. Open the **Overview tab** to get the guardian's phone number.
+5. Call to confirm the absences are known to the family.
 
 **Checking a class's conduct:**
 1. Go to **Attendance**, filter by the class (Level + Stream) and the current month.

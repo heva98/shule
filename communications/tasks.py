@@ -197,7 +197,7 @@ def send_email_task(self, message_id, to_email, recipient_name):
 def send_daily_absence_alerts(self):
     """
     Fetch all AbsenceAlerts for today where sms_sent=False,
-    fire a WhatsApp / email notification per student,
+    email a notification to each student's guardian,
     then mark sms_sent=True.
 
     Scheduled via django-celery-beat to run at 09:00 Africa/Dar_es_Salaam daily.

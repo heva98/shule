@@ -2,14 +2,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
   Bell,
-  Check,
   ChevronDown,
   ChevronUp,
   Clock,
   GraduationCap,
   Loader2,
   Mail,
-  MessageCircle,
   MessageSquare,
   RefreshCw,
   Send,
@@ -35,10 +33,8 @@ import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CHANNELS = [
-  { value: 'WHATSAPP', label: 'WhatsApp', Icon: MessageCircle, enabled: false,
-    badge: 'Not connected yet' },
-  { value: 'EMAIL',    label: 'Email',    Icon: Mail,           enabled: true },
-  { value: 'SMS',      label: 'SMS',      Icon: Smartphone,     enabled: false,
+  { value: 'EMAIL', label: 'Email', Icon: Mail,        enabled: true },
+  { value: 'SMS',   label: 'SMS',   Icon: Smartphone,  enabled: false,
     badge: 'Send from the Parent SMS page' },
 ]
 
@@ -50,9 +46,8 @@ const AUDIENCE_OPTIONS = [
 ]
 
 const CHANNEL_BADGE = {
-  WHATSAPP: 'bg-green-100 text-green-700',
-  EMAIL:    'bg-blue-100 text-blue-700',
-  SMS:      'bg-purple-100 text-purple-700',
+  EMAIL: 'bg-blue-100 text-blue-700',
+  SMS:   'bg-purple-100 text-purple-700',
 }
 
 const AUDIENCE_LABEL = {
@@ -135,32 +130,6 @@ function StudentSearchInput({ selectedName, onSelect, onClear }) {
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────
-
-function WhatsAppPreview({ body }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-        <MessageCircle size={12} className="text-green-600" />
-        WhatsApp Preview
-      </p>
-      <div className="bg-[#e5ddd5] rounded-xl p-4">
-        <div className="bg-white rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%] shadow-sm">
-          <p className="text-sm text-gray-900 whitespace-pre-wrap break-words leading-relaxed">
-            {body}
-          </p>
-          <div className="flex items-center justify-end gap-1 mt-2">
-            <Clock size={10} className="text-gray-400" />
-            <span className="text-[10px] text-gray-400">
-              {new Date().toLocaleTimeString('en-TZ', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-            <Check size={10} className="text-blue-500" />
-            <Check size={10} className="text-blue-500 -ml-1.5" />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function EmailPreview({ subject, body }) {
   return (
@@ -250,7 +219,6 @@ function ComposeTab() {
   const [subject,           setSubject]           = useState('')
   const [body,              setBody]              = useState('')
   const [sending,           setSending]           = useState(false)
-  const [waUrls,            setWaUrls]            = useState([])
   const [quickLoading,      setQuickLoading]      = useState({ absentees: false, defaulters: false })
 
   // ── Recipient count ──────────────────────────────────────────────────────────
@@ -277,9 +245,7 @@ function ComposeTab() {
       : countEnabled ? '…' : null
 
   // ── Validation ───────────────────────────────────────────────────────────────
-  const bodyLen   = body.length
-  const overLimit = channel === 'WHATSAPP' && bodyLen > 1000
-  const canSend   = !sending && !overLimit && body.trim().length > 0
+  const canSend   = !sending && body.trim().length > 0
     && (audience !== 'LEVEL'      || !!targetLevel)
     && (audience !== 'CLASS'      || !!targetLevel)
     && (audience !== 'INDIVIDUAL' || !!targetStudentId)
@@ -297,7 +263,6 @@ function ComposeTab() {
       const result = await broadcast(payload)
       const n = result.total_recipients
       toast.success(`Message queued for ${n} recipient${n !== 1 ? 's' : ''}.`)
-      setWaUrls(result.wa_urls ?? [])
       setBody('')
       setSubject('')
       queryClient.invalidateQueries({ queryKey: ['msg-history'] })
@@ -358,7 +323,7 @@ function ComposeTab() {
       {/* 1 · Channel */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Channel</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {CHANNELS.map(({ value, label, Icon, enabled, badge }) => (
             <button
               key={value}
@@ -478,38 +443,21 @@ function ComposeTab() {
 
       {/* 4 · Message body */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold text-gray-700">Message</label>
-          {channel === 'WHATSAPP' && (
-            <span className={`text-xs tabular-nums font-medium
-              ${overLimit ? 'text-red-500' : bodyLen > 800 ? 'text-yellow-600' : 'text-gray-400'}`}>
-              {bodyLen} / 1000
-            </span>
-          )}
-        </div>
+        <label className="text-sm font-semibold text-gray-700">Message</label>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={5}
-          placeholder={
-            channel === 'WHATSAPP'
-              ? 'Habari wazazi, tunataka kuwajulisha…'
-              : 'Dear Parent / Guardian,\n\n'
-          }
-          className={`w-full border rounded-lg px-3 py-2.5 text-sm resize-none
-            focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-            ${overLimit ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
+          placeholder={'Dear Parent / Guardian,\n\n'}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-none
+            focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
         />
-        {overLimit && (
-          <p className="text-xs text-red-500">WhatsApp messages must be 1,000 characters or fewer.</p>
-        )}
       </div>
 
       {/* 5 · Preview */}
-      {body.trim() && (
+      {body.trim() && channel === 'EMAIL' && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          {channel === 'WHATSAPP' && <WhatsAppPreview body={body} />}
-          {channel === 'EMAIL'    && <EmailPreview subject={subject} body={body} />}
+          <EmailPreview subject={subject} body={body} />
         </div>
       )}
 
@@ -532,44 +480,6 @@ function ComposeTab() {
         )}
       </div>
 
-      {/* 7 · WA URLs panel */}
-      {waUrls.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageCircle size={15} className="text-green-600" />
-              <p className="text-sm font-semibold text-green-800">
-                {waUrls.length} WhatsApp message{waUrls.length !== 1 ? 's' : ''} ready
-              </p>
-            </div>
-            <button onClick={() => setWaUrls([])} className="p-1 text-green-500 hover:text-green-700">
-              <X size={15} />
-            </button>
-          </div>
-          <p className="text-xs text-green-700">
-            Click each link to open WhatsApp with the pre-filled message.
-          </p>
-          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-            {waUrls.map((item, i) => {
-              const href  = typeof item === 'string' ? item : (item.url ?? item)
-              const label = typeof item === 'string' ? `Recipient ${i + 1}` : (item.student_name ?? item.student ?? `Recipient ${i + 1}`)
-              return (
-                <a
-                  key={i}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2 bg-white border border-green-200
-                    rounded-lg text-xs text-green-700 hover:bg-green-100 transition-colors"
-                >
-                  <MessageCircle size={12} className="shrink-0" />
-                  <span className="truncate">{label}</span>
-                </a>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* 8 · Quick actions */}
       {(attendanceEnabled || feesEnabled) && (
@@ -711,10 +621,7 @@ function MessageRow({ msg, expanded, onToggle }) {
                         <tr key={log.id} className="hover:bg-gray-50/50">
                           <td className="px-3 py-2 font-medium text-gray-800">{log.recipient_name}</td>
                           <td className="px-3 py-2 text-gray-500 hidden sm:table-cell">
-                            {log.whatsapp_url
-                              ? <a href={log.whatsapp_url} target="_blank" rel="noopener noreferrer"
-                                  className="text-green-600 hover:underline">Open WA</a>
-                              : log.recipient_phone || log.recipient_email || '—'}
+                            {log.recipient_phone || log.recipient_email || '—'}
                           </td>
                           <td className="px-3 py-2 text-center">
                             <span className={`px-1.5 py-0.5 rounded-full font-medium
@@ -783,7 +690,6 @@ function HistoryTab() {
               className={filterCls}
             >
               <option value="">All Channels</option>
-              <option value="WHATSAPP">WhatsApp</option>
               <option value="EMAIL">Email</option>
               <option value="SMS">SMS</option>
             </select>

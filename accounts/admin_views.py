@@ -700,7 +700,6 @@ class AdminSystemHealthView(APIView):
             'celery': {'ok': celery_ok},
             'email_configured': email_configured,
             'sms_configured': sms_configured,
-            'whatsapp_configured': True,
             'storage_mb': storage_mb,
             'active_users': user_count,
             'total_students': student_count,

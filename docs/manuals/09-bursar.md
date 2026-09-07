@@ -172,7 +172,7 @@ The Defaulters tab lists all students with outstanding balances.
 #### Sending a Fee Reminder
 1. Click **Send Reminder** on a defaulter's row.
 2. If the guardian has an email address on file, a reminder email is sent automatically.
-3. If the guardian has no email on file, the reminder cannot be sent — contact them by phone instead. (WhatsApp reminders are not available; that channel is not connected yet.)
+3. If the guardian has no email on file, the reminder email cannot be sent — contact them by phone instead, or use the **Parent SMS** page to send an SMS fee reminder.
 
 > The system also runs an automatic fee reminder every Monday morning for all overdue invoices. You can trigger it manually from the Dashboard's **Send Reminder** button on the defaulters card.
 

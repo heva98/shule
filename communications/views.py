@@ -115,8 +115,6 @@ class BroadcastView(APIView):
                 'message_id': message.pk,
                 'total_recipients': summary['total_recipients'],
                 'delivered': summary['delivered'],
-                # WhatsApp URLs returned so the frontend can open them
-                'wa_urls': summary.get('wa_urls', []),
             },
             status=status.HTTP_201_CREATED,
         )

@@ -4,7 +4,6 @@ import {
   Download,
   Edit2,
   FileText,
-  MessageCircle,
   Phone,
   Plus,
   Printer,
@@ -64,11 +63,6 @@ const DOCUMENT_CATEGORIES = [
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-function waUrl(phone) {
-  if (!phone) return null
-  return `https://wa.me/${phone.replace(/\D/g, '')}`
-}
 
 function DetailRow({ label, value }) {
   return (
@@ -271,7 +265,6 @@ function OverviewTab({ student, canManage }) {
           </div>
         )}
         {student.guardians?.map((g) => {
-          const whatsapp = waUrl(g.whatsapp_phone || g.phone)
           return (
             <div
               key={g.id}
@@ -309,18 +302,6 @@ function OverviewTab({ student, canManage }) {
                   <Phone size={12} />
                   {g.phone}
                 </a>
-                {whatsapp && (
-                  <a
-                    href={whatsapp}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-xs text-white bg-[#25D366]
-                      rounded-lg px-3 py-1.5 hover:bg-[#1ebe5d] transition-colors"
-                  >
-                    <MessageCircle size={12} />
-                    WhatsApp
-                  </a>
-                )}
               </div>
             </div>
           )

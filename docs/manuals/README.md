@@ -34,8 +34,9 @@ This folder contains one user manual per staff role. Give each staff member only
 
 **Currency:** All amounts in Tanzanian Shillings (TZS)
 
-**WhatsApp notifications:** Not connected yet — the WhatsApp channel is disabled in Communications and fee/absence reminders no longer generate wa.me links. Guardian WhatsApp numbers are still captured on student profiles for future use.  
-**Email notifications:** Active if SMTP is configured (check with System Administrator) — this is currently the only working channel for reminders and alerts
+**WhatsApp:** Not part of the system. The Communications channel, the wa.me quick-links, and the Meta API config have all been removed. Guardian WhatsApp numbers are still captured on student profiles as a contact reference only.  
+**Email notifications:** Active if SMTP is configured (check with System Administrator).  
+**SMS to parents:** Live — sent from the dedicated **Parent SMS** page (exam results, fee reminders, announcements).
 
 ---
 

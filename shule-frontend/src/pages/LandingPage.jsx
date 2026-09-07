@@ -56,7 +56,7 @@ const FEATURES = [
     icon: MessageCircle,
     title: 'Communications',
     description:
-      'Reach parents by SMS, WhatsApp, or email — individually, by class, or school-wide.',
+      'Reach parents by SMS or email — individually, by class, or school-wide.',
   },
 ]
 
@@ -78,7 +78,7 @@ const PARENT_FEATURES = [
   {
     icon: Bell,
     title: 'Live absence alerts',
-    description: 'The moment a child is marked absent, guardians get an SMS or WhatsApp message — no waiting for a phone call home.',
+    description: 'The moment a child is marked absent, guardians get an SMS — no waiting for a phone call home.',
   },
   {
     icon: CreditCard,
@@ -115,7 +115,7 @@ const REASONS = [
   {
     icon: MessageCircle,
     title: 'Parents get alerts they’ll see',
-    description: 'WhatsApp and SMS out of the box, so a fee reminder or absence alert doesn’t sit unread in an app nobody opens.',
+    description: 'SMS out of the box, so a fee reminder or absence alert reaches parents on any phone.',
   },
   {
     icon: ClipboardList,
@@ -202,7 +202,7 @@ function DashboardMockup() {
         </span>
         <div className="leading-tight">
           <p className="text-[11px] text-gray-400">Absence alert sent</p>
-          <p className="text-xs font-semibold text-gray-800">via WhatsApp</p>
+          <p className="text-xs font-semibold text-gray-800">via SMS</p>
         </div>
       </div>
 
@@ -287,7 +287,7 @@ function Hero() {
             </h1>
             <p className="mt-5 text-base sm:text-lg text-white/80 max-w-xl">
               Shule SMS brings your whole school onto one platform — TZS-native billing, a real
-              2-term / 4-quarter calendar, and SMS/WhatsApp alerts parents actually see.
+              2-term / 4-quarter calendar, and SMS alerts parents actually see.
             </p>
             <div className="mt-9 flex flex-col sm:flex-row items-start gap-3">
               <a

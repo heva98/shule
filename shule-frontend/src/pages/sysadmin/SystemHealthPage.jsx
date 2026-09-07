@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
-  AlertCircle, CheckCircle2, Database, Mail, MessageSquare,
+  AlertCircle, CheckCircle2, Database, Mail,
   RefreshCw, Smartphone, Zap,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -96,7 +96,7 @@ export default function SystemHealthPage() {
       {/* Service cards */}
       <div>
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Services</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <ServiceCard
             title="Database"
             icon={Database}
@@ -123,15 +123,6 @@ export default function SystemHealthPage() {
             detail="Django email backend"
             badge={h?.email_configured ? 'Configured' : 'Not configured'}
             badgeColor={h?.email_configured ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
-          />
-          <ServiceCard
-            title="WhatsApp"
-            icon={MessageSquare}
-            ok={true}
-            loading={q.isLoading}
-            detail="wa.me deep-link integration"
-            badge="Active"
-            badgeColor="bg-green-100 text-green-700"
           />
           <ServiceCard
             title="SMS"
@@ -208,7 +199,7 @@ export default function SystemHealthPage() {
             <div>
               <p className="text-sm font-semibold text-gray-800">Run Absence Alerts Now</p>
               <p className="text-xs text-gray-500 mt-0.5">
-                Sends WhatsApp/email notifications to guardians of today's absent students.
+                Emails a notification to guardians of today's absent students.
               </p>
             </div>
             <button

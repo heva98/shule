@@ -57,7 +57,7 @@ Scroll down to see the **Monthly Revenue** chart and the **Top Fee Defaulters** 
 2. Complete all sections:
    - **Personal details** — names, date of birth, gender
    - **Academic details** — level, stream, admission date
-   - **Guardian details** — name, relationship, phone, email, WhatsApp number (contact info only — not currently used for notifications)
+   - **Guardian details** — name, relationship, phone, email, WhatsApp number (contact reference only)
 3. Click **Save**. A student ID is assigned automatically.
 
 ### Student Profile Tabs
@@ -177,7 +177,7 @@ Use the **Absentees** view (filter by date) to see all absent students with thei
 1. Click **Communications** in the sidebar.
 2. Click **+ New Message**.
 3. Select:
-   - **Channel** — **Email** (WhatsApp is listed but not connected)
+   - **Channel** — **Email**
    - **Audience** — All Students, By Level, By Class, or Individual Student
    - **Subject** and **Message body**
 4. Click **Send**.

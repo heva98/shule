@@ -16,7 +16,7 @@ class MessageLogSerializer(serializers.ModelSerializer):
         model = MessageLog
         fields = [
             'id', 'recipient_name', 'recipient_phone', 'recipient_email',
-            'status', 'whatsapp_url', 'provider_response', 'sent_at',
+            'status', 'provider_response', 'sent_at',
         ]
         read_only_fields = fields
 
@@ -51,10 +51,6 @@ class BroadcastSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        if attrs.get('message_type') == 'WHATSAPP':
-            raise serializers.ValidationError(
-                {'message_type': 'WhatsApp sending is not connected yet — use Email.'}
-            )
         audience = attrs.get('audience')
         if audience == 'LEVEL' and not attrs.get('target_level'):
             raise serializers.ValidationError(

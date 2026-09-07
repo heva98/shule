@@ -64,7 +64,7 @@ The Dashboard loads automatically after login and shows a live snapshot of schoo
 2. Fill in all required fields:
    - **Personal:** First name, last name, date of birth, gender
    - **Academic:** Level (Baby/Middle/Senior Class for nursery, Std 1–7, or Form 1–6), stream, admission date
-   - **Guardian:** Full name, relationship, phone, email, WhatsApp number (captured for reference — not currently used to send notifications)
+   - **Guardian:** Full name, relationship, phone, email, WhatsApp number (contact reference only)
 3. Click **Save**. The system auto-generates a student ID (e.g. `SHULE-2025-0042`).
 
 ### Student Detail Page
@@ -195,7 +195,7 @@ When a student is marked **Absent**, the system can automatically email the prim
 ### Sending a Broadcast Message
 1. Click **Communications** in the sidebar.
 2. Click **+ New Message**.
-3. Select the **channel**: **Email** (WhatsApp appears in the channel list but is not connected).
+3. The **channel** is **Email**.
 4. Select the **audience**: All Students, By Level, By Class, or Individual.
 5. Type your subject and message body.
 6. Click **Send**.

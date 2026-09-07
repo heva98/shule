@@ -9,7 +9,6 @@ import {
   Download,
   GraduationCap,
   LogOut,
-  MessageCircle,
   Package,
   Smartphone,
   Wallet,
@@ -174,12 +173,6 @@ function FeesTab({ child }) {
   const balance  = parseFloat(latest?.balance ?? 0)
   const isOwing  = balance > 0
 
-  const waText   = encodeURIComponent(
-    `Habari, mimi ni mzazi wa ${child.full_name}. Ninahitaji msaada kuhusu ada.`
-  )
-  // Replace with actual school WhatsApp number
-  const schoolWa = `https://wa.me/255700000000?text=${waText}`
-
   if (isLoading) return <TabSkeleton />
 
   return (
@@ -209,7 +202,7 @@ function FeesTab({ child }) {
       )}
 
       {/* Action buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         <button
           disabled
           title="Coming soon"
@@ -220,16 +213,6 @@ function FeesTab({ child }) {
           M-Pesa
           <span className="text-[9px] px-1.5 py-0.5 bg-gray-200 rounded ml-0.5">Soon</span>
         </button>
-        <a
-          href={schoolWa}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 min-h-[48px] rounded-xl
-            bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-        >
-          <MessageCircle size={15} />
-          Contact School
-        </a>
       </div>
 
       {/* Invoice history */}

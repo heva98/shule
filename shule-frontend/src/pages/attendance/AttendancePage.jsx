@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
   CalendarCheck,
-  MessageCircle,
   RefreshCw,
   Search,
 } from 'lucide-react'
@@ -637,16 +636,6 @@ function AbsenteesTab() {
   })
   const absentees = Array.isArray(data) ? data : []
 
-  function waLink(absentee) {
-    const phone = absentee.guardian_phone?.replace(/\D/g, '')
-    if (!phone) return null
-    const guardianName = absentee.guardian_name || 'Mzazi'
-    const msg = encodeURIComponent(
-      `Habari ${guardianName}, mtoto wako ${absentee.student_name} hakuhudhuria shule leo. Tafadhali wasiliana nasi.`
-    )
-    return `https://wa.me/${phone}?text=${msg}`
-  }
-
   return (
     <div className="space-y-4">
       {/* Controls */}
@@ -718,7 +707,7 @@ function AbsenteesTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
-                  {['Name', 'Level', 'Stream', 'Guardian', 'Phone', 'Reason', ''].map((h) => (
+                  {['Name', 'Level', 'Stream', 'Guardian', 'Phone', 'Reason'].map((h) => (
                     <th
                       key={h}
                       className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap"
@@ -729,41 +718,22 @@ function AbsenteesTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {absentees.map((a) => {
-                  const link = waLink(a)
-                  return (
-                    <tr key={a.student_id} className="hover:bg-red-50/20 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900">{a.student_name}</td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                        {LEVEL_LABEL[a.level] ?? a.level}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">{a.stream || '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{a.guardian_name || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
-                        {a.guardian_phone || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-gray-400 text-xs max-w-[140px] truncate">
-                        {a.reason || '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        {link ? (
-                          <a
-                            href={link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs text-white bg-[#25D366]
-                              rounded-lg px-2.5 py-1.5 hover:bg-[#1ebe5d] transition-colors whitespace-nowrap"
-                          >
-                            <MessageCircle size={12} />
-                            Notify
-                          </a>
-                        ) : (
-                          <span className="text-xs text-gray-300">No phone</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
+                {absentees.map((a) => (
+                  <tr key={a.student_id} className="hover:bg-red-50/20 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">{a.student_name}</td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      {LEVEL_LABEL[a.level] ?? a.level}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">{a.stream || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600">{a.guardian_name || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
+                      {a.guardian_phone || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-xs max-w-[140px] truncate">
+                      {a.reason || '—'}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -113,7 +113,7 @@ You can view all staff profiles but cannot add or remove staff members — that 
 1. Click **Communications**.
 2. Click **+ New Message**.
 3. Choose:
-   - **Channel**: **Email** (WhatsApp is listed but disabled — not connected yet)
+   - **Channel**: **Email**
    - **Audience**: All Students, By Level, By Class, or Individual
    - Enter **Subject** and **Message**.
 4. Click **Send**.

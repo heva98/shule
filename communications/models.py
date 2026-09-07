@@ -4,7 +4,6 @@ from django.db import models
 
 class MessageType(models.TextChoices):
     SMS = 'SMS', 'SMS'
-    WHATSAPP = 'WHATSAPP', 'WhatsApp'
     EMAIL = 'EMAIL', 'Email'
 
 
@@ -73,8 +72,6 @@ class MessageLog(models.Model):
         max_length=10, choices=DeliveryStatus.choices, default=DeliveryStatus.PENDING
     )
     provider_response = models.JSONField(default=dict, blank=True)
-    # For WhatsApp type — the wa.me URL generated
-    whatsapp_url = models.URLField(max_length=2000, blank=True)
     sent_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -102,10 +99,9 @@ class DemoRequest(models.Model):
 
 
 # ── SMS (Notify Africa) ──────────────────────────────────────────────────────
-# A separate model set from Message/MessageLog above (which is the email +
-# WhatsApp-deeplink channel). SMS needs per-recipient provider ids, cost,
-# segment counts, a normalised phone and an auditable batch rollup that the
-# older models don't carry.
+# A separate model set from Message/MessageLog above (the email channel). SMS
+# needs per-recipient provider ids, cost, segment counts, a normalised phone and
+# an auditable batch rollup that the older models don't carry.
 
 
 class SmsLanguage(models.TextChoices):
