@@ -485,7 +485,7 @@ function SettingsTab({ config }) {
         <h3 className="text-sm font-semibold text-gray-800 mb-3">Templates ({draft.language})</h3>
         {templates.isLoading ? <Skeleton className="h-40" /> : (
           <div className="space-y-4">
-            {(templates.data ?? []).map((t) => (
+            {(templates.data?.results ?? templates.data ?? []).map((t) => (
               <TemplateEditor key={t.id} template={t} onSave={(body) => saveTpl.mutate({ id: t.id, body })}
                 saving={saveTpl.isPending} />
             ))}
@@ -511,7 +511,7 @@ function TemplateEditor({ template, onSave, saving }) {
       <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3}
         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono" />
       <p className="text-[11px] text-gray-400 mt-1">
-        Placeholders: {template.placeholders.map((p) => `{${p}}`).join(' ')}
+        Placeholders: {(template.placeholders ?? []).map((p) => `{${p}}`).join(' ')}
       </p>
     </div>
   )
