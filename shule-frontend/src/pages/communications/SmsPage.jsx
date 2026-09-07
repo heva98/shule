@@ -44,6 +44,7 @@ function ComposeTab({ config }) {
       (k.value !== 'FEE_REMINDER' || config.fees_module_enabled),
   )
   const [kind, setKind] = useState(kinds[0]?.value ?? '')
+  const [language, setLanguage] = useState(config.language || 'SW')
   const [form, setForm] = useState({ exam_id: '', scope: 'all', audience: 'SCHOOL', level: '', stream: '', message: '' })
   const [preview, setPreview] = useState(null)
   const set = (patch) => { setForm((f) => ({ ...f, ...patch })); setPreview(null) }
@@ -53,10 +54,10 @@ function ComposeTab({ config }) {
   })
 
   const payload = useMemo(() => {
-    if (kind === 'EXAM_RESULTS') return { kind, exam_id: form.exam_id }
-    if (kind === 'FEE_REMINDER') return { kind, scope: form.scope, level: form.level, stream: form.stream }
-    return { kind, audience: form.audience, level: form.level, stream: form.stream, message: form.message }
-  }, [kind, form])
+    if (kind === 'EXAM_RESULTS') return { kind, language, exam_id: form.exam_id }
+    if (kind === 'FEE_REMINDER') return { kind, language, scope: form.scope, level: form.level, stream: form.stream }
+    return { kind, language, audience: form.audience, level: form.level, stream: form.stream, message: form.message }
+  }, [kind, language, form])
 
   const previewMut = useMutation({
     mutationFn: () => previewSms(payload),
@@ -98,6 +99,24 @@ function ComposeTab({ config }) {
               <Icon size={15} /> {label}
             </button>
           ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">Language</span>
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            {[['SW', 'Swahili'], ['EN', 'English']].map(([val, lbl]) => (
+              <button key={val} type="button"
+                onClick={() => { setLanguage(val); setPreview(null) }}
+                className={`px-3 py-1 rounded-md text-sm transition
+                  ${language === val ? 'bg-white text-gray-900 shadow-sm font-medium'
+                    : 'text-gray-500 hover:text-gray-700'}`}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-gray-400">
+            {language === config.language ? 'school default' : 'overrides the school default'}
+          </span>
         </div>
 
         {kind === 'EXAM_RESULTS' && (

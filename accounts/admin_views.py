@@ -672,6 +672,14 @@ class AdminSystemHealthView(APIView):
         # Email
         email_configured = bool(getattr(settings, 'EMAIL_HOST', ''))
 
+        # SMS — live once a real sending backend has its credentials + sender id
+        sms_backend = str(getattr(settings, 'SMS_BACKEND', 'noop')).strip().lower()
+        sms_configured = (
+            sms_backend == 'notify_africa'
+            and bool(getattr(settings, 'NOTIFY_AFRICA_API_TOKEN', ''))
+            and bool(getattr(settings, 'NOTIFY_AFRICA_SENDER_ID', ''))
+        )
+
         # Storage
         media_root = getattr(settings, 'MEDIA_ROOT', '')
         storage_mb = None
@@ -691,7 +699,7 @@ class AdminSystemHealthView(APIView):
             'database': {'ok': db_ok, 'latency_ms': db_latency_ms},
             'celery': {'ok': celery_ok},
             'email_configured': email_configured,
-            'sms_configured': False,
+            'sms_configured': sms_configured,
             'whatsapp_configured': True,
             'storage_mb': storage_mb,
             'active_users': user_count,

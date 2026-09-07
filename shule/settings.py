@@ -247,10 +247,6 @@ SMS_PROVIDER_CHUNK_SLEEP = config('SMS_PROVIDER_CHUNK_SLEEP', default=1.0, cast=
 # confirm a send. 0 = show segment counts only, no shilling estimate.
 SMS_PRICE_PER_SEGMENT = config('SMS_PRICE_PER_SEGMENT', default='0', cast=str)
 
-# ── Africa's Talking (legacy stub — unused) ──────────────────────────────────
-AFRICASTALKING_USERNAME = config('AFRICASTALKING_USERNAME', default='')
-AFRICASTALKING_API_KEY = config('AFRICASTALKING_API_KEY', default='')
-
 # M-Pesa payment gateway
 MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
 MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')

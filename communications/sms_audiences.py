@@ -14,7 +14,15 @@ from django.utils import timezone
 from students.models import Level, Student, StudentStatus
 
 from .models import SmsTemplateKey
-from .sms_service import Recipient, _fmt_date, _fmt_money, _school_name, class_label, primary_guardian
+from .sms_service import (
+    Recipient,
+    _fmt_date,
+    _fmt_money,
+    _school_contact,
+    _school_name,
+    class_label,
+    primary_guardian,
+)
 
 _ACTIVE = StudentStatus.ACTIVE
 
@@ -122,6 +130,7 @@ def fee_reminder_recipients(*, scope: str = "all", level: str = "", stream: str 
         per_student.setdefault(inv.student_id, []).append(inv)
 
     school = _school_name()
+    contact = _school_contact()
     recipients: list[Recipient] = []
     for invoices in per_student.values():
         oldest = invoices[0]  # earliest due_date
@@ -138,6 +147,8 @@ def fee_reminder_recipients(*, scope: str = "all", level: str = "", stream: str 
             force_skip="" if guardian else "no guardian on file",
             context={
                 "school_name": school,
+                "school_contact": contact,
+                "student_name": student.full_name,
                 "pupil_name": student.full_name,
                 "class": class_label(student.level, student.stream),
                 "balance": _fmt_money(total_balance),

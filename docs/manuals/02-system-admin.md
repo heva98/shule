@@ -215,9 +215,9 @@ The **Notification Channels** section shows the status of each channel:
 
 | Channel | Status | How to configure | Notes |
 |---|---|---|---|
-| **Email (SMTP)** | Configured / Not configured | Edit `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` in the server `.env` file | The only working notification channel |
+| **Email (SMTP)** | Configured / Not configured | Edit `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` in the server `.env` file | Used for broadcasts, fee reminders, and absence alerts |
 | **WhatsApp** | Shown as active (wa.me deep-links) | No configuration available | The badge here is a leftover — actual WhatsApp sending is disabled system-wide. Broadcasts, fee reminders, and absence alerts are all email-only regardless of this indicator |
-| **SMS** | Coming soon | Africa's Talking integration is planned | Not usable yet |
+| **SMS** | Configured / Not configured | Set `SMS_BACKEND` and the SMS provider credentials in the server `.env` file | **Live.** Staff send exam results, fee reminders, and announcements from the **Parent SMS** page |
 
 ---
 
@@ -255,7 +255,7 @@ The System Health page **auto-refreshes every 30 seconds** and shows the real-ti
 | **Celery Worker** | Background tasks are running | Worker is offline — restart with `celery -A shule worker` |
 | **Email (SMTP)** | EMAIL_HOST is configured | Email not configured in `.env` |
 | **WhatsApp** | Always green | This card is cosmetic — WhatsApp sending is disabled system-wide, so it stays green regardless of anything happening on the backend |
-| **SMS** | Coming soon | — |
+| **SMS** | SMS provider credentials are configured on the server | Not configured — set `SMS_BACKEND` and the SMS credentials in `.env` |
 
 The **DB Latency** figure shows how fast the database is responding (normal is < 10ms).
 

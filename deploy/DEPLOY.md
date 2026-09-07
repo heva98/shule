@@ -59,7 +59,8 @@ Edit `.env` and fill in:
 - `DB_PASSWORD` — the password you set in step 2
 - `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` — if you want real emails sent (leave blank to keep console/no-op email for now). Use a Gmail App Password, not your regular password (myaccount.google.com/apppasswords).
 - `DEMO_REQUEST_NOTIFY_EMAIL` — where "Request a demo" landing-page submissions get emailed; defaults to `henrymkama@gmail.com` if left blank
-- `AFRICASTALKING_*` / `MPESA_*` — fill in when you're ready to wire those up; safe to leave blank for now
+- `SMS_BACKEND` + the SMS credentials — set `SMS_BACKEND` to the live backend and fill the token / sender ID to send real SMS; leave `SMS_BACKEND=noop` to record messages without sending
+- `MPESA_*` — fill in when you're ready to wire that up; safe to leave blank for now
 
 `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, and `FRONTEND_URL` are already set correctly for `shule.ac.tz` in the template — leave them as-is unless your domain changes.
 

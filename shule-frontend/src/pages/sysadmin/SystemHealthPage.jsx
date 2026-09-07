@@ -136,11 +136,11 @@ export default function SystemHealthPage() {
           <ServiceCard
             title="SMS"
             icon={Smartphone}
-            ok={null}
+            ok={h?.sms_configured}
             loading={q.isLoading}
-            detail="Africa's Talking"
-            badge="Coming soon"
-            badgeColor="bg-gray-100 text-gray-400"
+            detail="Bulk SMS to parents"
+            badge={h?.sms_configured ? 'Configured' : 'Not configured'}
+            badgeColor={h?.sms_configured ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
           />
         </div>
       </div>

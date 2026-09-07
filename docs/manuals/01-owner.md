@@ -195,10 +195,18 @@ When a student is marked **Absent**, the system can automatically email the prim
 ### Sending a Broadcast Message
 1. Click **Communications** in the sidebar.
 2. Click **+ New Message**.
-3. Select the **channel**: **Email** (WhatsApp and SMS are shown in the channel list but are not yet connected — WhatsApp is disabled and SMS is "coming soon").
+3. Select the **channel**: **Email** (WhatsApp appears in the channel list but is not connected).
 4. Select the **audience**: All Students, By Level, By Class, or Individual.
 5. Type your subject and message body.
 6. Click **Send**.
+
+### Sending SMS to Parents
+Bulk SMS is live. Use the dedicated **Parent SMS** page in the sidebar to send:
+- **Exam results** — per class, once marks are entered.
+- **Fee reminders** — to all families or only those overdue.
+- **Announcements** — whole school, a level, or a single class.
+
+Preview shows the recipient count, message text, and how many families will be skipped (no valid number, opted out) before you confirm. Delivery status for every batch is on the same page.
 
 ---
 

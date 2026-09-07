@@ -177,10 +177,13 @@ Use the **Absentees** view (filter by date) to see all absent students with thei
 1. Click **Communications** in the sidebar.
 2. Click **+ New Message**.
 3. Select:
-   - **Channel** — **Email** (WhatsApp is listed but disabled — sending is not connected yet; SMS is coming soon)
+   - **Channel** — **Email** (WhatsApp is listed but not connected)
    - **Audience** — All Students, By Level, By Class, or Individual Student
    - **Subject** and **Message body**
 4. Click **Send**.
+
+### Sending SMS to Parents
+Bulk SMS is live — use the dedicated **Parent SMS** page in the sidebar for exam results, fee reminders, and announcements. Each send shows a preview (recipient count, message text, who will be skipped) before you confirm, and a delivery log for every batch.
 
 ---
 

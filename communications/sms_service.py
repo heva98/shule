@@ -105,6 +105,21 @@ def _school_name() -> str:
     return SchoolSettings.get_settings().school_name
 
 
+def _school_contact() -> str:
+    """Phone (or email) parents can call for help — used in fee-reminder copy."""
+    from accounts.models import SchoolSettings
+    s = SchoolSettings.get_settings()
+    return (s.school_phone or s.school_email or "").strip()
+
+
+def resolve_language(language: str, cfg=None) -> str:
+    """A caller-supplied language if it's a valid choice, else the school default."""
+    from .models import SmsConfiguration, SmsLanguage
+    cfg = cfg or SmsConfiguration.load()
+    lang = (language or "").strip().upper()
+    return lang if lang in SmsLanguage.values else cfg.language
+
+
 def _load_language_templates(language: str) -> dict[str, str]:
     from .models import SmsTemplate
     return {
@@ -178,15 +193,17 @@ def recount(batch: SmsBatch) -> None:
 
 
 def preview_recipients(*, kind: str, template_key: str, recipients: list[Recipient],
-                       base_context: dict | None = None, sample_size: int = 3) -> Preview:
+                       base_context: dict | None = None, sample_size: int = 3,
+                       language: str = "") -> Preview:
     cfg = SmsConfiguration.load()
-    templates = _load_language_templates(cfg.language)
+    lang = resolve_language(language, cfg)
+    templates = _load_language_templates(lang)
     if template_key not in templates:
-        raise SmsError(f"No active '{template_key}' template for language {cfg.language}.")
+        raise SmsError(f"No active '{template_key}' template for language {lang}.")
     base_context = base_context or {}
     max_segments = cfg.effective_max_segments
 
-    pv = Preview(kind=kind, template_key=template_key, language=cfg.language,
+    pv = Preview(kind=kind, template_key=template_key, language=lang,
                  price_per_segment=str(price_per_segment()))
     seen: set = set()
     total_segments = 0
@@ -209,12 +226,14 @@ def preview_recipients(*, kind: str, template_key: str, recipients: list[Recipie
 
 def create_batch(*, kind: str, template_key: str, recipients: list[Recipient],
                  created_by=None, base_context: dict | None = None,
-                 dry_run: bool = False, idempotency_key: str = "") -> SmsBatch:
+                 dry_run: bool = False, idempotency_key: str = "",
+                 language: str = "") -> SmsBatch:
     cfg = SmsConfiguration.load()
-    templates = _load_language_templates(cfg.language)
-    template = get_active_template(template_key, cfg.language)
+    lang = resolve_language(language, cfg)
+    templates = _load_language_templates(lang)
+    template = get_active_template(template_key, lang)
     if template is None or template_key not in templates:
-        raise SmsError(f"No active '{template_key}' template for language {cfg.language}.")
+        raise SmsError(f"No active '{template_key}' template for language {lang}.")
 
     if idempotency_key:
         existing = SmsBatch.objects.filter(idempotency_key=idempotency_key).first()
@@ -242,7 +261,7 @@ def create_batch(*, kind: str, template_key: str, recipients: list[Recipient],
     try:
         with transaction.atomic():
             batch = _build_batch(
-                kind=kind, template=template, template_key=template_key, language=cfg.language,
+                kind=kind, template=template, template_key=template_key, language=lang,
                 sender_id=sender_id, created_by=created_by, base_context=base_context,
                 dry_run=dry_run, idempotency_key=idempotency_key,
                 recipients=recipients, templates=templates, max_segments=max_segments,

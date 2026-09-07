@@ -39,7 +39,7 @@ const CHANNELS = [
     badge: 'Not connected yet' },
   { value: 'EMAIL',    label: 'Email',    Icon: Mail,           enabled: true },
   { value: 'SMS',      label: 'SMS',      Icon: Smartphone,     enabled: false,
-    badge: "Africa's Talking — coming soon" },
+    badge: 'Send from the Parent SMS page' },
 ]
 
 const AUDIENCE_OPTIONS = [

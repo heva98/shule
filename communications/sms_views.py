@@ -40,6 +40,7 @@ from .sms_permissions import (
 )
 from .sms_service import (
     SmsError,
+    _school_contact,
     create_batch,
     dispatch_batch,
     preview_recipients,
@@ -108,6 +109,11 @@ def _resolve(kind: str, data: dict, user):
             raise PermissionDenied("You cannot send fee-reminder SMS.")
         if not module_enabled("fees"):
             raise PermissionDenied("The fees module is not enabled.")
+        if not _school_contact():
+            raise ValidationError({"detail": (
+                "Add the school phone number in School Settings first — the fee-reminder "
+                "message gives it to parents as the contact for assistance."
+            )})
         scope = data.get("scope", "all")
         if scope not in ("all", "overdue"):
             raise ValidationError({"scope": 'Must be "all" or "overdue".'})
@@ -198,7 +204,8 @@ class SmsPreviewView(APIView):
         _batch_kind, template_key, recipients, base_ctx, audit = _resolve(kind, request.data, request.user)
         try:
             preview = preview_recipients(
-                kind=kind, template_key=template_key, recipients=recipients, base_context=base_ctx)
+                kind=kind, template_key=template_key, recipients=recipients,
+                base_context=base_ctx, language=request.data.get("language", ""))
         except SmsError as exc:
             raise ValidationError({"detail": str(exc)})
         return Response({
@@ -227,6 +234,7 @@ class SmsSendView(APIView):
             batch = create_batch(
                 kind=batch_kind, template_key=template_key, recipients=recipients,
                 created_by=request.user, base_context=base_ctx, dry_run=dry_run,
+                language=request.data.get("language", ""),
             )
         except SmsError as exc:
             raise ValidationError({"detail": str(exc)})

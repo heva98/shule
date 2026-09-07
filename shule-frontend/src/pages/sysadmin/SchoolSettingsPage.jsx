@@ -312,12 +312,15 @@ export default function SchoolSettingsPage() {
         <div className="border border-gray-100 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Smartphone size={16} className="text-gray-400" />
-              <span className="text-sm font-medium text-gray-500">SMS</span>
+              <Smartphone size={16} className="text-primary" />
+              <span className="text-sm font-medium text-gray-700">SMS</span>
             </div>
-            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Not configured</span>
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
           </div>
-          <p className="text-xs text-gray-400">Africa's Talking SMS integration — coming soon.</p>
+          <p className="text-xs text-gray-500">
+            Bulk SMS to parents is live. Compose and send exam results, fee reminders, and
+            announcements from the <strong>Parent SMS</strong> page.
+          </p>
         </div>
       </Section>
 

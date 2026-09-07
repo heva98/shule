@@ -1,6 +1,6 @@
 # Shule SMS — School Management System
 
-A Django REST API backend for managing a private school in Tanzania. Built to handle student records, fee payments (M-Pesa/TZS), attendance, exams, staff, and SMS communications via Africa's Talking.
+A Django REST API backend for managing a private school in Tanzania. Built to handle student records, fee payments (M-Pesa/TZS), attendance, exams, staff, and bulk SMS to parents.
 
 ## Project Structure
 
@@ -13,7 +13,7 @@ shule-sms/
 ├── attendance/         # Daily attendance tracking
 ├── exams/              # Exam results & report cards
 ├── staff/              # Staff records & roles
-├── communications/     # SMS & notifications via Africa's Talking
+├── communications/     # Bulk SMS to parents & notifications
 ├── manage.py
 ├── .env.example
 └── requirements.txt
@@ -25,7 +25,7 @@ shule-sms/
 - **Auth:** JWT via `djangorestframework-simplejwt`
 - **Database:** PostgreSQL
 - **Cache:** Redis
-- **SMS:** Africa's Talking
+- **SMS:** Bulk SMS to parents (exam results, fee reminders, announcements)
 - **Payments:** M-Pesa (Vodacom Tanzania)
 - **Currency:** TZS (Tanzanian Shilling)
 - **Timezone:** Africa/Dar_es_Salaam
@@ -70,8 +70,8 @@ Edit `.env` and fill in all required values:
 | `DB_HOST` | Database host (default: `localhost`) |
 | `DB_PORT` | Database port (default: `5432`) |
 | `REDIS_URL` | Redis connection URL |
-| `AFRICASTALKING_USERNAME` | Africa's Talking account username |
-| `AFRICASTALKING_API_KEY` | Africa's Talking API key |
+| `SMS_BACKEND` | SMS mode: `noop` (default — records messages without sending), `console`, or the live sending backend |
+| SMS provider credentials | See the `SMS_BACKEND` / `NOTIFY_AFRICA_*` block in `.env.example` — required only when `SMS_BACKEND` is the live backend |
 | `MPESA_CONSUMER_KEY` | M-Pesa API consumer key |
 | `MPESA_CONSUMER_SECRET` | M-Pesa API consumer secret |
 | `MPESA_SHORTCODE` | M-Pesa business shortcode |

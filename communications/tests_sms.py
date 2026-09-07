@@ -69,6 +69,7 @@ class SegmentTests(TestCase):
     def test_swahili_default_templates_are_gsm7_and_within_cap(self):
         ctx = dict(
             school_name="Shule Bora", pupil_name="Asha Juma Mwakalinga",
+            student_name="Asha Juma Mwakalinga", school_contact="+255 22 123 4567",
             exam_name="Mtihani wa Katikati", total="412", out_of="600",
             average="68.7", grade="B", position="5", class_size="42",
             balance="450,000", due_date="12 Oct 2026", term="Term 1",
@@ -228,6 +229,37 @@ class SendTests(TestCase):
         self.assertEqual(batch.messages.filter(status=SmsMessage.Status.SENT).count(), 0)
         self.assertEqual(batch.messages.filter(status=SmsMessage.Status.PENDING).count(), 1)
 
+    def test_language_param_overrides_school_default(self):
+        # School default is Swahili; the composer asks for English on this send.
+        self.assertEqual(SmsConfiguration.load().language, "SW")
+        a = make_student(level="FORM1")
+        add_guardian(a, phone="0713000021")
+        resp = self.client.post(
+            "/api/communications/sms/send/",
+            {"kind": "ANNOUNCEMENT", "audience": "SCHOOL", "message": "Hi", "language": "EN"},
+            format="json")
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(SmsBatch.objects.get(pk=resp.data["id"]).language, "EN")
+
+    def test_language_param_unknown_falls_back_to_school_default(self):
+        a = make_student(level="FORM1")
+        add_guardian(a, phone="0713000022")
+        resp = self.client.post(
+            "/api/communications/sms/send/",
+            {"kind": "ANNOUNCEMENT", "audience": "SCHOOL", "message": "Hi", "language": "FR"},
+            format="json")
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(SmsBatch.objects.get(pk=resp.data["id"]).language, "SW")
+
+    def test_preview_echoes_chosen_language(self):
+        make_student(level="FORM1")
+        resp = self.client.post(
+            "/api/communications/sms/preview/",
+            {"kind": "ANNOUNCEMENT", "audience": "SCHOOL", "message": "Hi", "language": "EN"},
+            format="json")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["language"], "EN")
+
     def test_preview_reports_counts_without_persisting(self):
         for i in range(3):
             st = make_student(level="FORM2")
@@ -275,6 +307,10 @@ class SendTests(TestCase):
 class FeeReminderTests(TestCase):
     def setUp(self):
         seed_templates()
+        s = SchoolSettings.get_settings()
+        s.school_name = "Shule Bora"
+        s.school_phone = "+255 22 123 4567"
+        s.save()
         self.year = make_academic_year()
         self.bursar = make_user(role=Role.BURSAR)
         self.client = APIClient()
@@ -298,8 +334,8 @@ class FeeReminderTests(TestCase):
         self.assertEqual(resp.status_code, 201)
         batch = SmsBatch.objects.get(pk=resp.data["id"])
         bodies = {m.student.first_name: m.body for m in batch.messages.all()}
-        self.assertIn("IMEPITWA NA MUDA", bodies["Over"])
-        self.assertNotIn("IMEPITWA NA MUDA", bodies["Due"])
+        self.assertIn("muda wake wa malipo umepita", bodies["Over"])
+        self.assertNotIn("muda wake wa malipo umepita", bodies["Due"])
 
     def test_scope_overdue_only_excludes_not_yet_due(self):
         due_s = make_student(level="FORM1")
