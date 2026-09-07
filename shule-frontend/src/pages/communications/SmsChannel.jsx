@@ -517,9 +517,9 @@ function TemplateEditor({ template, onSave, saving }) {
   )
 }
 
-// ── Page ────────────────────────────────────────────────────────────────
+// ── SMS channel ─────────────────────────────────────────────────────────
 
-export default function SmsPage() {
+export default function SmsChannel() {
   const { user } = useAuth()
   const [tab, setTab] = useState('compose')
   const config = useQuery({ queryKey: ['sms-config'], queryFn: getSmsConfig })
@@ -544,11 +544,6 @@ export default function SmsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <MessageSquare size={20} className="text-primary" />
-        <h1 className="text-lg font-semibold text-gray-900">SMS to parents</h1>
-      </div>
-
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
         {TABS.map(({ key, label, Icon }) => (
           <button key={key} onClick={() => setTab(key)}

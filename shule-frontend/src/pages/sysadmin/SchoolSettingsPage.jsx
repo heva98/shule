@@ -304,7 +304,7 @@ export default function SchoolSettingsPage() {
           </div>
           <p className="text-xs text-gray-500">
             Bulk SMS to parents is live. Compose and send exam results, fee reminders, and
-            announcements from the <strong>Parent SMS</strong> page.
+            announcements from the SMS tab on the <strong>Communications</strong> page.
           </p>
         </div>
       </Section>

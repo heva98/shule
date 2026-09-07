@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
@@ -33,7 +33,6 @@ const ResultsPage = lazy(() => import('./pages/exams/ResultsPage'))
 const ExamReportsPage = lazy(() => import('./pages/exams/ReportsPage'))
 const StaffPage = lazy(() => import('./pages/staff/StaffPage'))
 const CommunicationsPage = lazy(() => import('./pages/communications/CommunicationsPage'))
-const SmsPage = lazy(() => import('./pages/communications/SmsPage'))
 const SchoolCalendarPage = lazy(() => import('./pages/calendar/SchoolCalendarPage'))
 const ParentPortalPage = lazy(() => import('./pages/parent/ParentPortalPage'))
 const SysAdminDashboard = lazy(() => import('./pages/sysadmin/SysAdminDashboard'))
@@ -240,20 +239,17 @@ export default function App() {
                 <Route
                   path="/communications"
                   element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.COMMUNICATIONS} requiredModule="communications">
+                    <ProtectedRoute
+                      allowedRoles={FEATURE_ROLES.COMMUNICATIONS_HUB}
+                      requiredModule={['communications', 'sms']}
+                    >
                       <CommunicationsPage />
                     </ProtectedRoute>
                   }
                 />
 
-                <Route
-                  path="/sms"
-                  element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.SMS} requiredModule="sms">
-                      <SmsPage />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Parent SMS folded into Communications — keep old links working */}
+                <Route path="/sms" element={<Navigate to="/communications" replace />} />
 
                 <Route
                   path="/school-calendar"

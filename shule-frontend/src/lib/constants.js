@@ -168,3 +168,10 @@ export const FEATURE_ROLES = {
   SCHOOL_CALENDAR: ['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER', 'BURSAR'],
   PARENT:          ['PARENT'],
 }
+
+// The merged Communications page hosts both the Email broadcast channel and the
+// Parent SMS channel, so it's reachable by anyone who can use either one; each
+// channel's tab is then gated individually inside the page.
+FEATURE_ROLES.COMMUNICATIONS_HUB = [
+  ...new Set([...FEATURE_ROLES.COMMUNICATIONS, ...FEATURE_ROLES.SMS]),
+]

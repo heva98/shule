@@ -22,7 +22,6 @@ import {
   ScrollText,
   Settings,
   Shield,
-  Smartphone,
   UserCog,
   Users,
   X,
@@ -50,8 +49,7 @@ const NAV_ITEMS = [
   { label: 'Exams',           path: '/exams',          icon: ClipboardList,   roles: FEATURE_ROLES.EXAMS, module: 'exams' },
   { label: 'Exam Reports',    path: '/exams/reports',  icon: FileBarChart2,   roles: FEATURE_ROLES.EXAM_REPORTS, module: 'reports' },
   { label: 'Staff',           path: '/staff',          icon: Users,           roles: FEATURE_ROLES.STAFF },
-  { label: 'Communications',  path: '/communications', icon: MessageSquare,   roles: FEATURE_ROLES.COMMUNICATIONS, module: 'communications' },
-  { label: 'Parent SMS',      path: '/sms',            icon: Smartphone,      roles: FEATURE_ROLES.SMS, module: 'sms' },
+  { label: 'Communications',  path: '/communications', icon: MessageSquare,   roles: FEATURE_ROLES.COMMUNICATIONS_HUB, modules: ['communications', 'sms'] },
   { label: 'School Calendar', path: '/school-calendar',icon: CalendarRange,   roles: FEATURE_ROLES.SCHOOL_CALENDAR, module: 'school_calendar' },
   { label: 'My Children',     path: '/parent',         icon: Heart,           roles: FEATURE_ROLES.PARENT },
 ]
@@ -99,9 +97,15 @@ export default function Sidebar({ onClose }) {
   const role = user?.role ?? ''
   const isAdmin = ADMIN_ROLES.includes(role)
 
-  const regularItems = NAV_ITEMS.filter(
-    item => item.roles.includes(role) && isModuleVisible(item.module, enabledModules, modulesLoading)
-  )
+  const regularItems = NAV_ITEMS.filter(item => {
+    if (!item.roles.includes(role)) return false
+    // `modules` (a list) means "visible if any one of these is on"; `module`
+    // (a single name) is the common case.
+    if (item.modules) {
+      return item.modules.some(m => isModuleVisible(m, enabledModules, modulesLoading))
+    }
+    return isModuleVisible(item.module, enabledModules, modulesLoading)
+  })
   const showAdmin = isAdmin
 
   return (
