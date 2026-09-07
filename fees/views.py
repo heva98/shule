@@ -6,7 +6,7 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -17,7 +17,16 @@ from accounts.models import Role
 from accounts.permissions import ModuleEnabled
 from students.models import Student, StudentStatus
 
-from .models import AcademicYear, FeeStructure, Invoice, InvoiceStatus, Payment
+from .models import (
+    AcademicYear,
+    FeeCategory,
+    FeeStructure,
+    Invoice,
+    InvoiceKind,
+    InvoiceLine,
+    InvoiceStatus,
+    Payment,
+)
 from .serializers import (
     AcademicYearSerializer,
     FeeStructureSerializer,
@@ -145,12 +154,26 @@ class InvoiceViewSet(ModelViewSet):
         amount_due = structure.total_fee
         created, skipped = 0, 0
         for student in students:
-            _, was_created = Invoice.objects.get_or_create(
+            invoice, was_created = Invoice.objects.get_or_create(
                 student=student,
                 academic_year=academic_year,
                 term=term,
                 quarter=quarter,
+                kind=InvoiceKind.QUARTERLY,
                 defaults={'amount_due': amount_due, 'due_date': due_date},
+            )
+            # Phase 1 bridge: the per-category resolver arrives in Phase 3.
+            # Until then each generated invoice carries one consolidated line so
+            # the pay / receipt / balance flow keeps working end to end.
+            InvoiceLine.objects.get_or_create(
+                invoice=invoice,
+                category=FeeCategory.TUITION,
+                defaults={
+                    'amount': amount_due,
+                    'description': 'Consolidated term fees',
+                    'level_snapshot': student.level,
+                    'source_kind': 'legacy_generate',
+                },
             )
             if was_created:
                 created += 1
@@ -179,14 +202,49 @@ class PaymentViewSet(ModelViewSet):
             raise PermissionDenied('You do not have permission to access payments.')
 
     def get_queryset(self):
-        return Payment.objects.select_related('invoice__student', 'received_by').all()
+        return (
+            Payment.objects
+            .select_related('invoice__student', 'student', 'received_by')
+            .prefetch_related('allocations__invoice_line')
+            .all()
+        )
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        serializer.save(received_by=self.request.user)
+        from .services import allocate_payment, auto_allocate
+
+        allocations_input = serializer.validated_data.pop('allocations_input', None)
+        invoice = serializer.validated_data.get('invoice')
+        student = serializer.validated_data.get('student') or (
+            invoice.student if invoice else None
+        )
+        if student is None:
+            raise ValidationError('Could not determine the student for this payment.')
+
+        payment = serializer.save(received_by=self.request.user, student=student)
+
+        if allocations_input:
+            allocate_payment(
+                payment,
+                [(row['invoice_line'], row['amount']) for row in allocations_input],
+            )
+        else:
+            auto_allocate(payment, invoice)
 
     @action(detail=True, methods=['get'], url_path='receipt')
     def receipt(self, request, pk=None):
         payment = self.get_object()
+        return Response(ReceiptSerializer(payment).data)
+
+    @action(detail=True, methods=['post'], url_path='reverse')
+    def reverse_payment(self, request, pk=None):
+        from .services import reverse_payment
+
+        payment = self.get_object()
+        reason = (request.data.get('reason') or '').strip()
+        if not reason:
+            return Response({'detail': 'A reason is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        reverse_payment(payment, request.user, reason)
         return Response(ReceiptSerializer(payment).data)
 
 

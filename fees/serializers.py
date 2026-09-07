@@ -1,6 +1,16 @@
 from rest_framework import serializers
 
-from .models import AcademicYear, FeeStructure, Invoice, Payment, Quarter, SchoolCalendarEvent, Term
+from .models import (
+    AcademicYear,
+    FeeStructure,
+    Invoice,
+    InvoiceLine,
+    Payment,
+    PaymentAllocation,
+    Quarter,
+    SchoolCalendarEvent,
+    Term,
+)
 
 
 class AcademicYearSerializer(serializers.ModelSerializer):
@@ -48,12 +58,29 @@ class FeeStructureSerializer(serializers.ModelSerializer):
 class PaymentInlineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['id', 'amount', 'payment_method', 'transaction_id', 'paid_at', 'receipt_number']
+        fields = ['id', 'amount', 'payment_method', 'transaction_id', 'paid_at',
+                  'receipt_number', 'status']
+
+
+class InvoiceLineSerializer(serializers.ModelSerializer):
+    net_required = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    outstanding = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+
+    class Meta:
+        model = InvoiceLine
+        fields = [
+            'id', 'invoice', 'category', 'category_display', 'description',
+            'level_snapshot', 'amount', 'amount_allocated', 'net_required',
+            'outstanding', 'status', 'is_legacy', 'is_sale', 'created_at',
+        ]
+        read_only_fields = fields
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
     balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     payments = PaymentInlineSerializer(many=True, read_only=True)
+    lines = InvoiceLineSerializer(many=True, read_only=True)
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_id_display = serializers.CharField(source='student.student_id', read_only=True)
     student_level = serializers.CharField(source='student.level', read_only=True)
@@ -63,11 +90,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = [
             'id', 'student', 'student_id_display', 'student_name', 'student_level',
-            'academic_year', 'academic_year_label', 'term', 'quarter',
+            'academic_year', 'academic_year_label', 'kind', 'term', 'quarter',
             'amount_due', 'amount_paid', 'balance',
             'due_date', 'status', 'notes',
-            'payments', 'created_at',
+            'lines', 'payments', 'created_at',
         ]
+        # amount_due stays writable for the legacy "create invoice by hand"
+        # path; once the invoice has lines, recompute_invoice owns it.
         read_only_fields = ['id', 'amount_paid', 'status', 'created_at']
 
 
@@ -89,33 +118,68 @@ class InvoiceGenerateSerializer(serializers.Serializer):
         return attrs
 
 
+class PaymentAllocationInputSerializer(serializers.Serializer):
+    invoice_line = serializers.PrimaryKeyRelatedField(queryset=InvoiceLine.objects.all())
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+
+
+class PaymentAllocationSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(source='invoice_line.category', read_only=True)
+    category_display = serializers.CharField(
+        source='invoice_line.get_category_display', read_only=True
+    )
+
+    class Meta:
+        model = PaymentAllocation
+        fields = ['id', 'invoice_line', 'category', 'category_display', 'amount']
+        read_only_fields = fields
+
+
 class PaymentSerializer(serializers.ModelSerializer):
     receipt_number = serializers.CharField(read_only=True)
+    allocations = PaymentAllocationSerializer(many=True, read_only=True)
+    # Optional multi-category split (decision J-9); when omitted the payment is
+    # auto-distributed across the given invoice's open lines (legacy path).
+    allocations_input = PaymentAllocationInputSerializer(
+        many=True, write_only=True, required=False
+    )
 
     class Meta:
         model = Payment
         fields = [
-            'id', 'invoice', 'amount', 'payment_method',
+            'id', 'student', 'invoice', 'amount', 'payment_method',
             'transaction_id', 'phone_used', 'paid_at',
-            'received_by', 'receipt_number', 'notes',
+            'received_by', 'receipt_number', 'notes', 'status',
+            'allocations', 'allocations_input',
         ]
-        read_only_fields = ['id', 'received_by', 'receipt_number']
+        read_only_fields = ['id', 'received_by', 'receipt_number', 'status']
 
     def validate_amount(self, value):
         if value <= 0:
             raise serializers.ValidationError('Payment amount must be greater than zero.')
         return value
 
+    def validate(self, attrs):
+        if not attrs.get('invoice') and not attrs.get('allocations_input'):
+            raise serializers.ValidationError(
+                'Provide an invoice (legacy auto-split) or an explicit allocations_input list.'
+            )
+        return attrs
+
 
 class ReceiptSerializer(serializers.ModelSerializer):
     invoice_detail = InvoiceSerializer(source='invoice', read_only=True)
+    allocations = PaymentAllocationSerializer(many=True, read_only=True)
     received_by_name = serializers.CharField(source='received_by.full_name', read_only=True)
+    student_name = serializers.CharField(source='student.full_name', read_only=True)
+    student_id_display = serializers.CharField(source='student.student_id', read_only=True)
 
     class Meta:
         model = Payment
         fields = [
             'id', 'receipt_number', 'amount', 'payment_method',
-            'transaction_id', 'phone_used', 'paid_at',
-            'received_by', 'received_by_name', 'notes',
-            'invoice_detail',
+            'transaction_id', 'phone_used', 'paid_at', 'status',
+            'received_by', 'received_by_name',
+            'student_name', 'student_id_display', 'notes',
+            'allocations', 'invoice_detail',
         ]

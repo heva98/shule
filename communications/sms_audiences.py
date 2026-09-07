@@ -203,7 +203,7 @@ def term_dates_recipients(*, boundary: str, term_label: str, closing_date=None,
 def payment_thank_you_recipients(payment) -> list[Recipient]:
     from fees.models import Invoice, InvoiceStatus
 
-    student = payment.invoice.student
+    student = payment.student or payment.invoice.student
     guardian = primary_guardian(
         Student.objects.prefetch_related("guardians").get(pk=student.pk)
     )

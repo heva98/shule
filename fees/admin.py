@@ -1,7 +1,17 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import AcademicYear, FeeStructure, Invoice, Payment
+from .models import (
+    AcademicYear,
+    FeeAdjustment,
+    FeeStructure,
+    Invoice,
+    InvoiceLine,
+    Payment,
+    PaymentAllocation,
+    StudentCredit,
+    UniformSaleItem,
+)
 
 
 @admin.register(AcademicYear)
@@ -29,31 +39,45 @@ class FeeStructureAdmin(admin.ModelAdmin):
 class PaymentInline(admin.TabularInline):
     model = Payment
     extra = 0
-    readonly_fields = ('receipt_number', 'amount', 'payment_method', 'paid_at', 'received_by')
-    fields = ('receipt_number', 'amount', 'payment_method', 'transaction_id', 'paid_at', 'received_by')
+    readonly_fields = ('receipt_number', 'amount', 'payment_method', 'paid_at', 'received_by', 'status')
+    fields = ('receipt_number', 'amount', 'payment_method', 'transaction_id', 'paid_at', 'received_by', 'status')
     can_delete = False
+
+
+class InvoiceLineInline(admin.TabularInline):
+    model = InvoiceLine
+    extra = 0
+    readonly_fields = ('amount_allocated', 'status', 'created_at')
+    fields = ('category', 'description', 'amount', 'amount_allocated', 'status', 'is_legacy', 'is_sale')
+
+
+class FeeAdjustmentInline(admin.TabularInline):
+    model = FeeAdjustment
+    extra = 0
+    fields = ('kind', 'amount', 'reason', 'approved_by', 'created_at')
+    readonly_fields = ('created_at',)
 
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = (
         'student_id_col', 'student_name_col',
-        'academic_year', 'term', 'quarter',
+        'academic_year', 'kind', 'term', 'quarter',
         'amount_due_col', 'amount_paid_col', 'balance_col',
         'due_date', 'status',
     )
-    list_filter = ('status', 'term', 'quarter', 'academic_year', 'student__level')
+    list_filter = ('status', 'kind', 'term', 'quarter', 'academic_year', 'student__level')
     search_fields = (
         'student__student_id', 'student__first_name', 'student__last_name'
     )
     date_hierarchy = 'created_at'
-    readonly_fields = ('amount_paid', 'status', 'created_at', 'balance_display')
+    readonly_fields = ('amount_due', 'amount_paid', 'status', 'created_at', 'balance_display')
     ordering = ('-academic_year__year', 'term', 'quarter', 'student__last_name')
-    inlines = [PaymentInline]
+    inlines = [InvoiceLineInline, PaymentInline]
 
     fieldsets = (
         ('Student', {'fields': ('student',)}),
-        ('Period', {'fields': ('academic_year', 'term', 'quarter')}),
+        ('Period', {'fields': ('academic_year', 'kind', 'term', 'quarter')}),
         ('Amounts (TZS)', {'fields': ('amount_due', 'amount_paid', 'balance_display')}),
         ('Status', {'fields': ('status', 'due_date', 'notes')}),
         ('Timestamps', {'fields': ('created_at',), 'classes': ('collapse',)}),
@@ -88,27 +112,64 @@ class InvoiceAdmin(admin.ModelAdmin):
     balance_display.short_description = 'Balance'
 
 
+class PaymentAllocationInline(admin.TabularInline):
+    model = PaymentAllocation
+    extra = 0
+    fields = ('invoice_line', 'amount', 'created_at')
+    readonly_fields = ('created_at',)
+    autocomplete_fields = ('invoice_line',)
+
+
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = (
         'receipt_number', 'student_col',
-        'amount_col', 'payment_method',
+        'amount_col', 'payment_method', 'status',
         'transaction_id', 'paid_at', 'received_by',
     )
-    list_filter = ('payment_method', 'paid_at', 'received_by')
+    list_filter = ('payment_method', 'status', 'paid_at', 'received_by')
     search_fields = (
         'receipt_number', 'transaction_id',
+        'student__first_name', 'student__last_name', 'student__student_id',
         'invoice__student__first_name', 'invoice__student__last_name',
         'invoice__student__student_id',
     )
     date_hierarchy = 'paid_at'
-    readonly_fields = ('receipt_number',)
+    readonly_fields = ('receipt_number', 'status', 'reversed_by', 'reversed_at')
     ordering = ('-paid_at',)
+    inlines = [PaymentAllocationInline]
 
     def student_col(self, obj):
-        return obj.invoice.student.full_name
+        student = obj.student or (obj.invoice.student if obj.invoice_id else None)
+        return student.full_name if student else '—'
     student_col.short_description = 'Student'
 
     def amount_col(self, obj):
         return f'TZS {obj.amount:,.2f}'
     amount_col.short_description = 'Amount'
+
+
+@admin.register(InvoiceLine)
+class InvoiceLineAdmin(admin.ModelAdmin):
+    list_display = ('id', 'invoice', 'category', 'amount', 'amount_allocated', 'status', 'is_legacy', 'is_sale')
+    list_filter = ('category', 'status', 'is_legacy', 'is_sale')
+    search_fields = (
+        'invoice__student__student_id', 'invoice__student__first_name',
+        'invoice__student__last_name', 'description',
+    )
+    readonly_fields = ('amount_allocated', 'status', 'created_at')
+    inlines = [FeeAdjustmentInline]
+
+
+@admin.register(StudentCredit)
+class StudentCreditAdmin(admin.ModelAdmin):
+    list_display = ('student', 'amount', 'remaining_amount', 'source', 'created_at')
+    list_filter = ('source',)
+    search_fields = ('student__student_id', 'student__first_name', 'student__last_name')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(UniformSaleItem)
+class UniformSaleItemAdmin(admin.ModelAdmin):
+    list_display = ('invoice_line', 'name', 'qty', 'unit_price')
+    search_fields = ('name',)
