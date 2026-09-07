@@ -237,7 +237,9 @@ class SmsBatch(models.Model):
     )
     template_key = models.CharField(max_length=32, blank=True)
     language = models.CharField(max_length=2, choices=SmsLanguage.choices, blank=True)
-    sender_id = models.CharField(max_length=20, blank=True)
+    # Notify Africa's sender-id reference. Historically a short integer; newer
+    # accounts get a UUID, so this is sized for a 36-char UUID plus headroom.
+    sender_id = models.CharField(max_length=64, blank=True)
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
@@ -302,7 +304,7 @@ class SmsMessage(models.Model):
     recipient_name = models.CharField(max_length=255, blank=True)
     recipient_phone = models.CharField(max_length=20, blank=True)  # normalised +255…, blank if skipped before normalisation
     body = models.TextField(blank=True)
-    sender_id = models.CharField(max_length=20, blank=True)
+    sender_id = models.CharField(max_length=64, blank=True)
 
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True)
     skip_reason = models.CharField(max_length=255, blank=True)
