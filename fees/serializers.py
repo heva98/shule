@@ -5,7 +5,6 @@ from students.models import Student
 from .models import (
     AcademicYear,
     ActivityFeePlan,
-    FeeStructure,
     Invoice,
     InvoiceLine,
     LunchFeeConfig,
@@ -46,22 +45,6 @@ class SchoolCalendarEventSerializer(serializers.ModelSerializer):
         if start and end and end < start:
             raise serializers.ValidationError({'end_date': 'End date cannot be before start date.'})
         return attrs
-
-
-class FeeStructureSerializer(serializers.ModelSerializer):
-    total_fee = serializers.DecimalField(
-        max_digits=10, decimal_places=2, read_only=True
-    )
-    period_label = serializers.CharField(read_only=True)
-    academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
-
-    class Meta:
-        model = FeeStructure
-        fields = [
-            'id', 'academic_year', 'academic_year_label', 'level', 'term', 'quarter',
-            'period_label', 'tuition_fee', 'lunch_fee', 'transport_fee',
-            'uniform_fee', 'activity_fee', 'total_fee',
-        ]
 
 
 class PaymentInlineSerializer(serializers.ModelSerializer):
@@ -119,24 +102,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
         # amount_due stays writable for the legacy "create invoice by hand"
         # path; once the invoice has lines, recompute_invoice owns it.
         read_only_fields = ['id', 'amount_paid', 'status', 'created_at']
-
-
-class InvoiceGenerateSerializer(serializers.Serializer):
-    academic_year = serializers.PrimaryKeyRelatedField(
-        queryset=AcademicYear.objects.all()
-    )
-    term = serializers.ChoiceField(choices=Term.choices)
-    quarter = serializers.ChoiceField(choices=Quarter.choices)
-    level = serializers.CharField(max_length=10)
-    due_date = serializers.DateField()
-
-    def validate(self, attrs):
-        from shule.utils import validate_term_quarter
-        try:
-            validate_term_quarter(attrs['term'], attrs['quarter'])
-        except Exception as e:
-            raise serializers.ValidationError({'quarter': str(e)})
-        return attrs
 
 
 class PaymentAllocationInputSerializer(serializers.Serializer):

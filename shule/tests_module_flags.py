@@ -26,7 +26,7 @@ MSEWE_MODULES = ['exams', 'reports', 'communications']
 # be disabled for it to 403. Extend this when a new optional-module view is
 # added — it's the whole point of this file.
 GATED_ENDPOINTS = [
-    ('/api/fees/structures/', 'fees'),
+    ('/api/fees/config/tuition/', 'fees'),
     ('/api/fees/invoices/', 'fees'),
     ('/api/fees/payments/', 'fees'),
     ('/api/fees/defaulters/', 'fees'),

@@ -5,7 +5,6 @@ from .models import (
     AcademicYear,
     ActivityFeePlan,
     FeeAdjustment,
-    FeeStructure,
     Invoice,
     InvoiceLine,
     LunchFeeConfig,
@@ -23,21 +22,6 @@ class AcademicYearAdmin(admin.ModelAdmin):
     list_display = ('year', 'is_current', 'q1_start', 'q2_start', 'q3_start', 'q4_start')
     list_filter = ('is_current',)
     ordering = ('-year',)
-
-
-@admin.register(FeeStructure)
-class FeeStructureAdmin(admin.ModelAdmin):
-    list_display = (
-        'academic_year', 'level', 'term', 'quarter',
-        'tuition_fee', 'lunch_fee', 'transport_fee',
-        'uniform_fee', 'activity_fee', 'display_total',
-    )
-    list_filter = ('academic_year', 'level', 'term', 'quarter')
-    ordering = ('-academic_year__year', 'level', 'term', 'quarter')
-
-    def display_total(self, obj):
-        return f'TZS {obj.total_fee:,.2f}'
-    display_total.short_description = 'Total Fee'
 
 
 class PaymentInline(admin.TabularInline):

@@ -11,7 +11,6 @@ from .views import (
     FeeMonthlyView,
     FeeOutstandingReport,
     FeeOverviewReport,
-    FeeStructureViewSet,
     FeeSummaryView,
     FeeUnpaidStudentsReport,
     InvoiceLineViewSet,
@@ -28,7 +27,6 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r'academic-years', AcademicYearViewSet, basename='academic-year')
-router.register(r'structures', FeeStructureViewSet, basename='fee-structure')
 router.register(r'config/tuition', TuitionFeePlanViewSet, basename='tuition-plan')
 router.register(r'config/uniform', UniformFeePlanViewSet, basename='uniform-plan')
 router.register(r'config/lunch', LunchFeeConfigViewSet, basename='lunch-config')

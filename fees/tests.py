@@ -7,7 +7,7 @@ from accounts.models import Role
 from shule.factories import make_academic_year, make_student, make_user
 from students.models import Guardian
 
-from .models import FeeStructure, Invoice, InvoiceStatus
+from .models import Invoice, InvoiceStatus
 
 
 class InvoiceParentScopingTests(TestCase):
@@ -58,12 +58,11 @@ class InvoiceParentScopingTests(TestCase):
         resp = client.get(f'/api/fees/invoices/{self.other_invoice.id}/')
         self.assertEqual(resp.status_code, 404)
 
-    def test_parent_cannot_generate_invoices(self):
+    def test_parent_cannot_generate_charges(self):
         client = APIClient()
         client.force_authenticate(user=self.parent)
-        resp = client.post('/api/fees/invoices/generate/', {
-            'academic_year': self.academic_year.id, 'term': 'TERM1', 'quarter': 'Q1',
-            'level': 'STD1', 'due_date': str(datetime.date.today()),
+        resp = client.post('/api/fees/charges/generate/', {
+            'academic_year': self.academic_year.id, 'scope': 'ANNUAL',
         }, format='json')
         self.assertEqual(resp.status_code, 403)
 
@@ -86,20 +85,20 @@ class FeesPermissionTests(TestCase):
         resp = client.get('/api/fees/invoices/')
         self.assertEqual(resp.status_code, 200)
 
-    def test_teacher_cannot_access_fee_structures(self):
+    def test_teacher_cannot_access_fee_config(self):
         teacher = make_user(role=Role.TEACHER)
         client = APIClient()
         client.force_authenticate(user=teacher)
-        resp = client.get('/api/fees/structures/')
+        resp = client.get('/api/fees/config/tuition/')
         self.assertEqual(resp.status_code, 403)
 
-    def test_bursar_can_create_fee_structure(self):
+    def test_bursar_can_create_tuition_plan(self):
         bursar = make_user(role=Role.BURSAR)
         client = APIClient()
         client.force_authenticate(user=bursar)
-        resp = client.post('/api/fees/structures/', {
-            'academic_year': self.academic_year.id, 'level': 'STD1',
-            'term': 'TERM1', 'quarter': 'Q1', 'tuition_fee': '50000',
+        resp = client.post('/api/fees/config/tuition/', {
+            'academic_year': self.academic_year.id, 'scope': 'LEVEL_GROUP',
+            'level_group': 'PRIMARY', 'amount': '500000',
         }, format='json')
         self.assertEqual(resp.status_code, 201)
 

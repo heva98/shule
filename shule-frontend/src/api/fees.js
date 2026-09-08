@@ -9,9 +9,6 @@ export const getInvoice = (id) =>
 export const createInvoice = (data) =>
   api.post('/fees/invoices/', data).then((r) => r.data)
 
-export const generateInvoices = (data) =>
-  api.post('/fees/invoices/generate/', data).then((r) => r.data)
-
 export const recordPayment = (data) =>
   api.post('/fees/payments/', data).then((r) => r.data)
 
@@ -26,18 +23,6 @@ export const getMonthlyRevenue = (params = {}) =>
 
 export const getDefaulters = (params = {}) =>
   api.get('/fees/defaulters/', { params }).then((r) => r.data)
-
-export const getFeeStructures = (params = {}) =>
-  api.get('/fees/structures/', { params }).then((r) => r.data)
-
-export const createFeeStructure = (data) =>
-  api.post('/fees/structures/', data).then((r) => r.data)
-
-export const updateFeeStructure = (id, data) =>
-  api.patch(`/fees/structures/${id}/`, data).then((r) => r.data)
-
-export const deleteFeeStructure = (id) =>
-  api.delete(`/fees/structures/${id}/`)
 
 export const getAcademicYears = () =>
   api.get('/fees/academic-years/').then((r) => r.data)

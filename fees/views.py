@@ -15,15 +15,12 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from accounts.models import Role
 from accounts.permissions import ModuleEnabled
-from students.models import Student, StudentStatus
+from students.models import Student
 
 from .models import (
     AcademicYear,
     ActivityFeePlan,
-    FeeCategory,
-    FeeStructure,
     Invoice,
-    InvoiceKind,
     InvoiceLine,
     InvoiceStatus,
     LineStatus,
@@ -37,8 +34,6 @@ from .serializers import (
     AcademicYearSerializer,
     ActivityFeePlanSerializer,
     ChargeGenerateSerializer,
-    FeeStructureSerializer,
-    InvoiceGenerateSerializer,
     InvoiceLineSerializer,
     InvoiceLineWriteSerializer,
     InvoiceSerializer,
@@ -69,27 +64,6 @@ class AcademicYearViewSet(ModelViewSet):
         # need academic years for their own forms.
         if self.action in ('create', 'update', 'partial_update', 'destroy') and request.user.role not in _MANAGE_ROLES:
             raise PermissionDenied('You do not have permission to manage academic years.')
-
-
-class FeeStructureViewSet(ModelViewSet):
-    module = 'fees'
-    serializer_class = FeeStructureSerializer
-    permission_classes = [IsAuthenticated, ModuleEnabled]
-
-    def check_permissions(self, request):
-        super().check_permissions(request)
-        if request.user.role not in _MANAGE_ROLES:
-            raise PermissionDenied('You do not have permission to access fee structures.')
-
-    def get_queryset(self):
-        qs = FeeStructure.objects.select_related('academic_year').all()
-        level = self.request.query_params.get('level')
-        year = self.request.query_params.get('year')
-        if level:
-            qs = qs.filter(level=level)
-        if year:
-            qs = qs.filter(academic_year__year=year)
-        return qs
 
 
 class _FeeConfigViewSet(ModelViewSet):
@@ -450,75 +424,6 @@ class InvoiceViewSet(ModelViewSet):
         if level:
             qs = qs.filter(student__level=level)
         return qs
-
-    @action(detail=False, methods=['post'], url_path='generate')
-    @transaction.atomic
-    def generate(self, request):
-        serializer = InvoiceGenerateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
-        academic_year = data['academic_year']
-        term = data['term']
-        quarter = data['quarter']
-        level = data['level']
-        due_date = data['due_date']
-
-        try:
-            structure = FeeStructure.objects.get(
-                academic_year=academic_year, level=level, term=term, quarter=quarter
-            )
-        except FeeStructure.DoesNotExist:
-            return Response(
-                {'detail': f'No fee structure found for {level} / {term} / {quarter} / {academic_year}.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        students = Student.objects.filter(level=level, status=StudentStatus.ACTIVE)
-        if not students.exists():
-            return Response(
-                {'detail': f'No active students found at level {level}.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        amount_due = structure.total_fee
-        created, skipped = 0, 0
-        for student in students:
-            invoice, was_created = Invoice.objects.get_or_create(
-                student=student,
-                academic_year=academic_year,
-                term=term,
-                quarter=quarter,
-                kind=InvoiceKind.QUARTERLY,
-                defaults={'amount_due': amount_due, 'due_date': due_date},
-            )
-            # Phase 1 bridge: the per-category resolver arrives in Phase 3.
-            # Until then each generated invoice carries one consolidated line so
-            # the pay / receipt / balance flow keeps working end to end.
-            InvoiceLine.objects.get_or_create(
-                invoice=invoice,
-                category=FeeCategory.TUITION,
-                defaults={
-                    'amount': amount_due,
-                    'description': 'Consolidated term fees',
-                    'level_snapshot': student.level,
-                    'source_kind': 'legacy_generate',
-                },
-            )
-            if was_created:
-                created += 1
-            else:
-                skipped += 1
-
-        return Response(
-            {
-                'detail': f'{created} invoices created, {skipped} already existed.',
-                'created': created,
-                'skipped': skipped,
-                'amount_due': str(amount_due),
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
 
 class PaymentViewSet(ModelViewSet):

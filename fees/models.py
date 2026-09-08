@@ -134,47 +134,6 @@ class SchoolCalendarEvent(models.Model):
         return f'{self.title} ({self.start_date})'
 
 
-class FeeStructure(models.Model):
-    academic_year = models.ForeignKey(
-        AcademicYear, on_delete=models.PROTECT, related_name='fee_structures'
-    )
-    level = models.CharField(max_length=10, choices=Level.choices)
-    term = models.CharField(max_length=10, choices=Term.choices)
-    quarter = models.CharField(max_length=5, choices=Quarter.choices)
-
-    tuition_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    lunch_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    transport_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    uniform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    activity_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
-    class Meta:
-        unique_together = ('academic_year', 'level', 'term', 'quarter')
-        ordering = ['academic_year', 'level', 'term', 'quarter']
-
-    def __str__(self):
-        return f'{self.academic_year} | {self.level} | {self.term} | {self.quarter}'
-
-    def clean(self):
-        validate_term_quarter(self.term, self.quarter)
-
-    @property
-    def period_label(self):
-        term_label = dict(Term.choices).get(self.term, self.term)
-        quarter_label = dict(Quarter.choices).get(self.quarter, self.quarter)
-        return f'{term_label} — {quarter_label}'
-
-    @property
-    def total_fee(self):
-        return (
-            self.tuition_fee
-            + self.lunch_fee
-            + self.transport_fee
-            + self.uniform_fee
-            + self.activity_fee
-        )
-
-
 # ── Fee configuration (templates) ────────────────────────────────────────────
 # The school's rule for a fee — NOT what any given student owes. A student's
 # charge is a resolved snapshot (InvoiceLine) produced from these in Phase 3.
