@@ -49,6 +49,7 @@ from .serializers import (
     TuitionFeePlanSerializer,
     UniformAssignSerializer,
     UniformFeePlanSerializer,
+    UniformSaleInputSerializer,
 )
 
 # Roles that may manage fee structures, invoices and payments (matches the
@@ -254,6 +255,55 @@ class UniformAssignView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
+class UniformSaleView(APIView):
+    """POST /api/fees/uniform-sales/ — record a uniform walk-in sale
+    (requirement 4). Body: {student, items:[{name,qty,unit_price}], academic_year?,
+    notes?, payment?:{payment_method, transaction_id?, paid_at?}}. When `payment`
+    is given the sale is paid in full and the receipt is returned."""
+    module = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to record sales.')
+
+    @transaction.atomic
+    def post(self, request):
+        from .sales import create_uniform_sale
+        from .services import allocate_payment
+
+        s = UniformSaleInputSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        d = s.validated_data
+
+        line = create_uniform_sale(
+            d['student'],
+            [dict(i) for i in d['items']],
+            academic_year=d.get('academic_year'),
+            created_by=request.user,
+            notes=d.get('notes', ''),
+        )
+
+        body = {'invoice_line': InvoiceLineSerializer(line).data}
+
+        pay_data = d.get('payment')
+        if pay_data:
+            payment = Payment.objects.create(
+                student=d['student'],
+                invoice=line.invoice,
+                amount=line.amount,
+                payment_method=pay_data['payment_method'],
+                transaction_id=pay_data.get('transaction_id', ''),
+                paid_at=pay_data.get('paid_at') or timezone.now(),
+                received_by=request.user,
+            )
+            allocate_payment(payment, [(line, line.amount)])
+            body['receipt'] = ReceiptSerializer(payment).data
+
+        return Response(body, status=status.HTTP_201_CREATED)
+
+
 class StudentFeeSummaryView(APIView):
     """GET /api/fees/student-summary/?student=&academic_year= — the per-category
     required / paid / outstanding table for one student."""
@@ -323,6 +373,10 @@ class InvoiceLineViewSet(ModelViewSet):
         if p.get('outstanding') in ('1', 'true', 'True'):
             # lines that still have a balance to receive against
             qs = qs.filter(status__in=[LineStatus.UNPAID, LineStatus.PARTIAL])
+            # walk-in uniform sales are settled through their own flow — keep
+            # them out of the normal "outstanding fees" list unless asked for.
+            if p.get('include_sales') not in ('1', 'true', 'True') and not p.get('kind'):
+                qs = qs.filter(is_sale=False)
         return qs
 
     def _guard_mutable(self, line):

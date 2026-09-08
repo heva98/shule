@@ -35,6 +35,7 @@ export default function ReceiptView({ receipt, onClose, onReverse }) {
   const inv = receipt.invoice_detail
   const reversed = receipt.status === 'REVERSED'
   const allocations = receipt.allocations ?? []
+  const saleItems = receipt.is_sale ? (receipt.sale_items ?? []) : []
   const studentName = receipt.student_name ?? inv?.student_name
   const studentId = receipt.student_id_display ?? inv?.student_id_display
 
@@ -71,7 +72,8 @@ export default function ReceiptView({ receipt, onClose, onReverse }) {
             <div className="school-name">Shule School</div>
             <div className="school-sub">P.O. Box 1234, Dar es Salaam, Tanzania</div>
             <div className={`receipt-badge ${reversed ? 'reversed-badge' : ''}`}>
-              {reversed ? 'REVERSED — NOT VALID' : 'OFFICIAL RECEIPT'}
+              {reversed ? 'REVERSED — NOT VALID'
+                : saleItems.length ? 'UNIFORM SALE RECEIPT' : 'OFFICIAL RECEIPT'}
             </div>
           </div>
 
@@ -83,7 +85,29 @@ export default function ReceiptView({ receipt, onClose, onReverse }) {
             )}
           </div>
 
-          {allocations.length > 0 && (
+          {saleItems.length > 0 ? (
+            <table className="breakdown">
+              <thead>
+                <tr>
+                  <th>Item</th><th className="amt">Qty</th>
+                  <th className="amt">Unit</th><th className="amt">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {saleItems.map((it) => (
+                  <tr key={it.id}>
+                    <td>{it.name}</td>
+                    <td className="amt">{it.qty}</td>
+                    <td className="amt">{formatTZS(it.unit_price)}</td>
+                    <td className="amt">{formatTZS(it.line_total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr><td colSpan={3}>Total</td><td className="amt">{formatTZS(receipt.amount)}</td></tr>
+              </tfoot>
+            </table>
+          ) : allocations.length > 0 && (
             <table className="breakdown">
               <thead>
                 <tr><th>Payment Type</th><th className="amt">Amount</th></tr>

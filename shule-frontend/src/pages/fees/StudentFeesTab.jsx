@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Search, Sparkles, Trash2, UserRound, Wallet } from 'lucide-react'
+import { Loader2, Shirt, Sparkles, Trash2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { getAcademicYears, getReceipt } from '../../api/fees'
@@ -7,61 +7,17 @@ import {
   assignUniform, getInvoiceLines, getPayments, getStudentFeeSummary,
   reversePayment, voidInvoiceLine,
 } from '../../api/feeCharges'
-import { getStudents } from '../../api/students'
 import Badge from '../../components/ui/Badge'
 import ReceiptView from '../../components/fees/ReceiptView'
 import ReceivePaymentModal from '../../components/fees/ReceivePaymentModal'
+import StudentPicker from '../../components/fees/StudentPicker'
+import UniformSaleModal from '../../components/fees/UniformSaleModal'
 import { LEVEL_LABEL } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
 import GenerateChargesModal from './GenerateChargesModal'
 
 const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
   focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-
-function StudentSearch({ onPick }) {
-  const [q, setQ] = useState('')
-  const { data, isFetching } = useQuery({
-    queryKey: ['student-search', q],
-    queryFn: () => getStudents({ search: q, status: 'ACTIVE' }),
-    enabled: q.trim().length >= 2,
-  })
-  const results = data?.results ?? data ?? []
-
-  return (
-    <div className="relative w-full max-w-sm">
-      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search student by name or ID…"
-        className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm
-          focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-      />
-      {q.trim().length >= 2 && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-72 overflow-y-auto">
-          {isFetching ? (
-            <div className="px-3 py-3 text-sm text-gray-400">Searching…</div>
-          ) : results.length === 0 ? (
-            <div className="px-3 py-3 text-sm text-gray-400">No matches.</div>
-          ) : (
-            results.slice(0, 20).map((s) => (
-              <button
-                key={s.id}
-                onClick={() => { onPick(s); setQ('') }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
-              >
-                <UserRound size={14} className="text-gray-400" />
-                <span className="font-medium text-gray-800">{s.full_name}</span>
-                <span className="text-xs text-gray-400 font-mono ml-auto">{s.student_id}</span>
-                <span className="text-xs text-gray-400">{LEVEL_LABEL[s.level] || s.level}</span>
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
 function SummaryTable({ summary }) {
   const t = summary.totals
@@ -258,6 +214,7 @@ export default function StudentFeesTab() {
   const [pickedYearId, setPickedYearId] = useState('')
   const [showGenerate, setShowGenerate] = useState(false)
   const [showReceive, setShowReceive] = useState(false)
+  const [showSale, setShowSale] = useState(false)
 
   const { data: yearsData } = useQuery({ queryKey: ['academic-years'], queryFn: getAcademicYears })
   const years = (yearsData?.results ?? yearsData ?? []).slice().sort((a, b) => b.year - a.year)
@@ -287,11 +244,17 @@ export default function StudentFeesTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <StudentSearch onPick={setStudent} />
+        <StudentPicker onPick={setStudent} />
         <select className={selectCls} value={yearId} onChange={(e) => setPickedYearId(e.target.value)}>
           <option value="">Year…</option>
           {years.map((y) => <option key={y.id} value={y.id}>{y.year}{y.is_current ? ' (Current)' : ''}</option>)}
         </select>
+        <button
+          onClick={() => setShowSale(true)}
+          className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <Shirt size={15} /> Uniform Sale
+        </button>
         <button
           onClick={() => setShowGenerate(true)}
           className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary"
@@ -351,6 +314,18 @@ export default function StudentFeesTab() {
       )}
 
       {showGenerate && <GenerateChargesModal onClose={() => setShowGenerate(false)} />}
+      {showSale && (
+        <UniformSaleModal
+          student={student}
+          onClose={() => setShowSale(false)}
+          onSuccess={() => {
+            if (student) {
+              qc.invalidateQueries({ queryKey: ['invoice-lines', student.id, yearId] })
+              qc.invalidateQueries({ queryKey: ['student-payments', student.id, yearId] })
+            }
+          }}
+        />
+      )}
       {showReceive && student && (
         <ReceivePaymentModal
           student={student}

@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from students.models import Student
+
 from .models import (
     AcademicYear,
     ActivityFeePlan,
@@ -16,6 +18,7 @@ from .models import (
     Term,
     TuitionFeePlan,
     UniformFeePlan,
+    UniformSaleItem,
 )
 
 
@@ -68,17 +71,29 @@ class PaymentInlineSerializer(serializers.ModelSerializer):
                   'receipt_number', 'status']
 
 
+class UniformSaleItemSerializer(serializers.ModelSerializer):
+    line_total = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = UniformSaleItem
+        fields = ['id', 'name', 'qty', 'unit_price', 'line_total']
+        read_only_fields = ['id', 'line_total']
+
+
 class InvoiceLineSerializer(serializers.ModelSerializer):
     net_required = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     outstanding = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
+    sale_items = UniformSaleItemSerializer(many=True, read_only=True)
+    student_name = serializers.CharField(source='invoice.student.full_name', read_only=True)
 
     class Meta:
         model = InvoiceLine
         fields = [
             'id', 'invoice', 'category', 'category_display', 'description',
             'level_snapshot', 'amount', 'amount_allocated', 'net_required',
-            'outstanding', 'status', 'is_legacy', 'is_sale', 'created_at',
+            'outstanding', 'status', 'is_legacy', 'is_sale', 'sale_items',
+            'student_name', 'created_at',
         ]
         read_only_fields = fields
 
@@ -218,6 +233,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_id_display = serializers.CharField(source='student.student_id', read_only=True)
     from_credit = serializers.SerializerMethodField()
+    is_sale = serializers.SerializerMethodField()
+    sale_items = serializers.SerializerMethodField()
     reversal_of_receipt = serializers.CharField(
         source='reversal_of.receipt_number', read_only=True, default=None
     )
@@ -230,11 +247,26 @@ class ReceiptSerializer(serializers.ModelSerializer):
             'received_by', 'received_by_name',
             'student_name', 'student_id_display', 'notes',
             'from_credit', 'reversal_of_receipt', 'reversal_reason',
-            'allocations', 'invoice_detail',
+            'is_sale', 'sale_items', 'allocations', 'invoice_detail',
         ]
 
     def get_from_credit(self, obj):
         return obj.funded_from_credit_id is not None
+
+    def _sale_lines(self, obj):
+        return [
+            a.invoice_line for a in obj.allocations.all()
+            if a.invoice_line.is_sale
+        ]
+
+    def get_is_sale(self, obj):
+        return bool(self._sale_lines(obj))
+
+    def get_sale_items(self, obj):
+        items = []
+        for line in self._sale_lines(obj):
+            items.extend(UniformSaleItemSerializer(line.sale_items.all(), many=True).data)
+        return items
 
 
 # ── Fee configuration ───────────────────────────────────────────────────────
@@ -423,3 +455,28 @@ class InvoiceLineWriteSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError('Amount cannot be negative.')
         return value
+
+
+class UniformSaleItemInputSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150)
+    qty = serializers.IntegerField(min_value=1)
+    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+
+
+class UniformSalePaymentSerializer(serializers.Serializer):
+    payment_method = serializers.ChoiceField(
+        choices=[c for c in PaymentMethod.choices if c[0] != PaymentMethod.CARRIED_CREDIT]
+    )
+    transaction_id = serializers.CharField(required=False, allow_blank=True, default='')
+    paid_at = serializers.DateTimeField(required=False)
+
+
+class UniformSaleInputSerializer(serializers.Serializer):
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    academic_year = serializers.PrimaryKeyRelatedField(
+        queryset=AcademicYear.objects.all(), required=False,
+    )
+    items = UniformSaleItemInputSerializer(many=True, allow_empty=False)
+    notes = serializers.CharField(required=False, allow_blank=True, default='')
+    # When present, the sale is paid in full and a receipt is returned.
+    payment = UniformSalePaymentSerializer(required=False)

@@ -19,6 +19,7 @@ from .views import (
     TuitionFeePlanViewSet,
     UniformAssignView,
     UniformFeePlanViewSet,
+    UniformSaleView,
 )
 
 router = DefaultRouter()
@@ -38,6 +39,7 @@ urlpatterns = [
     path('config/resolve/', FeeConfigResolveView.as_view(), name='fee-config-resolve'),
     path('charges/generate/', ChargeGenerateView.as_view(), name='fee-charges-generate'),
     path('charges/assign-uniform/', UniformAssignView.as_view(), name='fee-assign-uniform'),
+    path('uniform-sales/', UniformSaleView.as_view(), name='fee-uniform-sale'),
     path('student-summary/', StudentFeeSummaryView.as_view(), name='fee-student-summary'),
     path('defaulters/', DefaultersView.as_view(), name='fee-defaulters'),
     path('summary/monthly/', FeeMonthlyView.as_view(), name='fee-summary-monthly'),
