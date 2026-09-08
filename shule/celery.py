@@ -34,5 +34,12 @@ app.conf.beat_schedule = {
         'task': 'communications.tasks.sms_term_date_run',
         'schedule': crontab(hour=7, minute=0),
     },
+
+    # 02:00 daily — re-run the fee assignment engine for every active student
+    # so configuration changes that missed a signal still land. Idempotent.
+    'nightly-fee-charge-resync': {
+        'task': 'fees.tasks.resync_current_charges',
+        'schedule': crontab(hour=2, minute=0),
+    },
 }
 app.conf.timezone = 'Africa/Dar_es_Salaam'

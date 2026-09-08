@@ -9,8 +9,10 @@ from .models import (
     LunchFeeConfig,
     Payment,
     PaymentAllocation,
+    PaymentMethod,
     Quarter,
     SchoolCalendarEvent,
+    StudentCredit,
     Term,
     TuitionFeePlan,
     UniformFeePlan,
@@ -147,6 +149,10 @@ class PaymentSerializer(serializers.ModelSerializer):
     allocations_input = PaymentAllocationInputSerializer(
         many=True, write_only=True, required=False
     )
+    funded_from_credit = serializers.PrimaryKeyRelatedField(
+        queryset=StudentCredit.objects.filter(remaining_amount__gt=0),
+        required=False, allow_null=True,
+    )
 
     class Meta:
         model = Payment
@@ -154,7 +160,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             'id', 'student', 'invoice', 'amount', 'payment_method',
             'transaction_id', 'phone_used', 'paid_at',
             'received_by', 'receipt_number', 'notes', 'status',
-            'allocations', 'allocations_input',
+            'funded_from_credit', 'allocations', 'allocations_input',
         ]
         read_only_fields = ['id', 'received_by', 'receipt_number', 'status']
 
@@ -164,11 +170,45 @@ class PaymentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        method = attrs.get('payment_method')
+        credit = attrs.get('funded_from_credit')
+
+        if method == PaymentMethod.CARRIED_CREDIT:
+            if not credit:
+                raise serializers.ValidationError(
+                    {'funded_from_credit': 'Required when paying from carried credit.'}
+                )
+            if not attrs.get('allocations_input'):
+                raise serializers.ValidationError(
+                    'A carried-credit payment must list explicit allocations.'
+                )
+            if attrs.get('amount') and attrs['amount'] > credit.remaining_amount:
+                raise serializers.ValidationError(
+                    {'amount': f'Only {credit.remaining_amount} of credit remains.'}
+                )
+        elif credit:
+            raise serializers.ValidationError(
+                {'funded_from_credit': 'Only valid when payment_method is CARRIED_CREDIT.'}
+            )
+
         if not attrs.get('invoice') and not attrs.get('allocations_input'):
             raise serializers.ValidationError(
                 'Provide an invoice (legacy auto-split) or an explicit allocations_input list.'
             )
         return attrs
+
+
+class StudentCreditSerializer(serializers.ModelSerializer):
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+    student_name = serializers.CharField(source='student.full_name', read_only=True)
+
+    class Meta:
+        model = StudentCredit
+        fields = [
+            'id', 'student', 'student_name', 'amount', 'remaining_amount',
+            'source', 'source_display', 'reason', 'created_at',
+        ]
+        read_only_fields = fields
 
 
 class ReceiptSerializer(serializers.ModelSerializer):
@@ -177,6 +217,10 @@ class ReceiptSerializer(serializers.ModelSerializer):
     received_by_name = serializers.CharField(source='received_by.full_name', read_only=True)
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_id_display = serializers.CharField(source='student.student_id', read_only=True)
+    from_credit = serializers.SerializerMethodField()
+    reversal_of_receipt = serializers.CharField(
+        source='reversal_of.receipt_number', read_only=True, default=None
+    )
 
     class Meta:
         model = Payment
@@ -185,8 +229,12 @@ class ReceiptSerializer(serializers.ModelSerializer):
             'transaction_id', 'phone_used', 'paid_at', 'status',
             'received_by', 'received_by_name',
             'student_name', 'student_id_display', 'notes',
+            'from_credit', 'reversal_of_receipt', 'reversal_reason',
             'allocations', 'invoice_detail',
         ]
+
+    def get_from_credit(self, obj):
+        return obj.funded_from_credit_id is not None
 
 
 # ── Fee configuration ───────────────────────────────────────────────────────
@@ -332,3 +380,46 @@ class ActivityFeePlanSerializer(serializers.ModelSerializer):
                  'quarter': quarter, 'level': level},
             )
         return attrs
+
+
+# ── Charge assignment (Phase 3) ────────────────────────────────────────────
+
+class ChargeGenerateSerializer(serializers.Serializer):
+    academic_year = serializers.PrimaryKeyRelatedField(queryset=AcademicYear.objects.all())
+    scope = serializers.ChoiceField(choices=['ANNUAL', 'QUARTERLY'])
+    term = serializers.ChoiceField(choices=Term.choices, required=False, allow_null=True)
+    quarter = serializers.ChoiceField(choices=Quarter.choices, required=False, allow_null=True)
+    levels = serializers.ListField(child=serializers.CharField(), required=False)
+    due_date = serializers.DateField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        if attrs['scope'] == 'QUARTERLY':
+            if not attrs.get('term') or not attrs.get('quarter'):
+                raise serializers.ValidationError('Quarterly generation needs term and quarter.')
+            from shule.utils import validate_term_quarter
+            try:
+                validate_term_quarter(attrs['term'], attrs['quarter'])
+            except Exception as e:
+                raise serializers.ValidationError({'quarter': str(e)})
+        return attrs
+
+
+class UniformAssignSerializer(serializers.Serializer):
+    academic_year = serializers.PrimaryKeyRelatedField(queryset=AcademicYear.objects.all())
+    student_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+    amount_override = serializers.DecimalField(
+        max_digits=10, decimal_places=2, required=False, allow_null=True, min_value=0
+    )
+
+
+class InvoiceLineWriteSerializer(serializers.ModelSerializer):
+    """Manual charges only — the assignment engine writes its own lines.
+    Editing is limited to still-unpaid, non-legacy lines (enforced in the view)."""
+    class Meta:
+        model = InvoiceLine
+        fields = ['id', 'invoice', 'category', 'description', 'amount', 'level_snapshot']
+
+    def validate_amount(self, value):
+        if value < 0:
+            raise serializers.ValidationError('Amount cannot be negative.')
+        return value
