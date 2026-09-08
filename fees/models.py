@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from students.models import Level
+from students.level_groups import LevelGroup
 from shule.utils import validate_term_quarter
 
 
@@ -172,6 +173,156 @@ class FeeStructure(models.Model):
             + self.uniform_fee
             + self.activity_fee
         )
+
+
+# ── Fee configuration (templates) ────────────────────────────────────────────
+# The school's rule for a fee — NOT what any given student owes. A student's
+# charge is a resolved snapshot (InvoiceLine) produced from these in Phase 3.
+# Transport config lives in the transport app (Route / RouteFee).
+
+class TuitionFeePlan(models.Model):
+    """Annual tuition (decision J-2). Configured for a whole level group
+    (Primary / O-Level / …) or a single class; a class-scoped row overrides
+    the group row for that class."""
+    class Scope(models.TextChoices):
+        LEVEL_GROUP = 'LEVEL_GROUP', 'Level group'
+        LEVEL = 'LEVEL', 'Single class'
+
+    academic_year = models.ForeignKey(
+        AcademicYear, on_delete=models.PROTECT, related_name='tuition_plans'
+    )
+    scope = models.CharField(max_length=12, choices=Scope.choices)
+    level_group = models.CharField(max_length=10, choices=LevelGroup.choices, blank=True)
+    level = models.CharField(max_length=10, choices=Level.choices, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['academic_year', 'level_group', 'level']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['academic_year', 'level_group'],
+                condition=models.Q(is_active=True, scope='LEVEL_GROUP'),
+                name='uniq_active_tuition_plan_per_group',
+            ),
+            models.UniqueConstraint(
+                fields=['academic_year', 'level'],
+                condition=models.Q(is_active=True, scope='LEVEL'),
+                name='uniq_active_tuition_plan_per_level',
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(scope='LEVEL_GROUP', level_group__gt='', level='')
+                    | models.Q(scope='LEVEL', level__gt='')
+                ),
+                name='tuition_plan_scope_fields_consistent',
+            ),
+        ]
+
+    def __str__(self):
+        target = self.level or self.level_group
+        return f'{self.academic_year} | Tuition {target} | {self.amount}'
+
+    def clean(self):
+        if self.scope == self.Scope.LEVEL_GROUP and not self.level_group:
+            raise ValidationError({'level_group': 'Required for a level-group plan.'})
+        if self.scope == self.Scope.LEVEL and not self.level:
+            raise ValidationError({'level': 'Required for a single-class plan.'})
+
+
+class UniformFeePlan(models.Model):
+    """Standard annual uniform cost for a class (decision J-1 / uniform=annual).
+    Assignment to individual students, and per-student overrides, happen at
+    assignment time — configuring a plan does not charge anyone."""
+    academic_year = models.ForeignKey(
+        AcademicYear, on_delete=models.PROTECT, related_name='uniform_plans'
+    )
+    level = models.CharField(max_length=10, choices=Level.choices)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['academic_year', 'level']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['academic_year', 'level'],
+                condition=models.Q(is_active=True),
+                name='uniq_active_uniform_plan_per_level',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.academic_year} | Uniform {self.level} | {self.amount}'
+
+
+class LunchFeeConfig(models.Model):
+    """School-wide lunch rates for a quarter (decision J-8). When a row exists
+    for a period, lunch is charged to every active student at the rate for
+    their boarding/day status; when none exists, no lunch is charged."""
+    academic_year = models.ForeignKey(
+        AcademicYear, on_delete=models.PROTECT, related_name='lunch_configs'
+    )
+    term = models.CharField(max_length=10, choices=Term.choices)
+    quarter = models.CharField(max_length=5, choices=Quarter.choices)
+    day_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    boarding_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-academic_year__year', 'term', 'quarter']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['academic_year', 'term', 'quarter'],
+                name='uniq_lunch_config_per_period',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.academic_year} | Lunch {self.term} {self.quarter}'
+
+    def clean(self):
+        validate_term_quarter(self.term, self.quarter)
+
+    def amount_for(self, is_boarding: bool):
+        return self.boarding_amount if is_boarding else self.day_amount
+
+
+class ActivityFeePlan(models.Model):
+    """Per-class activity fee for a quarter (decision J-5). Applies to every
+    student in the class for that period; the assignment engine keeps the
+    roster in step as students join or leave."""
+    academic_year = models.ForeignKey(
+        AcademicYear, on_delete=models.PROTECT, related_name='activity_plans'
+    )
+    term = models.CharField(max_length=10, choices=Term.choices)
+    quarter = models.CharField(max_length=5, choices=Quarter.choices)
+    level = models.CharField(max_length=10, choices=Level.choices)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-academic_year__year', 'term', 'quarter', 'level']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['academic_year', 'term', 'quarter', 'level'],
+                condition=models.Q(is_active=True),
+                name='uniq_active_activity_plan_per_class_period',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.academic_year} | Activity {self.level} {self.term} {self.quarter}'
+
+    def clean(self):
+        validate_term_quarter(self.term, self.quarter)
 
 
 class Invoice(models.Model):

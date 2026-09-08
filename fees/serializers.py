@@ -2,14 +2,18 @@ from rest_framework import serializers
 
 from .models import (
     AcademicYear,
+    ActivityFeePlan,
     FeeStructure,
     Invoice,
     InvoiceLine,
+    LunchFeeConfig,
     Payment,
     PaymentAllocation,
     Quarter,
     SchoolCalendarEvent,
     Term,
+    TuitionFeePlan,
+    UniformFeePlan,
 )
 
 
@@ -183,3 +187,148 @@ class ReceiptSerializer(serializers.ModelSerializer):
             'student_name', 'student_id_display', 'notes',
             'allocations', 'invoice_detail',
         ]
+
+
+# ── Fee configuration ───────────────────────────────────────────────────────
+
+def _reject_duplicate_active_plan(serializer, model, lookup: dict):
+    """DRF's auto-generated validators for *conditional* UniqueConstraints
+    crash on PATCH (KeyError on the condition field), so we disable those and
+    check the "one active plan" rule here with a friendly message."""
+    qs = model.objects.filter(is_active=True, **lookup)
+    if serializer.instance:
+        qs = qs.exclude(pk=serializer.instance.pk)
+    if qs.exists():
+        raise serializers.ValidationError(
+            'An active plan already exists for this scope. Deactivate it first.'
+        )
+
+
+class TuitionFeePlanSerializer(serializers.ModelSerializer):
+    academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
+    level_display = serializers.CharField(source='get_level_display', read_only=True)
+    level_group_display = serializers.CharField(source='get_level_group_display', read_only=True)
+    # Explicit so the auto unique-constraint validators always see them, and so
+    # a level-group plan need not send an empty `level`.
+    is_active = serializers.BooleanField(required=False, default=True)
+    level = serializers.CharField(required=False, allow_blank=True, default='')
+    level_group = serializers.CharField(required=False, allow_blank=True, default='')
+
+    class Meta:
+        model = TuitionFeePlan
+        fields = [
+            'id', 'academic_year', 'academic_year_label', 'scope',
+            'level_group', 'level_group_display', 'level', 'level_display',
+            'amount', 'is_active', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        validators = []  # conditional UniqueConstraints handled in validate()
+
+    def validate(self, attrs):
+        inst = self.instance
+        scope = attrs.get('scope', getattr(inst, 'scope', None))
+        level_group = attrs.get('level_group', getattr(inst, 'level_group', ''))
+        level = attrs.get('level', getattr(inst, 'level', ''))
+        academic_year = attrs.get('academic_year', getattr(inst, 'academic_year', None))
+        is_active = attrs.get('is_active', getattr(inst, 'is_active', True))
+
+        if scope == TuitionFeePlan.Scope.LEVEL_GROUP:
+            if not level_group:
+                raise serializers.ValidationError({'level_group': 'Required for a level-group plan.'})
+            attrs['level'] = level = ''
+        elif scope == TuitionFeePlan.Scope.LEVEL:
+            if not level:
+                raise serializers.ValidationError({'level': 'Required for a single-class plan.'})
+
+        if is_active and academic_year:
+            key = {'academic_year': academic_year, 'scope': scope}
+            key['level_group' if scope == TuitionFeePlan.Scope.LEVEL_GROUP else 'level'] = (
+                level_group if scope == TuitionFeePlan.Scope.LEVEL_GROUP else level
+            )
+            _reject_duplicate_active_plan(self, TuitionFeePlan, key)
+        return attrs
+
+
+class UniformFeePlanSerializer(serializers.ModelSerializer):
+    academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
+    level_display = serializers.CharField(source='get_level_display', read_only=True)
+    is_active = serializers.BooleanField(required=False, default=True)
+
+    class Meta:
+        model = UniformFeePlan
+        fields = [
+            'id', 'academic_year', 'academic_year_label', 'level', 'level_display',
+            'amount', 'is_active', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        validators = []
+
+    def validate(self, attrs):
+        inst = self.instance
+        is_active = attrs.get('is_active', getattr(inst, 'is_active', True))
+        academic_year = attrs.get('academic_year', getattr(inst, 'academic_year', None))
+        level = attrs.get('level', getattr(inst, 'level', None))
+        if is_active and academic_year and level:
+            _reject_duplicate_active_plan(
+                self, UniformFeePlan,
+                {'academic_year': academic_year, 'level': level},
+            )
+        return attrs
+
+
+class LunchFeeConfigSerializer(serializers.ModelSerializer):
+    academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
+
+    class Meta:
+        model = LunchFeeConfig
+        fields = [
+            'id', 'academic_year', 'academic_year_label', 'term', 'quarter',
+            'day_amount', 'boarding_amount', 'is_active', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        from shule.utils import validate_term_quarter
+        term = attrs.get('term', getattr(self.instance, 'term', None))
+        quarter = attrs.get('quarter', getattr(self.instance, 'quarter', None))
+        try:
+            validate_term_quarter(term, quarter)
+        except Exception as e:
+            raise serializers.ValidationError({'quarter': str(e)})
+        return attrs
+
+
+class ActivityFeePlanSerializer(serializers.ModelSerializer):
+    academic_year_label = serializers.CharField(source='academic_year.year', read_only=True)
+    level_display = serializers.CharField(source='get_level_display', read_only=True)
+    is_active = serializers.BooleanField(required=False, default=True)
+
+    class Meta:
+        model = ActivityFeePlan
+        fields = [
+            'id', 'academic_year', 'academic_year_label', 'term', 'quarter',
+            'level', 'level_display', 'amount', 'is_active', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        validators = []
+
+    def validate(self, attrs):
+        from shule.utils import validate_term_quarter
+        inst = self.instance
+        term = attrs.get('term', getattr(inst, 'term', None))
+        quarter = attrs.get('quarter', getattr(inst, 'quarter', None))
+        try:
+            validate_term_quarter(term, quarter)
+        except Exception as e:
+            raise serializers.ValidationError({'quarter': str(e)})
+
+        is_active = attrs.get('is_active', getattr(inst, 'is_active', True))
+        academic_year = attrs.get('academic_year', getattr(inst, 'academic_year', None))
+        level = attrs.get('level', getattr(inst, 'level', None))
+        if is_active and academic_year and level and term and quarter:
+            _reject_duplicate_active_plan(
+                self, ActivityFeePlan,
+                {'academic_year': academic_year, 'term': term,
+                 'quarter': quarter, 'level': level},
+            )
+        return attrs

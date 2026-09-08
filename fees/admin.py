@@ -3,13 +3,17 @@ from django.utils.html import format_html
 
 from .models import (
     AcademicYear,
+    ActivityFeePlan,
     FeeAdjustment,
     FeeStructure,
     Invoice,
     InvoiceLine,
+    LunchFeeConfig,
     Payment,
     PaymentAllocation,
     StudentCredit,
+    TuitionFeePlan,
+    UniformFeePlan,
     UniformSaleItem,
 )
 
@@ -173,3 +177,27 @@ class StudentCreditAdmin(admin.ModelAdmin):
 class UniformSaleItemAdmin(admin.ModelAdmin):
     list_display = ('invoice_line', 'name', 'qty', 'unit_price')
     search_fields = ('name',)
+
+
+@admin.register(TuitionFeePlan)
+class TuitionFeePlanAdmin(admin.ModelAdmin):
+    list_display = ('academic_year', 'scope', 'level_group', 'level', 'amount', 'is_active')
+    list_filter = ('academic_year', 'scope', 'is_active', 'level_group')
+
+
+@admin.register(UniformFeePlan)
+class UniformFeePlanAdmin(admin.ModelAdmin):
+    list_display = ('academic_year', 'level', 'amount', 'is_active')
+    list_filter = ('academic_year', 'is_active', 'level')
+
+
+@admin.register(LunchFeeConfig)
+class LunchFeeConfigAdmin(admin.ModelAdmin):
+    list_display = ('academic_year', 'term', 'quarter', 'day_amount', 'boarding_amount', 'is_active')
+    list_filter = ('academic_year', 'term', 'quarter', 'is_active')
+
+
+@admin.register(ActivityFeePlan)
+class ActivityFeePlanAdmin(admin.ModelAdmin):
+    list_display = ('academic_year', 'term', 'quarter', 'level', 'amount', 'is_active')
+    list_filter = ('academic_year', 'term', 'quarter', 'is_active', 'level')

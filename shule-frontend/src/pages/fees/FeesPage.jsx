@@ -23,6 +23,7 @@ import {
   updateFeeStructure,
 } from '../../api/fees'
 import { sendFeeReminder } from '../../api/communications'
+import FeeConfigTab from './FeeConfigTab'
 import RecordPaymentModal from '../../components/fees/RecordPaymentModal'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
@@ -1123,7 +1124,8 @@ function AcademicYearsTab() {
 const TABS = [
   { id: 'invoices',    label: 'Invoices' },
   { id: 'defaulters',  label: 'Defaulters' },
-  { id: 'structures',  label: 'Fee Structures' },
+  { id: 'config',      label: 'Fee Configuration' },
+  { id: 'structures',  label: 'Fee Structures (legacy)' },
   { id: 'years',       label: 'Academic Years' },
 ]
 
@@ -1135,6 +1137,7 @@ export default function FeesPage() {
       <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
       {activeTab === 'invoices'    && <InvoicesTab />}
       {activeTab === 'defaulters'  && <DefaultersTab />}
+      {activeTab === 'config'      && <FeeConfigTab />}
       {activeTab === 'structures'  && <FeeStructuresTab />}
       {activeTab === 'years'       && <AcademicYearsTab />}
     </div>

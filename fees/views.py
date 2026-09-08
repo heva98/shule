@@ -19,21 +19,29 @@ from students.models import Student, StudentStatus
 
 from .models import (
     AcademicYear,
+    ActivityFeePlan,
     FeeCategory,
     FeeStructure,
     Invoice,
     InvoiceKind,
     InvoiceLine,
     InvoiceStatus,
+    LunchFeeConfig,
     Payment,
+    TuitionFeePlan,
+    UniformFeePlan,
 )
 from .serializers import (
     AcademicYearSerializer,
+    ActivityFeePlanSerializer,
     FeeStructureSerializer,
     InvoiceGenerateSerializer,
     InvoiceSerializer,
+    LunchFeeConfigSerializer,
     PaymentSerializer,
     ReceiptSerializer,
+    TuitionFeePlanSerializer,
+    UniformFeePlanSerializer,
 )
 
 # Roles that may manage fee structures, invoices and payments (matches the
@@ -74,6 +82,115 @@ class FeeStructureViewSet(ModelViewSet):
         if year:
             qs = qs.filter(academic_year__year=year)
         return qs
+
+
+class _FeeConfigViewSet(ModelViewSet):
+    """Shared base for the fee-configuration endpoints: finance-only, module
+    gated, filterable by ``?year=`` / ``?level=`` / ``?term=`` / ``?active=``."""
+    module = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
+    _model = None
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to manage fee configuration.')
+
+    def get_queryset(self):
+        qs = self._model.objects.select_related('academic_year')
+        p = self.request.query_params
+        if p.get('year'):
+            qs = qs.filter(academic_year__year=p['year'])
+        if p.get('academic_year'):
+            qs = qs.filter(academic_year_id=p['academic_year'])
+        if p.get('level') and hasattr(self._model, 'level'):
+            qs = qs.filter(level=p['level'])
+        if p.get('term') and hasattr(self._model, 'term'):
+            qs = qs.filter(term=p['term'])
+        if p.get('quarter') and hasattr(self._model, 'quarter'):
+            qs = qs.filter(quarter=p['quarter'])
+        if p.get('active') in ('1', 'true', 'True'):
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class TuitionFeePlanViewSet(_FeeConfigViewSet):
+    _model = TuitionFeePlan
+    serializer_class = TuitionFeePlanSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        p = self.request.query_params
+        if p.get('scope'):
+            qs = qs.filter(scope=p['scope'])
+        if p.get('level_group'):
+            qs = qs.filter(level_group=p['level_group'])
+        return qs
+
+
+class UniformFeePlanViewSet(_FeeConfigViewSet):
+    _model = UniformFeePlan
+    serializer_class = UniformFeePlanSerializer
+
+
+class LunchFeeConfigViewSet(_FeeConfigViewSet):
+    _model = LunchFeeConfig
+    serializer_class = LunchFeeConfigSerializer
+
+
+class ActivityFeePlanViewSet(_FeeConfigViewSet):
+    _model = ActivityFeePlan
+    serializer_class = ActivityFeePlanSerializer
+
+
+class FeeConfigResolveView(APIView):
+    """Preview what the current configuration would charge one student for a
+    period — GET /api/fees/config/resolve/?student=&academic_year=&term=&quarter=
+
+    Read-only; the Phase 3 engine snapshots these onto real charges."""
+    module = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to view fee configuration.')
+
+    def get(self, request):
+        from . import resolvers
+
+        try:
+            student = Student.objects.get(pk=request.query_params['student'])
+            year = AcademicYear.objects.get(pk=request.query_params['academic_year'])
+        except (KeyError, Student.DoesNotExist, AcademicYear.DoesNotExist):
+            return Response(
+                {'detail': 'student and academic_year are required and must exist.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        term = request.query_params.get('term')
+        quarter = request.query_params.get('quarter')
+
+        boarding = resolvers.is_boarding(student, year)
+        out = {
+            'student': student.pk,
+            'student_name': student.full_name,
+            'is_boarding': boarding,
+            'annual': {
+                'TUITION': _money(resolvers.resolve_tuition(student, year)),
+                'UNIFORM': _money(resolvers.resolve_uniform(student, year)),
+            },
+        }
+        if term and quarter:
+            out['quarterly'] = {
+                'LUNCH': _money(resolvers.resolve_lunch(student, year, term, quarter)),
+                'TRANSPORT': _money(resolvers.resolve_transport(student, year, term, quarter)),
+                'ACTIVITY': _money(resolvers.resolve_activity(student, year, term, quarter)),
+            }
+        return Response(out)
+
+
+def _money(value):
+    return None if value is None else str(value)
 
 
 class InvoiceViewSet(ModelViewSet):
