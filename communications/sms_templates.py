@@ -77,31 +77,34 @@ DEFAULT_TEMPLATES: dict[tuple[str, str], str] = {
 
     (SmsTemplateKey.FEE_REMINDER_DUE, SmsLanguage.EN): (
         "{school_name}: Dear Parent/Guardian, {student_name} has a pending fee balance "
-        "of TZS {balance}. Kindly plan to clear it by {due_date}. For assistance, call {school_contact}."
+        "of TZS {balance} ({breakdown}). Kindly plan to clear it by {due_date}. "
+        "For assistance, call {school_contact}."
     ),
     (SmsTemplateKey.FEE_REMINDER_DUE, SmsLanguage.SW): (
-        "{school_name}: Mzazi/Mlezi, {student_name} ana salio la ada la TZS {balance}. "
+        "{school_name}: Mzazi/Mlezi, {student_name} ana salio la ada la TZS {balance} ({breakdown}). "
         "Tafadhali panga kulipa salio hilo ifikapo {due_date}. Kwa msaada, piga {school_contact}."
     ),
 
     (SmsTemplateKey.FEE_REMINDER_OVERDUE, SmsLanguage.EN): (
         "{school_name}: Dear Parent/Guardian, {student_name} has an outstanding fee balance "
-        "of TZS {balance}, which is past due. Kindly clear the balance as soon as possible. "
-        "For assistance, call {school_contact}."
+        "of TZS {balance} ({breakdown}), which is past due. Kindly clear the balance as soon "
+        "as possible. For assistance, call {school_contact}."
     ),
     (SmsTemplateKey.FEE_REMINDER_OVERDUE, SmsLanguage.SW): (
-        "{school_name}: Mzazi/Mlezi, {student_name} ana salio la ada la TZS {balance} ambalo "
-        "muda wake wa malipo umepita. Tafadhali lipia salio hilo haraka iwezekanavyo. "
+        "{school_name}: Mzazi/Mlezi, {student_name} ana salio la ada la TZS {balance} ({breakdown}) "
+        "ambalo muda wake wa malipo umepita. Tafadhali lipia salio hilo haraka iwezekanavyo. "
         "Kwa msaada, piga {school_contact}."
     ),
 
     (SmsTemplateKey.PAYMENT_RECEIVED, SmsLanguage.EN): (
         "{school_name}: Payment of TZS {amount} received for {pupil_name} on {payment_date}. "
-        "Receipt {receipt_number}. Outstanding balance: TZS {outstanding_balance}. Thank you."
+        "Receipt {receipt_number}. Paid: {breakdown}. Outstanding balance: TZS {outstanding_balance}. "
+        "Thank you."
     ),
     (SmsTemplateKey.PAYMENT_RECEIVED, SmsLanguage.SW): (
         "{school_name}: Tumepokea malipo ya TZS {amount} kwa {pupil_name} tarehe {payment_date}. "
-        "Risiti {receipt_number}. Salio lililobaki: TZS {outstanding_balance}. Asante."
+        "Risiti {receipt_number}. Malipo: {breakdown}. Salio lililobaki: TZS {outstanding_balance}. "
+        "Asante."
     ),
 
     (SmsTemplateKey.ANNOUNCEMENT, SmsLanguage.EN): "{school_name}: {message}",

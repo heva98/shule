@@ -104,9 +104,18 @@ def exam_results_recipients(exam) -> list[Recipient]:
 
 # ── fee reminders ──────────────────────────────────────────────────────────
 
+def _breakdown_text(pairs) -> str:
+    """[(FeeCategory, amount)] -> 'Tuition TZS 3,000, Transport TZS 1,000'."""
+    from fees.models import FeeCategory
+
+    labels = dict(FeeCategory.choices)
+    return ", ".join(f"{labels.get(c, c)} TZS {_fmt_money(a)}" for c, a in pairs)
+
+
 def fee_reminder_recipients(*, scope: str = "all", level: str = "", stream: str = "",
                             as_of=None) -> list[Recipient]:
     from fees.models import Invoice, InvoiceStatus, Term
+    from fees.summaries import outstanding_breakdown
 
     as_of = as_of or timezone.localdate()
     term_label = dict(Term.choices)
@@ -140,6 +149,15 @@ def fee_reminder_recipients(*, scope: str = "all", level: str = "", stream: str 
         if scope == "overdue" and not is_overdue:
             continue
         guardian = primary_guardian(student)
+
+        pairs = outstanding_breakdown(student)
+        if pairs:
+            breakdown = _breakdown_text(pairs)
+            balance = sum(a for _, a in pairs)
+        else:  # invoices with no line detail (legacy / hand-made) — never blank
+            breakdown = f"total TZS {_fmt_money(total_balance)}"
+            balance = total_balance
+
         recipients.append(Recipient(
             student=student, guardian=guardian,
             template_key=(SmsTemplateKey.FEE_REMINDER_OVERDUE if is_overdue
@@ -151,7 +169,8 @@ def fee_reminder_recipients(*, scope: str = "all", level: str = "", stream: str 
                 "student_name": student.full_name,
                 "pupil_name": student.full_name,
                 "class": class_label(student.level, student.stream),
-                "balance": _fmt_money(total_balance),
+                "balance": _fmt_money(balance),
+                "breakdown": breakdown,
                 "due_date": _fmt_date(oldest.due_date),
                 "term": term_label.get(oldest.term, oldest.term),
             },
@@ -201,7 +220,8 @@ def term_dates_recipients(*, boundary: str, term_label: str, closing_date=None,
 # ── payment thank-you ─────────────────────────────────────────────────────
 
 def payment_thank_you_recipients(payment) -> list[Recipient]:
-    from fees.models import Invoice, InvoiceStatus
+    from fees.models import Invoice, InvoiceKind, InvoiceStatus
+    from fees.summaries import payment_category_breakdown
 
     student = payment.student or payment.invoice.student
     guardian = primary_guardian(
@@ -210,16 +230,20 @@ def payment_thank_you_recipients(payment) -> list[Recipient]:
     outstanding = sum(
         i.balance for i in Invoice.objects.filter(
             student=student,
+            kind__in=[InvoiceKind.ANNUAL, InvoiceKind.QUARTERLY],
             status__in=[InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE],
         )
         if i.balance > 0
     )
+    breakdown = _breakdown_text(payment_category_breakdown(payment)) \
+        or f"TZS {_fmt_money(payment.amount)}"
     ctx = {
         "school_name": _school_name(),
         "pupil_name": student.full_name,
         "amount": _fmt_money(payment.amount),
         "payment_date": _fmt_date(payment.paid_at),
         "receipt_number": payment.receipt_number or "",
+        "breakdown": breakdown,
         "outstanding_balance": _fmt_money(outstanding),
     }
     return [Recipient(

@@ -75,6 +75,7 @@ class SegmentTests(TestCase):
             balance="450,000", due_date="12 Oct 2026", term="Term 1",
             amount="200,000", payment_date="1 Oct 2026", receipt_number="RCP-2026-00042",
             outstanding_balance="250,000", message="Test notice",
+            breakdown="Tuition TZS 150,000, Transport TZS 80,000, Lunch TZS 50,000",
             closing_date="20 Dec 2026", opening_date="12 Jan 2027",
         )
         ctx["class"] = "Kidato cha 2 A"
