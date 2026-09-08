@@ -758,3 +758,61 @@ class FeeSummaryView(APIView):
         term = request.query_params.get('term')
         year = request.query_params.get('year')
         return Response(fee_summary_data(term=term, year=year))
+
+
+# ── Category-aware reports (Phase 7) ──────────────────────────────────────────
+
+class _ReportView(APIView):
+    module = 'fees'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role not in _MANAGE_ROLES:
+            raise PermissionDenied('You do not have permission to view fee reports.')
+
+    def _filters(self, request):
+        p = request.query_params
+        return {
+            'academic_year': p.get('academic_year') or None,
+            'term': p.get('term') or None,
+            'level': p.get('level') or None,
+        }
+
+
+class FeeCollectionsReport(_ReportView):
+    def get(self, request):
+        from . import reports
+        f = self._filters(request)
+        return Response(reports.collections(
+            **f, quarter=request.query_params.get('quarter') or None,
+            group_by=request.query_params.get('group_by', 'category'),
+        ))
+
+
+class FeeOutstandingReport(_ReportView):
+    def get(self, request):
+        from . import reports
+        return Response(reports.outstanding(
+            **self._filters(request),
+            group_by=request.query_params.get('group_by', 'category'),
+        ))
+
+
+class FeeUnpaidStudentsReport(_ReportView):
+    def get(self, request):
+        from . import reports
+        category = request.query_params.get('category')
+        if not category:
+            return Response({'detail': 'category is required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'category': category,
+            'students': reports.unpaid_students(category=category, **self._filters(request)),
+        })
+
+
+class FeeOverviewReport(_ReportView):
+    def get(self, request):
+        from . import reports
+        return Response(reports.overview(**self._filters(request)))
