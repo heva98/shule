@@ -15,8 +15,11 @@ import toast from 'react-hot-toast'
 import { createExam, getExams } from '../../api/exams'
 import { getAcademicYears } from '../../api/fees'
 import Skeleton from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { LEVEL_LABEL } from '../../lib/constants'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
 
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
@@ -52,11 +55,8 @@ const TYPE_BADGE = {
   MOCK:     'bg-gray-100 text-gray-600',
 }
 
-const selectCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-
-const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+const selectCls = `${baseSelectCls} w-full`
+const inputCls = `${baseInputCls} w-full`
 
 // ── Create Exam Modal ──────────────────────────────────────────────────────
 
@@ -202,17 +202,13 @@ function CreateExamModal({ onClose }) {
         </form>
 
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
-          <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+          <Button variant="outline" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            onClick={handleSubmit(onSubmit)}
-            disabled={mutation.isPending}
-            className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary disabled:opacity-60 transition-colors"
-          >
+          </Button>
+          <Button onClick={handleSubmit(onSubmit)} disabled={mutation.isPending}>
             {mutation.isPending && <Loader2 size={14} className="animate-spin" />}
             {mutation.isPending ? 'Creating…' : 'Create Exam'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -240,9 +236,6 @@ export default function ExamsPage() {
 
   const exams = data?.results ?? data ?? []
 
-  const filterSelectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
-    focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-
   const availableQuarters = termFilter ? (QUARTER_MAP[termFilter] ?? []) : [
     { value: 'Q1', label: 'Q1' }, { value: 'Q2', label: 'Q2' },
     { value: 'Q3', label: 'Q3' }, { value: 'Q4', label: 'Q4' },
@@ -252,7 +245,7 @@ export default function ExamsPage() {
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
-        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={filterSelectCls}>
+        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={baseSelectCls}>
           <option value="">All Levels</option>
           {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -260,53 +253,47 @@ export default function ExamsPage() {
         <select
           value={termFilter}
           onChange={(e) => { setTermFilter(e.target.value); setQuarterFilter('') }}
-          className={filterSelectCls}
+          className={baseSelectCls}
         >
           <option value="">All Terms</option>
           {TERM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
 
-        <select value={quarterFilter} onChange={(e) => setQuarterFilter(e.target.value)} className={filterSelectCls}>
+        <select value={quarterFilter} onChange={(e) => setQuarterFilter(e.target.value)} className={baseSelectCls}>
           <option value="">All Quarters</option>
           {availableQuarters.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
 
-        <button
-          onClick={() => setShowCreate(true)}
-          className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-primary text-white
-            rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
-        >
-          <Plus size={15} />
+        <Button icon={Plus} className="ml-auto" onClick={() => setShowCreate(true)}>
           Create Exam
-        </button>
+        </Button>
       </div>
 
       {/* Exam list */}
       {isLoading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <Card key={i}>
               <Skeleton className="h-4 w-64 mb-2" />
               <Skeleton className="h-3 w-40" />
-            </div>
+            </Card>
           ))}
         </div>
       ) : isError ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+        <Card padding="p-12" className="text-center">
           <p className="text-sm text-danger">Failed to load exams.</p>
-        </div>
+        </Card>
       ) : exams.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-16 text-center">
+        <Card padding="p-16" className="text-center">
           <ClipboardList size={40} className="mx-auto text-gray-200 mb-3" />
           <p className="text-sm text-gray-400">No exams yet. Click "Create Exam" to add one.</p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-3">
           {exams.map((exam) => (
-            <div
+            <Card
               key={exam.id}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm p-5
-                hover:border-primary/30 hover:shadow-md transition-all"
+              className="hover:border-primary/30 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -345,7 +332,7 @@ export default function ExamsPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

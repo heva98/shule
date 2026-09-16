@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom'
 import { getAuditLogs, getSettings, getSystemHealth, getUsers } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
 import AddUserModal from './components/AddUserModal'
+import Card from '../../components/ui/Card'
+import StatCard from '../../components/ui/StatCard'
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
@@ -66,27 +68,6 @@ function ActionIcon({ action }) {
   return (
     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cfg.color}`}>
       <Icon size={14} />
-    </div>
-  )
-}
-
-// ── Stat card ──────────────────────────────────────────────────────────────────
-
-function Card({ title, value, sub, icon: Icon, color }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{title}</p>
-          <p className="mt-1.5 text-2xl font-bold text-gray-900 leading-none">{value}</p>
-          {sub && <p className="mt-1.5 text-xs text-gray-400">{sub}</p>}
-        </div>
-        {Icon && (
-          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-            <Icon size={20} className="text-white" />
-          </div>
-        )}
-      </div>
     </div>
   )
 }
@@ -170,29 +151,29 @@ export default function SysAdminDashboard() {
 
       {/* Row 1 — Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 col-span-1 sm:col-span-2 xl:col-span-1">
+        <Card className="col-span-1 sm:col-span-2 xl:col-span-1">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Total Users</p>
           <p className="text-2xl font-bold text-gray-900 mb-3">{totalUsers}</p>
           <RoleDonut users={allUsers} />
-        </div>
+        </Card>
 
-        <Card
+        <StatCard
           title="Total Students"
           value={typeof totalStudents === 'number' ? totalStudents.toLocaleString() : totalStudents}
-          sub="Active enrolments"
+          subtitle="Active enrolments"
           icon={Users}
           color="bg-secondary"
         />
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Year</p>
           <p className="text-2xl font-bold text-gray-900 mt-1.5">
             {healthQ.data ? (healthQ.data.active_users ? '—' : '—') : '—'}
           </p>
           <p className="text-xs text-gray-400 mt-1.5">Configure in Academic Years</p>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">System Health</p>
           <div className="flex items-center gap-2 mt-2">
             <span className={`w-3 h-3 rounded-full shrink-0 ${
@@ -203,7 +184,7 @@ export default function SysAdminDashboard() {
           {healthQ.data?.database?.latency_ms && (
             <p className="text-xs text-gray-400 mt-1">DB {healthQ.data.database.latency_ms}ms</p>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Row 2 — Quick actions */}
@@ -220,7 +201,7 @@ export default function SysAdminDashboard() {
       </div>
 
       {/* Row 3 — Recent activity */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <Card>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700">Recent Activity</h2>
           <button
@@ -265,7 +246,7 @@ export default function SysAdminDashboard() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       <AddUserModal isOpen={showAddUser} onClose={() => setShowAddUser(false)} />
     </div>

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Award, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react'
 import { getSchoolPerformance } from '../../api/exams'
+import Card from '../ui/Card'
 import { LEVEL_LABEL } from '../../lib/constants'
 
 const CAN_SEE_ROLES = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER']
@@ -14,7 +15,7 @@ const defaultSubtitle = (it) => `${it.student_count} student${it.student_count !
 function RankTile({ title, icon: Icon, tone, items, labelFn, subtitleFn = defaultSubtitle, loading }) {
   const toneCls = tone === 'up' ? 'text-success' : 'text-danger'
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <Card>
       <div className="flex items-center gap-2 mb-3">
         <Icon size={15} className={toneCls} />
         <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{title}</h3>
@@ -38,7 +39,7 @@ function RankTile({ title, icon: Icon, tone, items, labelFn, subtitleFn = defaul
           ))}
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 

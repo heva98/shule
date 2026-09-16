@@ -7,9 +7,8 @@ import {
 import { LEVEL_LABEL } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
-
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+import { selectCls } from '../../lib/formStyles'
+import Card from '../../components/ui/Card'
 
 const CATEGORIES = [
   { value: 'TUITION', label: 'Tuition' },
@@ -25,18 +24,18 @@ const GROUP_BY = [
   { value: 'month', label: 'Month' },
 ]
 
-function Card({ label, value, tone }) {
+function StatBox({ label, value, tone }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+    <Card padding="p-4">
       <div className="text-xs text-gray-400 uppercase tracking-wide">{label}</div>
       <div className={`text-xl font-bold mt-1 ${tone || 'text-gray-900'}`}>{value}</div>
-    </div>
+    </Card>
   )
 }
 
 function SimpleTable({ head, rows, empty }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <Card padding="p-0" className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -53,7 +52,7 @@ function SimpleTable({ head, rows, empty }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -111,16 +110,16 @@ export default function ReportsTab() {
       </div>
 
       {!yearId ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-sm text-gray-400">
+        <Card padding="p-12" className="text-center text-sm text-gray-400">
           Pick an academic year.
-        </div>
+        </Card>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card label="Required" value={formatTZS(t?.required ?? 0)} />
-            <Card label="Collected" value={formatTZS(t?.collected ?? 0)} tone="text-success" />
-            <Card label="Outstanding" value={formatTZS(t?.outstanding ?? 0)} tone="text-danger" />
-            <Card label="Collection rate" value={`${t?.collection_rate_percent ?? '0'}%`} />
+            <StatBox label="Required" value={formatTZS(t?.required ?? 0)} />
+            <StatBox label="Collected" value={formatTZS(t?.collected ?? 0)} tone="text-success" />
+            <StatBox label="Outstanding" value={formatTZS(t?.outstanding ?? 0)} tone="text-danger" />
+            <StatBox label="Collection rate" value={`${t?.collection_rate_percent ?? '0'}%`} />
           </div>
           {Number(t?.credit_applied ?? 0) > 0 && (
             <p className="text-xs text-gray-400 -mt-2">

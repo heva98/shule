@@ -6,6 +6,8 @@ definition. ``exams.models.LevelGroup`` keeps its own identical TextChoices
 for historical migration reasons; the values match on purpose.
 """
 
+from __future__ import annotations
+
 from django.db import models
 
 from .models import Level

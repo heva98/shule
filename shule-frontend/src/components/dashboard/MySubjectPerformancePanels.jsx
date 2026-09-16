@@ -3,6 +3,7 @@ import { AlertTriangle, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import { getMySubjectPerformance } from '../../api/exams'
 import Badge from '../ui/Badge'
+import Card from '../ui/Card'
 import { GRADE_BADGE } from '../../lib/constants'
 
 function Skeleton({ className }) {
@@ -12,7 +13,7 @@ function Skeleton({ className }) {
 function StudentRankTile({ title, icon: Icon, tone, rows, loading, exam }) {
   const toneCls = tone === 'up' ? 'text-success' : 'text-danger'
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <Card>
       <div className="flex items-center gap-2 mb-3">
         <Icon size={15} className={toneCls} />
         <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{title}</h3>
@@ -41,7 +42,7 @@ function StudentRankTile({ title, icon: Icon, tone, rows, loading, exam }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 

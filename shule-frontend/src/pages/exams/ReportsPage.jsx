@@ -18,15 +18,12 @@ import {
 } from '../../api/exams'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { GRADE_BADGE, LEVEL_LABEL } from '../../lib/constants'
-
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-
-const inputCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+import { inputCls, selectCls } from '../../lib/formStyles'
 
 // ── Print helper ─────────────────────────────────────────────────────────────
 // Shared by both report types so the "Reports" module doesn't grow yet
@@ -259,7 +256,7 @@ ${summaryRows}
 // ── Shared filter controls ────────────────────────────────────────────────────
 
 function FiltersBar({ children }) {
-  return <div className="flex flex-wrap items-end gap-3 bg-white rounded-xl border border-gray-100 shadow-sm p-4">{children}</div>
+  return <Card padding="p-4" className="flex flex-wrap items-end gap-3">{children}</Card>
 }
 
 function Field({ label, children }) {
@@ -374,30 +371,15 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
         )}
         {data && (
           <div className="ml-auto flex items-center gap-2">
-            <button
-              onClick={handleExcel}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
-                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <FileSpreadsheet size={14} />
+            <Button variant="outline" icon={FileSpreadsheet} onClick={handleExcel}>
               Excel
-            </button>
-            <button
-              onClick={handlePDF}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
-                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <FileText size={14} />
+            </Button>
+            <Button variant="outline" icon={FileText} onClick={handlePDF}>
               PDF
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
-                text-sm font-medium hover:bg-secondary transition-colors"
-            >
-              <Printer size={14} />
+            </Button>
+            <Button icon={Printer} onClick={handlePrint}>
               Print
-            </button>
+            </Button>
           </div>
         )}
       </FiltersBar>
@@ -411,7 +393,7 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
       ) : !data?.students?.length ? (
         <EmptyHint text="No marks entered for this class in this exam yet." />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <Card padding="p-0" className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -457,7 +439,7 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   )
@@ -572,30 +554,15 @@ function SubjectPerformanceReport({ role, exams, levelOptions, school }) {
         )}
         {data && (
           <div className="ml-auto flex items-center gap-2">
-            <button
-              onClick={handleExcel}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
-                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <FileSpreadsheet size={14} />
+            <Button variant="outline" icon={FileSpreadsheet} onClick={handleExcel}>
               Excel
-            </button>
-            <button
-              onClick={handlePDF}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-300 rounded-lg
-                text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <FileText size={14} />
+            </Button>
+            <Button variant="outline" icon={FileText} onClick={handlePDF}>
               PDF
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
-                text-sm font-medium hover:bg-secondary transition-colors"
-            >
-              <Printer size={14} />
+            </Button>
+            <Button icon={Printer} onClick={handlePrint}>
               Print
-            </button>
+            </Button>
           </div>
         )}
       </FiltersBar>
@@ -624,7 +591,7 @@ function SubjectPerformanceReport({ role, exams, levelOptions, school }) {
             <StatCard label="Pass Rate" value={`${data.stats.pass_rate}%`} highlight />
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <Card padding="p-0" className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -652,7 +619,7 @@ function SubjectPerformanceReport({ role, exams, levelOptions, school }) {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </>
       )}
     </div>
@@ -672,26 +639,26 @@ function StatCard({ label, value, highlight }) {
 
 function EmptyHint({ text }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-14 text-center">
+    <Card padding="p-14" className="text-center">
       <Trophy size={36} className="mx-auto text-gray-200 mb-3" />
       <p className="text-sm text-gray-400">{text}</p>
-    </div>
+    </Card>
   )
 }
 
 function ErrorHint({ text }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+    <Card padding="p-12" className="text-center">
       <p className="text-sm text-danger">{text}</p>
-    </div>
+    </Card>
   )
 }
 
 function ReportSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-3">
+    <Card padding="p-6" className="space-y-3">
       {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-9 w-full rounded" />)}
-    </div>
+    </Card>
   )
 }
 

@@ -13,6 +13,8 @@ Uniform is opt-in: the engine only *refreshes / voids* uniform lines, it never
 creates them. Use :func:`assign_uniform` for that.
 """
 
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
 

@@ -21,6 +21,9 @@ import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { LEVEL_LABEL, SENIOR_STAFF_ROLES } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import { selectCls } from '../../lib/formStyles'
 
 const EDIT_ROLES = SENIOR_STAFF_ROLES
 const MINE_DEFAULT_ROLES = ['TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']
@@ -33,9 +36,6 @@ const DAYS = [
   { value: 'FRI', label: 'Fri' },
   { value: 'SAT', label: 'Sat' },
 ]
-
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
 
 // ── Printable HTML (opens a print window — same "download as PDF" pattern used
 // by report cards / receipts elsewhere in the app: user saves via the browser's
@@ -189,12 +189,10 @@ function EntryModal({ context, entry, onClose }) {
               <Trash2 size={14} />
             </button>
           )}
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={saveMut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={saveMut.isPending} className="flex-1">
             {saveMut.isPending ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -359,14 +357,16 @@ function GridTab({ canEdit }) {
           Only my sessions
         </label>
 
-        <button
+        <Button
           type="button"
+          variant="outline"
+          icon={Download}
           onClick={handleDownloadPdf}
           disabled={!viewLevel || !effectiveYear || periods.length === 0}
-          className="sm:ml-auto flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="sm:ml-auto"
         >
-          <Download size={14} /> Download PDF
-        </button>
+          Download PDF
+        </Button>
       </div>
 
       {!effectiveYear ? (
@@ -386,7 +386,7 @@ function GridTab({ canEdit }) {
           No periods have been set up yet.{canEdit ? ' Use the "Manage Periods" tab to add some.' : ''}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+        <Card padding="p-0" className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
@@ -455,7 +455,7 @@ function GridTab({ canEdit }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
       {cell && (
@@ -517,12 +517,10 @@ function PeriodModal({ period, onClose }) {
           Break / lunch slot (no lessons)
         </label>
         <div className="flex gap-3">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -551,13 +549,12 @@ function PeriodsTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-          <Plus size={14} /> Add Period
-        </button>
+        <Button icon={Plus} onClick={() => setShowAdd(true)}>
+          Add Period
+        </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -602,7 +599,7 @@ function PeriodsTab() {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       {showAdd && <PeriodModal onClose={() => setShowAdd(false)} />}
       {editPeriod && <PeriodModal period={editPeriod} onClose={() => setEditPeriod(null)} />}
@@ -611,11 +608,10 @@ function PeriodsTab() {
           <div className="p-6 space-y-4">
             <p className="text-sm text-gray-600">Remove this period? Any lessons scheduled in it will fail to delete this until they're removed first.</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-              <button onClick={() => deleteMut.mutate(deleteId)} disabled={deleteMut.isPending}
-                className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
+              <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1">Cancel</Button>
+              <Button variant="danger" onClick={() => deleteMut.mutate(deleteId)} disabled={deleteMut.isPending} className="flex-1">
                 {deleteMut.isPending ? 'Removing…' : 'Remove'}
-              </button>
+              </Button>
             </div>
           </div>
         </Modal>

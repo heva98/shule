@@ -18,11 +18,11 @@ import { useAuth } from '../../context/AuthContext'
 import { FEATURE_ROLES } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import { selectCls } from '../../lib/formStyles'
 
 const MANAGE_ROLES = FEATURE_ROLES.LIBRARY
-
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -178,12 +178,10 @@ function BookModal({ book, onClose }) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={saveMut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={saveMut.isPending} className="flex-1">
             {saveMut.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Book'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -206,11 +204,10 @@ function DeleteBookModal({ book, onClose }) {
       <div className="p-6 space-y-4">
         <p className="text-sm text-gray-600">Remove <strong>{book.title}</strong> from the catalog? This cannot be undone.</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button variant="danger" onClick={() => mut.mutate()} disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Removing…' : 'Remove'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -237,10 +234,9 @@ function CatalogTab({ canManage }) {
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search title, author, ISBN…"
           className={selectCls + ' w-full sm:w-72'} />
         {canManage && (
-          <button onClick={() => setShowAdd(true)}
-            className="sm:ml-auto flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-            <Plus size={14} /> Add Book
-          </button>
+          <Button onClick={() => setShowAdd(true)} icon={Plus} className="sm:ml-auto">
+            Add Book
+          </Button>
         )}
       </div>
 
@@ -256,7 +252,7 @@ function CatalogTab({ canManage }) {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {books.map((b) => (
-            <div key={b.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <Card key={b.id} padding="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{b.title}</p>
@@ -274,7 +270,7 @@ function CatalogTab({ canManage }) {
                 {b.shelf_location && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Shelf {b.shelf_location}</span>}
               </div>
               <p className="text-xs text-gray-400 mt-3">{b.available_copies} / {b.total_copies} available</p>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -334,16 +330,15 @@ function IssueBookModal({ onClose }) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button
             type="button"
             onClick={() => saveMut.mutate()}
             disabled={!bookId || !student || !dueDate || saveMut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+            className="flex-1"
           >
             {saveMut.isPending ? 'Issuing…' : 'Issue Book'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -393,14 +388,13 @@ function BorrowRecordsTab({ canManage }) {
           <option value="LOST">Lost</option>
         </select>
         {canManage && (
-          <button onClick={() => setShowIssue(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-            <Plus size={14} /> Issue Book
-          </button>
+          <Button onClick={() => setShowIssue(true)} icon={Plus}>
+            Issue Book
+          </Button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -464,7 +458,7 @@ function BorrowRecordsTab({ canManage }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       {showIssue && <IssueBookModal onClose={() => setShowIssue(false)} />}
     </div>

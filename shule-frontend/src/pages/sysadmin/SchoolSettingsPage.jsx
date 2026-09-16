@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { getSettings, updateSettings } from '../../api/sysadmin'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 const TANZANIA_REGIONS = [
   'Arusha', 'Dar es Salaam', 'Dodoma', 'Geita', 'Iringa', 'Kagera', 'Katavi', 'Kigoma',
@@ -28,13 +30,13 @@ const LEVEL_GROUPS = [
 
 function Section({ title, icon: Icon, children }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
+    <Card padding="p-6" className="space-y-5">
       <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
         <Icon size={16} className="text-primary" />
         <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
       </div>
       {children}
-    </div>
+    </Card>
   )
 }
 
@@ -136,11 +138,11 @@ export default function SchoolSettingsPage() {
     return (
       <div className="space-y-5">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-100 p-6 animate-pulse space-y-4">
+          <Card key={i} padding="p-6" className="animate-pulse space-y-4">
             <div className="h-4 bg-gray-100 rounded w-1/4" />
             <div className="h-8 bg-gray-100 rounded" />
             <div className="h-8 bg-gray-100 rounded" />
-          </div>
+          </Card>
         ))}
       </div>
     )
@@ -311,21 +313,16 @@ export default function SchoolSettingsPage() {
 
       {/* Sticky save bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-end gap-3 z-30">
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={() => { reset(); setLogoFile(null); setLogoPreview(null) }}
-          className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
         >
           Reset
-        </button>
-        <button
-          type="submit"
-          disabled={mut.isPending}
-          className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Save size={14} />
+        </Button>
+        <Button type="submit" disabled={mut.isPending} icon={Save}>
           {mut.isPending ? 'Saving…' : 'Save Settings'}
-        </button>
+        </Button>
       </div>
     </form>
   )

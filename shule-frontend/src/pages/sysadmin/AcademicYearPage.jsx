@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { createAcademicYear, getAcademicYears, setCurrentYear, updateAcademicYear } from '../../api/sysadmin'
 import Modal from '../../components/ui/Modal'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 function fmtRange(start, end) {
   if (!start && !end) return '—'
@@ -91,12 +93,10 @@ function CreateYearModal({ onClose }) {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Creating…' : 'Create Year'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -165,12 +165,10 @@ function EditQuartersModal({ year, onClose }) {
           ))}
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Saving…' : 'Save Quarters'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -197,12 +195,10 @@ function SetCurrentModal({ year, onClose }) {
           Set <strong>{year.year}</strong> as the current academic year? This will deactivate the previously active year.
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Saving…' : 'Set as Current'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -225,29 +221,24 @@ export default function AcademicYearPage() {
         <div>
           <p className="text-sm text-gray-500">Manage academic years and their quarterly date ranges.</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
-        >
-          <Plus size={14} /> Create Year
-        </button>
+        <Button icon={Plus} onClick={() => setShowCreate(true)}>Create Year</Button>
       </div>
 
       {q.isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 animate-pulse space-y-3">
+            <Card key={i} className="animate-pulse space-y-3">
               <div className="h-6 bg-gray-100 rounded w-1/3" />
               <div className="h-3 bg-gray-100 rounded" />
               <div className="h-3 bg-gray-100 rounded w-3/4" />
-            </div>
+            </Card>
           ))}
         </div>
       ) : years.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-400">
+        <Card padding="p-10" className="text-center text-gray-400">
           <CalendarDays size={36} className="mx-auto text-gray-200 mb-3" />
           <p className="text-sm">No academic years configured yet.</p>
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {years.map(y => (

@@ -25,6 +25,7 @@ import { getBoardingAssignments } from '../../api/boarding'
 import { getTransportAssignments } from '../../api/transport'
 import { getMyChildren } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { GRADE_BADGE, INVOICE_BADGE, LEVEL_LABEL } from '../../lib/constants'
@@ -605,9 +606,9 @@ function AnnouncementsSection({ level, userId }) {
           {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
+        <Card padding="p-6" className="text-center">
           <p className="text-sm text-gray-400">No announcements yet.</p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-2">
           {items.map((a) => {

@@ -11,6 +11,9 @@ import {
   STATUS_OPTIONS,
 } from '../../lib/constants'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -35,11 +38,8 @@ function Field({ label, required, error, children }) {
   )
 }
 
-const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-  disabled:bg-gray-50 disabled:text-gray-400`
-
-const selectCls = `${inputCls} bg-white`
+const inputCls = `${baseInputCls} w-full`
+const selectCls = `${baseSelectCls} w-full`
 
 // ── Main page ──────────────────────────────────────────────────────────────
 
@@ -261,7 +261,7 @@ export default function StudentFormPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
         {/* ── Personal Information ── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <Card padding="p-6">
           <SectionHeading>Personal Information</SectionHeading>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -317,10 +317,10 @@ export default function StudentFormPage() {
               />
             </Field>
           </div>
-        </div>
+        </Card>
 
         {/* ── Academic Details ── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <Card padding="p-6">
           <SectionHeading>Academic Details</SectionHeading>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -363,10 +363,10 @@ export default function StudentFormPage() {
               </select>
             </Field>
           </div>
-        </div>
+        </Card>
 
         {/* ── Photo ── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <Card padding="p-6">
           <SectionHeading>Student Photo</SectionHeading>
           <div className="flex items-center gap-5">
             <div className="relative shrink-0">
@@ -383,14 +383,13 @@ export default function StudentFormPage() {
               )}
             </div>
             <div className="flex flex-col gap-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => photoInputRef.current?.click()}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700
-                  hover:bg-gray-50 transition-colors"
               >
                 {photoPreview ? 'Change photo' : 'Upload photo'}
-              </button>
+              </Button>
               {photoPreview && (
                 <button
                   type="button"
@@ -410,10 +409,10 @@ export default function StudentFormPage() {
               className="hidden"
             />
           </div>
-        </div>
+        </Card>
 
         {/* ── Special Needs ── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <Card padding="p-6">
           <SectionHeading>Special Needs</SectionHeading>
           <label className="flex items-center gap-3 cursor-pointer mb-4">
             <input
@@ -433,11 +432,11 @@ export default function StudentFormPage() {
               />
             </Field>
           )}
-        </div>
+        </Card>
 
         {/* ── Guardians (create only — existing guardians are managed from the student's Overview tab) ── */}
         {!isEdit && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <Card padding="p-6">
           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
             <h3 className="text-sm font-semibold text-gray-700">
               Guardians / Parents
@@ -606,31 +605,20 @@ export default function StudentFormPage() {
               )
             })}
           </div>
-        </div>
+        </Card>
         )}
 
         {/* ── Actions ── */}
         <div className="flex items-center justify-end gap-3 pb-6">
-          <button
-            type="button"
-            onClick={() => navigate('/students')}
-            disabled={submitting}
-            className="px-5 py-2 border border-gray-300 rounded-lg text-sm text-gray-700
-              hover:bg-gray-50 disabled:opacity-50 transition-colors"
-          >
+          <Button type="button" variant="outline" onClick={() => navigate('/students')} disabled={submitting}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg
-              text-sm font-medium hover:bg-secondary disabled:opacity-60 transition-colors"
-          >
+          </Button>
+          <Button type="submit" disabled={submitting}>
             {submitting && <Loader2 size={15} className="animate-spin" />}
             {isEdit
               ? (submitting ? 'Saving…' : 'Save Changes')
               : (submitting ? 'Enrolling…' : 'Enrol Student')}
-          </button>
+          </Button>
         </div>
 
       </form>

@@ -11,6 +11,8 @@ recorded SKIPPED with a reason, never silently dropped:
     5. rendered body exceeds the segment cap
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from decimal import Decimal

@@ -1,5 +1,7 @@
 import { Component } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import Card from './ui/Card'
+import Button from './ui/Button'
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -24,7 +26,7 @@ export default class ErrorBoundary extends Component {
 
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center">
+        <Card padding="p-10" className="max-w-md w-full text-center">
           <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
             <AlertTriangle size={28} className="text-red-400" />
           </div>
@@ -40,20 +42,14 @@ export default class ErrorBoundary extends Component {
           )}
 
           <div className="flex gap-3 justify-center">
-            <button
-              onClick={this.handleReset}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1B4F72] text-white text-sm rounded-lg hover:bg-[#154060] transition-colors"
-            >
-              <RefreshCw size={14} /> Try again
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 border border-gray-300 text-sm rounded-lg hover:bg-gray-50 transition-colors"
-            >
+            <Button onClick={this.handleReset} icon={RefreshCw}>
+              Try again
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
               Reload page
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     )
   }

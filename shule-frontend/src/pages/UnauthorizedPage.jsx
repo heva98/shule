@@ -1,5 +1,6 @@
 import { ShieldOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import Button from '../components/ui/Button'
 
 export default function UnauthorizedPage() {
   const navigate = useNavigate()
@@ -11,12 +12,9 @@ export default function UnauthorizedPage() {
         <p className="text-sm text-gray-500 mt-2 mb-6">
           You don&apos;t have permission to view this page.
         </p>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary transition-colors"
-        >
+        <Button onClick={() => navigate(-1)}>
           Go back
-        </button>
+        </Button>
       </div>
     </div>
   )

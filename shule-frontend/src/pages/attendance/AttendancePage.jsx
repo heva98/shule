@@ -11,8 +11,11 @@ import { getStudents } from '../../api/students'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
 import Tabs from '../../components/ui/Tabs'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { ATT_BADGE, LEVEL_LABEL } from '../../lib/constants'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { selectCls } from '../../lib/formStyles'
 
 // ── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -42,9 +45,6 @@ const STATUS_CONFIG = {
 }
 
 const STATUSES = Object.values(STATUS_CONFIG)
-
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -199,7 +199,7 @@ function RegisterTab() {
   return (
     <div className="space-y-4">
       {/* ── Controls ── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+      <Card padding="p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
@@ -248,26 +248,21 @@ function RegisterTab() {
             />
           </div>
 
-          <button
-            onClick={loadClass}
-            disabled={loading || !level}
-            className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg
-              text-sm font-medium hover:bg-secondary disabled:opacity-50 transition-colors"
-          >
+          <Button onClick={loadClass} disabled={loading || !level}>
             {loading ? (
               <RefreshCw size={14} className="animate-spin" />
             ) : (
               <CalendarCheck size={14} />
             )}
             {loading ? 'Loading…' : 'Load Class'}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* ── Register table ── */}
       {loaded && (
         <>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <Card padding="p-0" className="overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <p className="text-sm font-semibold text-gray-800">
                 {LEVEL_LABEL[level] ?? level}{stream ? ` · Stream ${stream.toUpperCase()}` : ''} — {date}
@@ -302,11 +297,10 @@ function RegisterTab() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
           {/* ── Summary + Submit ── */}
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-xl
-            border border-gray-100 shadow-sm px-5 py-3">
+          <Card padding="p-0" className="flex flex-wrap items-center justify-between gap-4 px-5 py-3">
             <div className="flex items-center gap-5 text-sm">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
@@ -331,16 +325,11 @@ function RegisterTab() {
                 </span>
               )}
             </div>
-            <button
-              onClick={submitRegister}
-              disabled={submitting}
-              className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg
-                text-sm font-medium hover:bg-secondary disabled:opacity-60 transition-colors"
-            >
+            <Button onClick={submitRegister} disabled={submitting}>
               {submitting && <RefreshCw size={13} className="animate-spin" />}
               {submitting ? 'Submitting…' : 'Submit Register'}
-            </button>
-          </div>
+            </Button>
+          </Card>
         </>
       )}
     </div>
@@ -489,7 +478,7 @@ function ReportsTab() {
   return (
     <div className="space-y-5">
       {/* Controls */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+      <Card padding="p-4">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[240px]">
             <label className="block text-xs font-medium text-gray-500 mb-1">Student</label>
@@ -518,19 +507,19 @@ function ReportsTab() {
             </select>
           </div>
         </div>
-      </div>
+      </Card>
 
       {!selectedStudent && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+        <Card padding="p-12" className="text-center">
           <Search size={32} className="mx-auto text-gray-200 mb-3" />
           <p className="text-sm text-gray-400">Search for a student to view their attendance report.</p>
-        </div>
+        </Card>
       )}
 
       {selectedStudent && (
         <>
           {/* Summary card */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <Card>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="font-semibold text-gray-900">{selectedStudent.full_name}</p>
@@ -564,10 +553,10 @@ function ReportsTab() {
             ) : (
               <p className="text-sm text-gray-400 text-center py-4">No attendance data for this period.</p>
             )}
-          </div>
+          </Card>
 
           {/* Daily records */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <Card padding="p-0" className="overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-700">Daily Records</p>
             </div>
@@ -616,7 +605,7 @@ function ReportsTab() {
                 </tbody>
               </table>
             )}
-          </div>
+          </Card>
         </>
       )}
     </div>
@@ -639,7 +628,7 @@ function AbsenteesTab() {
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+      <Card padding="p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
@@ -659,19 +648,14 @@ function AbsenteesTab() {
               ))}
             </select>
           </div>
-          <button
-            onClick={() => refetch()}
-            className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg
-              text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            <RefreshCw size={13} />
+          <Button variant="outline" icon={RefreshCw} onClick={() => refetch()}>
             Refresh
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
           <p className="text-sm font-medium text-gray-700">
             Absent Students — {date}
@@ -738,7 +722,7 @@ function AbsenteesTab() {
             </table>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

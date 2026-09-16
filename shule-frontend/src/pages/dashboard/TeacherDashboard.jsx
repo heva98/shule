@@ -11,6 +11,7 @@ import MySubjectPerformancePanels from '../../components/dashboard/MySubjectPerf
 import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
 import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformancePanels'
 import StatCard from '../../components/ui/StatCard'
+import Card from '../../components/ui/Card'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { getPeriods, getTimetableEntries } from '../../api/timetable'
@@ -158,11 +159,11 @@ export default function TeacherDashboard() {
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {timetableEnabled && (timetableQ.isLoading ? (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <Card>
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
             <Skeleton className="h-3 w-20" />
-          </div>
+          </Card>
         ) : (
           <StatCard
             title="Today's Lessons"
@@ -178,11 +179,11 @@ export default function TeacherDashboard() {
         ))}
 
         {homepackagesEnabled && (homePackagesQ.isLoading ? (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <Card>
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
             <Skeleton className="h-3 w-20" />
-          </div>
+          </Card>
         ) : (
           <StatCard
             title="Home Packages Posted"
@@ -194,11 +195,11 @@ export default function TeacherDashboard() {
         ))}
 
         {examsEnabled && (examsQ.isLoading ? (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <Card>
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
             <Skeleton className="h-3 w-20" />
-          </div>
+          </Card>
         ) : (
           <StatCard
             title="Upcoming Exams"
@@ -210,11 +211,11 @@ export default function TeacherDashboard() {
         ))}
 
         {fourthCard && (fourthCard.loading ? (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <Card>
             <Skeleton className="h-3 w-24 mb-3" />
             <Skeleton className="h-7 w-16 mb-2" />
             <Skeleton className="h-3 w-20" />
-          </div>
+          </Card>
         ) : (
           <StatCard
             title={fourthCard.title}
@@ -230,7 +231,7 @@ export default function TeacherDashboard() {
       {(showTimetablePanel || showExamsPanel) && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {showTimetablePanel && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">Today's Timetable</h2>
             <Link to="/timetable" className="text-xs text-primary hover:underline">
@@ -271,12 +272,12 @@ export default function TeacherDashboard() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
         )}
 
         {showExamsPanel && (
         <div className={showTimetablePanel ? '' : 'lg:col-span-2'}>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">Upcoming Exams</h2>
             <Link to="/exams" className="text-xs text-primary hover:underline">
@@ -309,7 +310,7 @@ export default function TeacherDashboard() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
         </div>
         )}
       </div>
@@ -318,7 +319,7 @@ export default function TeacherDashboard() {
       {/* ── Home packages + discipline/quick-links (role-dependent) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {homepackagesEnabled && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">My Home Packages</h2>
             <Link to="/homepackages" className="text-xs text-primary hover:underline">
@@ -351,11 +352,11 @@ export default function TeacherDashboard() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
         )}
 
         {role === 'DISCIPLINE_TEACHER' ? (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-700">Open Discipline Cases</h2>
             </div>
@@ -395,7 +396,7 @@ export default function TeacherDashboard() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         ) : (
           <div className={homepackagesEnabled ? '' : 'lg:col-span-2'}>
             <QuickLinksPanel role={role} enabledModules={enabledModules} />

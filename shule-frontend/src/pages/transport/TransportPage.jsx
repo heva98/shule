@@ -28,6 +28,9 @@ import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { FEATURE_ROLES } from '../../lib/constants'
 import Modal from '../../components/ui/Modal'
 import Tabs from '../../components/ui/Tabs'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import { selectCls } from '../../lib/formStyles'
 
 const MANAGE_ROLES = FEATURE_ROLES.TRANSPORT
 
@@ -37,9 +40,6 @@ const QUARTER_OPTIONS = [
   { value: 'Q3', label: 'Quarter 3' },
   { value: 'Q4', label: 'Quarter 4' },
 ]
-
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -198,12 +198,10 @@ function RouteModal({ route, onClose }) {
           Active route
         </label>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={saveMut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={saveMut.isPending} className="flex-1">
             {saveMut.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Route'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -226,11 +224,10 @@ function DeleteRouteModal({ route, onClose }) {
       <div className="p-6 space-y-4">
         <p className="text-sm text-gray-600">Remove <strong>{route.name}</strong>? This cannot be undone.</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button variant="danger" onClick={() => mut.mutate()} disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Removing…' : 'Remove'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -291,12 +288,10 @@ function PickupPointModal({ route, point, onClose }) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -353,12 +348,10 @@ function RouteFeeModal({ route, fee, onClose }) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -413,10 +406,9 @@ function RouteDetailModal({ route, canManage, onClose }) {
               <MapPin size={14} /> Pickup Points
             </h3>
             {canManage && (
-              <button onClick={() => setShowAddPoint(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90">
-                <Plus size={12} /> Add
-              </button>
+              <Button size="sm" onClick={() => setShowAddPoint(true)} icon={Plus}>
+                Add
+              </Button>
             )}
           </div>
           {points.length === 0 ? (
@@ -445,10 +437,9 @@ function RouteDetailModal({ route, canManage, onClose }) {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">Transport Fees</h3>
             {canManage && (
-              <button onClick={() => setShowAddFee(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90">
-                <Plus size={12} /> Add
-              </button>
+              <Button size="sm" onClick={() => setShowAddFee(true)} icon={Plus}>
+                Add
+              </Button>
             )}
           </div>
           {fees.length === 0 ? (
@@ -499,10 +490,9 @@ function RoutesTab({ canManage }) {
     <div className="space-y-4">
       {canManage && (
         <div className="flex justify-end">
-          <button onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-            <Plus size={14} /> Add Route
-          </button>
+          <Button onClick={() => setShowAdd(true)} icon={Plus}>
+            Add Route
+          </Button>
         </div>
       )}
 
@@ -521,7 +511,7 @@ function RoutesTab({ canManage }) {
             const pct = r.capacity > 0 ? Math.min(100, Math.round((r.occupied_count / r.capacity) * 100)) : 0
             const barColor = pct >= 100 ? 'bg-danger' : pct >= 80 ? 'bg-accent' : 'bg-success'
             return (
-              <div key={r.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              <Card key={r.id} padding="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-semibold text-gray-900 flex items-center gap-1.5">
@@ -551,11 +541,10 @@ function RoutesTab({ canManage }) {
                   </div>
                 </div>
 
-                <button onClick={() => setDetailRoute(r)}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50">
-                  <Settings size={12} /> Manage stops & fees
-                </button>
-              </div>
+                <Button variant="outline" size="sm" icon={Settings} onClick={() => setDetailRoute(r)} className="mt-3 w-full">
+                  Manage stops & fees
+                </Button>
+              </Card>
             )
           })}
         </div>
@@ -685,16 +674,15 @@ function AssignModal({ onClose }) {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button
             type="button"
             onClick={() => saveMut.mutate()}
             disabled={!student || !routeId || !effectiveYear || saveMut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+            className="flex-1"
           >
             {saveMut.isPending ? 'Assigning…' : 'Assign'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -742,14 +730,13 @@ function AssignmentsTab({ canManage }) {
           Show vacated
         </label>
         {canManage && (
-          <button onClick={() => setShowAssign(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-            <Plus size={14} /> Assign Student
-          </button>
+          <Button onClick={() => setShowAssign(true)} icon={Plus}>
+            Assign Student
+          </Button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -802,7 +789,7 @@ function AssignmentsTab({ canManage }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       {showAssign && <AssignModal onClose={() => setShowAssign(false)} />}
     </div>

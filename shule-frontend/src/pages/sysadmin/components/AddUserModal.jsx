@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { createUser } from '../../../api/sysadmin'
 import Modal from '../../../components/ui/Modal'
+import Button from '../../../components/ui/Button'
 import { ROLE_OPTIONS } from '../../../lib/constants'
 
 function genPassword(len = 12) {
@@ -83,12 +84,9 @@ export default function AddUserModal({ isOpen, onClose }) {
             </div>
           </div>
           <p className="text-xs text-gray-400 text-center">Share this password securely. The user should change it on first login.</p>
-          <button
-            onClick={handleClose}
-            className="w-full py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
+          <Button onClick={handleClose} className="w-full">
             Done
-          </button>
+          </Button>
         </div>
       </Modal>
     )
@@ -203,17 +201,12 @@ export default function AddUserModal({ isOpen, onClose }) {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={handleClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+          <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={mutation.isPending} className="flex-1">
             {mutation.isPending ? 'Creating…' : 'Create User'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

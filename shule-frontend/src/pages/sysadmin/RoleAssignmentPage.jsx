@@ -4,6 +4,8 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { changeRole, getUsers } from '../../api/sysadmin'
 import Modal from '../../components/ui/Modal'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { ROLE_BADGE, ROLE_ICON, ROLE_OPTIONS } from '../../lib/constants'
 
 const initials = (name = '') =>
@@ -60,7 +62,7 @@ export default function RoleAssignmentPage() {
   return (
     <div className="flex gap-4 h-[calc(100vh-10rem)]">
       {/* Left — user list */}
-      <div className="w-72 shrink-0 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+      <Card padding="p-0" className="w-72 shrink-0 flex flex-col overflow-hidden">
         <div className="p-3 border-b border-gray-100">
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -115,10 +117,10 @@ export default function RoleAssignmentPage() {
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Right — assignment panel */}
-      <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+      <Card padding="p-0" className="flex-1 overflow-hidden flex flex-col">
         {!selected ? (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
             <Shield size={40} className="text-gray-200" />
@@ -188,18 +190,15 @@ export default function RoleAssignmentPage() {
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <button
-                    onClick={() => setShowConfirm(true)}
-                    className="px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                  >
+                  <Button onClick={() => setShowConfirm(true)}>
                     Confirm Role Change
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           </>
         )}
-      </div>
+      </Card>
 
       {/* Confirm modal */}
       <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} title="Confirm Role Change" size="sm">
@@ -210,12 +209,10 @@ export default function RoleAssignmentPage() {
           </p>
           <p className="text-xs text-gray-400">This action will be recorded in the audit log.</p>
           <div className="flex gap-3">
-            <button onClick={() => setShowConfirm(false)}
-              className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-            <button onClick={() => mut.mutate()} disabled={mut.isPending}
-              className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+            <Button variant="outline" onClick={() => setShowConfirm(false)} className="flex-1">Cancel</Button>
+            <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="flex-1">
               {mut.isPending ? 'Saving…' : 'Yes, change role'}
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

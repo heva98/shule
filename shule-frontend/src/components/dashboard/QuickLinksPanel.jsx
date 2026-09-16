@@ -9,6 +9,7 @@ import {
   UserCog,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import Card from '../ui/Card'
 import { FEATURE_ROLES } from '../../lib/constants'
 
 // Shared by both dashboards (DashboardRouter picks one or the other by
@@ -34,7 +35,7 @@ export default function QuickLinksPanel({ role, enabledModules }) {
   if (links.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <Card>
       <h2 className="text-sm font-semibold text-gray-700 mb-4">Quick Links</h2>
       <div className="grid grid-cols-2 gap-3">
         {links.map(({ label, path, icon: Icon }) => (
@@ -49,6 +50,6 @@ export default function QuickLinksPanel({ role, enabledModules }) {
           </Link>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

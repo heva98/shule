@@ -1,4 +1,5 @@
 import { Inbox } from 'lucide-react'
+import Button from './Button'
 
 export default function EmptyState({
   icon: Icon = Inbox,
@@ -16,12 +17,9 @@ export default function EmptyState({
         <p className="text-xs text-gray-400 max-w-xs">{message}</p>
       )}
       {action && (
-        <button
-          onClick={action.onClick}
-          className="mt-4 px-4 py-2 bg-[#1B4F72] text-white text-sm rounded-lg hover:bg-[#154060] transition-colors"
-        >
+        <Button onClick={action.onClick} className="mt-4">
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   )

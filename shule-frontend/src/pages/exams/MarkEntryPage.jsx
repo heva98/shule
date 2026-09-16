@@ -12,6 +12,8 @@ import toast from 'react-hot-toast'
 import { bulkEnterMarks, getExam, getResults, getSubjects } from '../../api/exams'
 import { getStudents } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { LEVEL_LABEL } from '../../lib/constants'
 
 // ── Grade logic (mirrors Tanzania grading in backend) ──────────────────────
@@ -272,9 +274,9 @@ export default function MarkEntryPage() {
       <div className="space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-4 w-48" />
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-3">
+        <Card padding="p-6" className="space-y-3">
           {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-9 w-full rounded" />)}
-        </div>
+        </Card>
       </div>
     )
   }
@@ -285,23 +287,23 @@ export default function MarkEntryPage() {
 
   if (students.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+      <Card padding="p-12" className="text-center">
         <p className="text-sm text-gray-400">
           No active students found for {LEVEL_LABEL[exam.level] ?? exam.level}
           {exam.stream ? ` · Stream ${exam.stream}` : ''}.
         </p>
-      </div>
+      </Card>
     )
   }
 
   if (subjects.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+      <Card padding="p-12" className="text-center">
         <p className="text-sm text-gray-400">
           No subjects configured for this level group ({levelGroup ?? 'unknown'}).
           Add subjects in the admin panel first.
         </p>
-      </div>
+      </Card>
     )
   }
 
@@ -350,7 +352,7 @@ export default function MarkEntryPage() {
       )}
 
       {/* Grid */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-auto max-h-[calc(100vh-280px)]">
           <table className="text-sm border-collapse">
             <thead>
@@ -396,11 +398,10 @@ export default function MarkEntryPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {/* Footer */}
-      <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100
-        shadow-sm px-5 py-3">
+      <Card padding="px-5 py-3" className="flex items-center justify-between">
         <div className="flex items-center gap-4 text-sm text-gray-500">
           <span>
             <span className="font-semibold text-gray-800">{filled}</span>
@@ -415,16 +416,11 @@ export default function MarkEntryPage() {
             </span>
           )}
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || filled === 0}
-          className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg
-            text-sm font-medium hover:bg-secondary disabled:opacity-50 transition-colors"
-        >
+        <Button onClick={handleSubmit} disabled={submitting || filled === 0}>
           {submitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           {submitting ? 'Saving…' : 'Save All Marks'}
-        </button>
-      </div>
+        </Button>
+      </Card>
     </div>
   )
 }

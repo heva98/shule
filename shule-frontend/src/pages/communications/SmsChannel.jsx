@@ -12,6 +12,8 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import Skeleton from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 const KINDS = [
   { value: 'EXAM_RESULTS', label: 'Exam results', Icon: GraduationCap,
@@ -89,7 +91,7 @@ function ComposeTab({ config }) {
 
   return (
     <div className="grid lg:grid-cols-2 gap-5">
-      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+      <Card className="space-y-4">
         <div className="flex gap-2 flex-wrap">
           {kinds.map(({ value, label, Icon }) => (
             <button key={value} onClick={() => { setKind(value); setPreview(null) }}
@@ -217,9 +219,9 @@ function ComposeTab({ config }) {
           {previewMut.isPending ? <Loader2 size={15} className="animate-spin" /> : <Users size={15} />}
           Preview recipients
         </button>
-      </div>
+      </Card>
 
-      <div className="bg-white rounded-xl border border-gray-100 p-5">
+      <Card>
         {!preview ? (
           <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 py-10">
             <MessageSquare size={28} className="mb-2" />
@@ -260,20 +262,21 @@ function ComposeTab({ config }) {
             )}
 
             <div className="flex gap-2 pt-1">
-              <button onClick={() => sendMut.mutate(true)} disabled={sendMut.isPending}
-                className="flex-1 border border-gray-200 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-50 disabled:opacity-40">
+              <Button variant="outline" onClick={() => sendMut.mutate(true)} disabled={sendMut.isPending} className="flex-1">
                 Save dry run
-              </button>
-              <button onClick={() => sendMut.mutate(false)}
+              </Button>
+              <Button
+                onClick={() => sendMut.mutate(false)}
                 disabled={sendMut.isPending || preview.would_send === 0}
-                className="flex-1 flex items-center justify-center gap-2 bg-primary text-white rounded-lg py-2 text-sm font-medium hover:opacity-90 disabled:opacity-40">
+                className="flex-1"
+              >
                 {sendMut.isPending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
                 Send {preview.would_send} SMS
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }
@@ -313,17 +316,23 @@ function LogTab() {
   if (openId) {
     const b = detail.data
     return (
-      <div className="bg-white rounded-xl border border-gray-100">
+      <Card padding="p-0">
         <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100">
           <button onClick={() => setOpenId(null)} className="text-gray-500 hover:text-gray-800">
             <ChevronLeft size={18} />
           </button>
           <span className="text-sm font-medium">Batch #{openId}</span>
           {b?.failed_count > 0 && !b?.dry_run && (
-            <button onClick={() => resend.mutate()} disabled={resend.isPending}
-              className="ml-auto flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-2.5 py-1 hover:bg-gray-50">
-              <RefreshCw size={12} /> Resend {b.failed_count} failed
-            </button>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={RefreshCw}
+              onClick={() => resend.mutate()}
+              disabled={resend.isPending}
+              className="ml-auto"
+            >
+              Resend {b.failed_count} failed
+            </Button>
           )}
         </div>
         {detail.isLoading ? <div className="p-5"><Skeleton className="h-40" /></div> : (
@@ -366,7 +375,7 @@ function LogTab() {
             </div>
           </div>
         )}
-      </div>
+      </Card>
     )
   }
 
@@ -459,7 +468,7 @@ function SettingsTab({ config }) {
 
   return (
     <div className="grid lg:grid-cols-2 gap-5">
-      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-1">
+      <Card className="space-y-1">
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Behaviour</h3>
         <label className="flex items-center justify-between py-2 text-sm">
           <span className="text-gray-700">Language</span>
@@ -479,9 +488,9 @@ function SettingsTab({ config }) {
         <p className="text-xs text-gray-400 pt-2">
           Per-batch cap: {draft.effective_recipient_cap} · segment limit: {draft.effective_max_segments}
         </p>
-      </div>
+      </Card>
 
-      <div className="bg-white rounded-xl border border-gray-100 p-5">
+      <Card>
         <h3 className="text-sm font-semibold text-gray-800 mb-3">Templates ({draft.language})</h3>
         {templates.isLoading ? <Skeleton className="h-40" /> : (
           <div className="space-y-4">
@@ -491,7 +500,7 @@ function SettingsTab({ config }) {
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

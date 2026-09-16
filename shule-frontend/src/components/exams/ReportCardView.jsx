@@ -1,4 +1,5 @@
 import { Printer, X } from 'lucide-react'
+import Button from '../ui/Button'
 
 // Tanzania grading scale
 function gradeFromScore(score) {
@@ -184,14 +185,9 @@ export default function ReportCardView({ reportCard: rc, onClose }) {
           <p className="text-xs text-gray-400 mt-0.5">{student.full_name} · {exam.name}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
-              text-sm font-medium hover:bg-secondary transition-colors"
-          >
-            <Printer size={14} />
+          <Button icon={Printer} onClick={handlePrint}>
             Print
-          </button>
+          </Button>
           {onClose && (
             <button
               onClick={onClose}

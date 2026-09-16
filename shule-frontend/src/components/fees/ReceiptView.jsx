@@ -1,5 +1,6 @@
 import { CheckCircle, Printer, RotateCcw, X } from 'lucide-react'
 import { formatTZS } from '../../lib/format'
+import Button from '../ui/Button'
 
 const PRINT_CSS = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -181,20 +182,18 @@ export default function ReceiptView({ receipt, onClose, onReverse }) {
       </div>
 
       <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
-        <button onClick={handlePrint}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-          <Printer size={15} /> Print Receipt
-        </button>
+        <Button icon={Printer} onClick={handlePrint}>
+          Print Receipt
+        </Button>
         {onReverse && !reversed && (
           <button onClick={onReverse}
             className="flex items-center gap-2 px-4 py-2 border border-danger/40 text-danger rounded-lg text-sm font-medium hover:bg-red-50 transition-colors">
             <RotateCcw size={15} /> Reverse
           </button>
         )}
-        <button onClick={onClose}
-          className="ml-auto px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+        <Button variant="outline" className="ml-auto" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
     </div>
   )

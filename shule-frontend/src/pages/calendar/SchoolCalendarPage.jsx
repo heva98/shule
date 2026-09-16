@@ -10,6 +10,8 @@ import {
   getCalendarEvents, updateCalendarEvent,
 } from '../../api/sysadmin'
 import Modal from '../../components/ui/Modal'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -448,7 +450,9 @@ export default function SchoolCalendarPage() {
           </div>
 
           {activeYearId && (
-            <button
+            <Button
+              variant="outline"
+              icon={Download}
               onClick={async () => {
                 if (!activeYear) return
                 setPdfLoading(true)
@@ -461,28 +465,22 @@ export default function SchoolCalendarPage() {
                 }
               }}
               disabled={pdfLoading}
-              className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
-              <Download size={14} />
               {pdfLoading ? 'Generating…' : 'Download PDF'}
-            </button>
+            </Button>
           )}
 
           {canManage && (
-            <button
-              onClick={() => setAddEvent(true)}
-              disabled={!activeYearId}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
-            >
-              <Plus size={14} /> Add Event
-            </button>
+            <Button icon={Plus} onClick={() => setAddEvent(true)} disabled={!activeYearId}>
+              Add Event
+            </Button>
           )}
         </div>
       </div>
 
       {/* Terms & Quarters */}
       {activeYear && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-800">Terms &amp; Quarters — {activeYear.year}</h3>
             {canManage && (
@@ -509,11 +507,11 @@ export default function SchoolCalendarPage() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Events */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50">
           <h3 className="text-sm font-semibold text-gray-800">
             School Events{activeYear ? ` — ${activeYear.year}` : ''}
@@ -592,7 +590,7 @@ export default function SchoolCalendarPage() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Modals */}
       {editQuartersFor && (

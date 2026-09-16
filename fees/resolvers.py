@@ -6,6 +6,8 @@ Every resolver returns ``None`` when the category does not apply to the
 student (not configured, or excluded — e.g. transport for a boarder).
 """
 
+from __future__ import annotations
+
 from decimal import Decimal
 
 from students.level_groups import level_group

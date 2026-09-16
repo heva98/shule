@@ -5,9 +5,12 @@ import { useNavigate } from 'react-router-dom'
 import { getStudents } from '../../api/students'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 import { LEVEL_LABEL, STATUS_BADGE, STATUS_OPTIONS } from '../../lib/constants'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { selectCls } from '../../lib/formStyles'
 
 const READ_ONLY_ROLES = ['TEACHER', 'BURSAR']
 
@@ -156,9 +159,6 @@ export default function StudentsListPage() {
   const count      = data?.count   ?? 0
   const totalPages = Math.max(1, Math.ceil(count / 20))
 
-  const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700
-    focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white`
-
   return (
     <div className="space-y-4">
       {/* ── Toolbar ── */}
@@ -190,31 +190,29 @@ export default function StudentsListPage() {
         </select>
 
         <div className="flex gap-2 shrink-0">
-          <button
+          <Button
+            variant="outline"
+            icon={Download}
             onClick={() => students.length && exportCSV(students)}
             disabled={!students.length}
-            className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg
-              text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
           >
-            <Download size={15} />
             Export
-          </button>
+          </Button>
 
           {!readOnly && (
-            <button
+            <Button
+              icon={UserPlus}
               onClick={() => navigate('/students/new')}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
-                text-sm font-medium hover:bg-secondary transition-colors whitespace-nowrap"
+              className="whitespace-nowrap"
             >
-              <UserPlus size={15} />
               Add Student
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -297,7 +295,7 @@ export default function StudentsListPage() {
             onChange={setPage}
           />
         )}
-      </div>
+      </Card>
     </div>
   )
 }

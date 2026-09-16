@@ -1,6 +1,8 @@
+import Card from './Card'
+
 export default function StatCard({ title, value, icon: Icon, color, subtitle }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <Card>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide truncate">
@@ -19,6 +21,6 @@ export default function StatCard({ title, value, icon: Icon, color, subtitle }) 
           </div>
         )}
       </div>
-    </div>
+    </Card>
   )
 }

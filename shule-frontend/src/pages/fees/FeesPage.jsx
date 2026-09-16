@@ -24,12 +24,15 @@ import RecordPaymentModal from '../../components/fees/RecordPaymentModal'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
 import Tabs from '../../components/ui/Tabs'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import {
   INVOICE_BADGE,
   LEVEL_LABEL,
 } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { inputCls as baseInputCls, selectCls } from '../../lib/formStyles'
 
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
@@ -61,11 +64,7 @@ const STATUS_OPTIONS = [
   { value: 'OVERDUE', label: 'Overdue' },
 ]
 
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-
-const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+const inputCls = `${baseInputCls} w-full`
 
 function fmtPeriod(term, quarter) {
   const t = term?.replace('TERM', 'T') ?? ''
@@ -150,17 +149,12 @@ function InvoicesTab() {
           ))}
         </select>
 
-        <button
-          onClick={() => setShowGenerate(true)}
-          className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-primary text-white
-            rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
-        >
-          <Plus size={15} />
+        <Button onClick={() => setShowGenerate(true)} icon={Plus} className="ml-auto">
           Generate Charges
-        </button>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -243,29 +237,29 @@ function InvoicesTab() {
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
             <p className="text-xs text-gray-500">{count} invoices</p>
             <div className="flex gap-1">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg disabled:opacity-40
-                  hover:bg-gray-50 transition-colors"
               >
                 Previous
-              </button>
+              </Button>
               <span className="px-3 py-1.5 text-xs text-gray-500">
                 {page} / {totalPages}
               </span>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg disabled:opacity-40
-                  hover:bg-gray-50 transition-colors"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {showGenerate && <GenerateChargesModal onClose={() => setShowGenerate(false)} />}
       {payInvoice && (
@@ -341,23 +335,18 @@ function DefaultersTab() {
         </select>
 
         {defaulters.length > 0 && (
-          <button
-            onClick={sendAllReminders}
-            disabled={sending}
-            className="ml-auto flex items-center gap-1.5 px-4 py-2 border border-gray-300
-              rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-          >
+          <Button variant="outline" onClick={sendAllReminders} disabled={sending} className="ml-auto">
             {sending ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <Send size={14} />
             )}
             Send All Reminders
-          </button>
+          </Button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -440,7 +429,7 @@ function DefaultersTab() {
             <p className="text-xs text-gray-400">{defaulters.length} student{defaulters.length !== 1 ? 's' : ''} with outstanding balances</p>
           </div>
         )}
-      </div>
+      </Card>
     </>
   )
 }
@@ -498,12 +487,9 @@ function AcademicYearsTab() {
         <p className="text-sm text-gray-500">
           Academic years are used across exams, fees, and reports. Mark one as <strong>Current</strong> to set the active school year.
         </p>
-        <button
-          onClick={() => setShowForm(s => !s)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary shrink-0 ml-4"
-        >
-          <Plus size={15} /> New Year
-        </button>
+        <Button onClick={() => setShowForm(s => !s)} icon={Plus} className="shrink-0 ml-4">
+          New Year
+        </Button>
       </div>
 
       {showForm && (
@@ -520,21 +506,17 @@ function AcademicYearsTab() {
               required
             />
           </div>
-          <button
-            type="submit"
-            disabled={createMut.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary disabled:opacity-60"
-          >
+          <Button type="submit" disabled={createMut.isPending}>
             {createMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
             {createMut.isPending ? 'Creating…' : 'Create'}
-          </button>
-          <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
             Cancel
-          </button>
+          </Button>
         </form>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
         ) : years.length === 0 ? (
@@ -566,13 +548,14 @@ function AcademicYearsTab() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {!y.is_current && (
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => markCurrentMut.mutate(y.id)}
                         disabled={markCurrentMut.isPending}
-                        className="px-3 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                       >
                         Set as Current
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -580,7 +563,7 @@ function AcademicYearsTab() {
             </tbody>
           </table>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

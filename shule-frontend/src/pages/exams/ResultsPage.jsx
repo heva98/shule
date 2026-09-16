@@ -17,6 +17,8 @@ import { getExam, getRanking, getReportCard, getResults } from '../../api/exams'
 import Skeleton from '../../components/ui/Skeleton'
 import { GRADE_BADGE, LEVEL_LABEL } from '../../lib/constants'
 import Badge from '../../components/ui/Badge'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import ReportCardView from '../../components/exams/ReportCardView'
 
 // ── Medal styling for top 3 ────────────────────────────────────────────────
@@ -188,18 +190,18 @@ export default function ResultsPage() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-64" />
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-3">
+        <Card padding="p-6" className="space-y-3">
           {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-9 w-full rounded" />)}
-        </div>
+        </Card>
       </div>
     )
   }
 
   if (rankError) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+      <Card padding="p-12" className="text-center">
         <p className="text-sm text-danger">Failed to load results.</p>
-      </div>
+      </Card>
     )
   }
 
@@ -212,13 +214,13 @@ export default function ResultsPage() {
           </button>
           <h1 className="text-xl font-bold text-gray-900">{exam?.name ?? 'Results'}</h1>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-14 text-center">
+        <Card padding="p-14" className="text-center">
           <Trophy size={40} className="mx-auto text-gray-200 mb-3" />
           <p className="text-sm text-gray-400">No marks have been entered for this exam yet.</p>
           <button onClick={() => navigate(`/exams/${id}/marks`)} className="mt-4 text-sm text-primary hover:underline">
             Enter Marks
           </button>
-        </div>
+        </Card>
       </div>
     )
   }
@@ -241,19 +243,14 @@ export default function ResultsPage() {
             </p>
           </div>
         </div>
-        <button
-          onClick={downloadAllReportCards}
-          disabled={downloading}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg
-            text-sm font-medium hover:bg-secondary disabled:opacity-60 transition-colors"
-        >
+        <Button onClick={downloadAllReportCards} disabled={downloading}>
           {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           {downloading ? 'Preparing…' : 'Download Report Cards'}
-        </button>
+        </Button>
       </div>
 
       {/* Ranking table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -328,11 +325,11 @@ export default function ResultsPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {/* Subject pass rate chart */}
       {subjectStats.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <h3 className="text-sm font-semibold text-gray-700 mb-4">Subject Pass Rate (%)</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={subjectStats} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
@@ -362,7 +359,7 @@ export default function ResultsPage() {
           <p className="text-xs text-gray-400 mt-2 text-center">
             Pass threshold: grade C (score ≥ 45)
           </p>
-        </div>
+        </Card>
       )}
 
       {/* Per-subject individual report card modal */}

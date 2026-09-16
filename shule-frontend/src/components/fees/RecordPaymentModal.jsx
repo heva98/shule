@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { getReceipt, recordPayment } from '../../api/fees'
 import { formatTZS } from '../../lib/format'
+import { inputCls as baseInputCls } from '../../lib/formStyles'
+import Button from '../ui/Button'
 import ReceiptView from './ReceiptView'
 
-const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+const inputCls = `${baseInputCls} w-full`
 
 export default function RecordPaymentModal({ invoice, onClose, onSuccess }) {
   const [receipt, setReceipt] = useState(null)
@@ -207,25 +208,13 @@ export default function RecordPaymentModal({ invoice, onClose, onSuccess }) {
 
             {/* Footer */}
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={submitting}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600
-                  hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
+              <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
                 Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit(onSubmit)}
-                disabled={submitting}
-                className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg
-                  text-sm font-medium hover:bg-secondary disabled:opacity-60 transition-colors"
-              >
+              </Button>
+              <Button type="button" onClick={handleSubmit(onSubmit)} disabled={submitting}>
                 {submitting && <Loader2 size={14} className="animate-spin" />}
                 {submitting ? 'Processing…' : 'Record Payment'}
-              </button>
+              </Button>
             </div>
           </>
         )}

@@ -7,6 +7,8 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { getSystemHealth } from '../../api/sysadmin'
 import api from '../../lib/axios'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 function StatusDot({ ok, loading }) {
   if (loading) return <span className="w-3 h-3 rounded-full bg-gray-300 animate-pulse inline-block" />
@@ -39,13 +41,13 @@ function ServiceCard({ title, icon: Icon, ok, loading, detail, badge, badgeColor
 
 function StatBox({ label, value, sub }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <Card>
       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
       <p className="text-2xl font-bold text-gray-900 mt-1.5">
         {value ?? <span className="text-gray-300">—</span>}
       </p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
-    </div>
+    </Card>
   )
 }
 
@@ -83,14 +85,10 @@ export default function SystemHealthPage() {
             {lastRefresh.toLocaleTimeString('en-TZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </p>
         </div>
-        <button
-          onClick={refresh}
-          disabled={q.isFetching}
-          className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-        >
+        <Button variant="outline" onClick={refresh} disabled={q.isFetching}>
           <RefreshCw size={13} className={q.isFetching ? 'animate-spin' : ''} />
           Refresh
-        </button>
+        </Button>
       </div>
 
       {/* Service cards */}
@@ -194,7 +192,7 @@ export default function SystemHealthPage() {
       {/* Manual actions */}
       <div>
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Manual Actions</h2>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-800">Run Absence Alerts Now</p>
@@ -202,16 +200,16 @@ export default function SystemHealthPage() {
                 Emails a notification to guardians of today's absent students.
               </p>
             </div>
-            <button
+            <Button
+              icon={Zap}
               onClick={() => absenceMut.mutate()}
               disabled={absenceMut.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 shrink-0"
+              className="shrink-0"
             >
-              <Zap size={13} />
               {absenceMut.isPending ? 'Running…' : 'Run Now'}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   )

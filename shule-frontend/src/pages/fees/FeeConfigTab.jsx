@@ -12,11 +12,11 @@ import {
 import { LEVEL_LABEL } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
 import { ALL_LEVEL_GROUPS, useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { inputCls as baseInputCls, selectCls } from '../../lib/formStyles'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+const inputCls = `${baseInputCls} w-full`
 
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
@@ -46,7 +46,7 @@ function errMsg(err, fallback) {
 // ── shared table chrome ───────────────────────────────────────────────────
 function ConfigTable({ headers, isLoading, isError, isEmpty, children }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <Card padding="p-0" className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -77,7 +77,7 @@ function ConfigTable({ headers, isLoading, isError, isEmpty, children }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -116,12 +116,9 @@ function ActiveCell({ active }) {
 
 function AddBar({ open, onToggle, label }) {
   return (
-    <button
-      onClick={onToggle}
-      className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
-    >
-      <Plus size={15} /> {open ? 'Close' : label}
-    </button>
+    <Button icon={Plus} className="ml-auto" onClick={onToggle}>
+      {open ? 'Close' : label}
+    </Button>
   )
 }
 
@@ -221,10 +218,9 @@ function TuitionSection({ yearId }) {
             <input type="number" min="0" step="1" className={inputCls + ' w-40'} value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
           </div>
-          <button type="submit" disabled={mut.create.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary disabled:opacity-60">
+          <Button type="submit" disabled={mut.create.isPending}>
             {mut.create.isPending && <Loader2 size={14} className="animate-spin" />} Save
-          </button>
+          </Button>
         </form>
       )}
 
@@ -290,10 +286,9 @@ function UniformSection({ yearId }) {
             <input type="number" min="0" step="1" className={inputCls + ' w-40'} value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
           </div>
-          <button type="submit" disabled={mut.create.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary disabled:opacity-60">
+          <Button type="submit" disabled={mut.create.isPending}>
             {mut.create.isPending && <Loader2 size={14} className="animate-spin" />} Save
-          </button>
+          </Button>
         </form>
       )}
 
@@ -365,10 +360,9 @@ function LunchSection({ yearId }) {
             <input type="number" min="0" step="1" className={inputCls + ' w-36'} value={form.boarding_amount}
               onChange={(e) => setForm({ ...form, boarding_amount: e.target.value })} required />
           </div>
-          <button type="submit" disabled={mut.create.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary disabled:opacity-60">
+          <Button type="submit" disabled={mut.create.isPending}>
             {mut.create.isPending && <Loader2 size={14} className="animate-spin" />} Save
-          </button>
+          </Button>
         </form>
       )}
 
@@ -444,10 +438,9 @@ function ActivitySection({ yearId }) {
             <input type="number" min="0" step="1" className={inputCls + ' w-40'} value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
           </div>
-          <button type="submit" disabled={mut.create.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary disabled:opacity-60">
+          <Button type="submit" disabled={mut.create.isPending}>
             {mut.create.isPending && <Loader2 size={14} className="animate-spin" />} Save
-          </button>
+          </Button>
         </form>
       )}
 
@@ -508,9 +501,9 @@ export default function FeeConfigTab() {
       <p className="text-xs text-gray-400">{SUB_TABS.find((t) => t.id === sub)?.hint}</p>
 
       {yearId ? <Section yearId={Number(yearId)} /> : (
-        <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-sm text-gray-400">
+        <Card padding="p-10" className="text-center text-sm text-gray-400">
           Pick an academic year to configure its fees.
-        </div>
+        </Card>
       )}
     </div>
   )

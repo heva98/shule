@@ -5,6 +5,8 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { getAuditLogs, getUsers } from '../../api/sysadmin'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 const ACTION_CONFIG = {
   USER_CREATED:     { Icon: Users,       color: 'bg-green-100 text-green-600',   label: 'User Created' },
@@ -114,7 +116,7 @@ export default function AuditLogPage() {
   return (
     <div className="space-y-5">
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+      <Card padding="p-4">
         <div className="flex flex-wrap items-center gap-3">
           <Filter size={14} className="text-gray-400 shrink-0" />
           <select value={action} onChange={e => { setAction(e.target.value); setPage(1) }}
@@ -148,10 +150,10 @@ export default function AuditLogPage() {
           </button>
         </div>
         {total > 0 && <p className="text-xs text-gray-400 mt-2">{total} entries</p>}
-      </div>
+      </Card>
 
       {/* Timeline */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+      <Card padding="p-0">
         {q.isLoading ? (
           <div className="space-y-4 p-6">
             {[...Array(8)].map((_, i) => (
@@ -180,15 +182,13 @@ export default function AuditLogPage() {
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
             <span>{total} total entries</span>
             <div className="flex items-center gap-2">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40">Prev</button>
+              <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
               <span>Page {page} of {Math.ceil(total / 25)}</span>
-              <button disabled={page >= Math.ceil(total / 25)} onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40">Next</button>
+              <Button variant="outline" size="sm" disabled={page >= Math.ceil(total / 25)} onClick={() => setPage(p => p + 1)}>Next</Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

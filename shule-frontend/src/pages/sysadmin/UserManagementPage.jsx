@@ -11,6 +11,8 @@ import {
   bulkImport, changeRole, getUsers, resetPassword, toggleActive, updateUser,
 } from '../../api/sysadmin'
 import Modal from '../../components/ui/Modal'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import AddUserModal from './components/AddUserModal'
 import { ROLE_BADGE, ROLE_LABEL, ROLE_OPTIONS } from '../../lib/constants'
 
@@ -69,12 +71,10 @@ function EditUserModal({ user, onClose }) {
           {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
         </div>
         <div className="flex gap-3">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -131,12 +131,10 @@ function ChangeRoleModal({ user, onClose }) {
           </p>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending || selected === user.role}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending || selected === user.role} className="flex-1">
             {mut.isPending ? 'Saving…' : 'Confirm Change'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -183,12 +181,10 @@ function ResetPasswordModal({ user, onClose }) {
           Send new password to {user.email}
         </label>
         <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Resetting…' : 'Reset Password'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -243,8 +239,7 @@ function ToggleActiveModal({ user, onClose }) {
           </div>
         ) : null}
         <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
           <button onClick={() => mut.mutate()} disabled={mut.isPending || (isActive && !trimmedReason)}
             className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50 ${
               isActive ? 'bg-danger hover:bg-danger/90' : 'bg-success hover:bg-success/90'
@@ -326,8 +321,7 @@ function BulkImportModal({ onClose }) {
               ))}
             </div>
           )}
-          <button onClick={onClose}
-            className="w-full py-2.5 bg-primary text-white rounded-lg text-sm font-medium">Done</button>
+          <Button onClick={onClose} className="w-full">Done</Button>
         </div>
       </Modal>
     )
@@ -382,12 +376,10 @@ function BulkImportModal({ onClose }) {
         )}
 
         <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={!file || mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button onClick={() => mut.mutate()} disabled={!file || mut.isPending} className="flex-1">
             {mut.isPending ? 'Importing…' : 'Import'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -486,18 +478,12 @@ export default function UserManagementPage() {
           <option value="true">Active</option>
           <option value="false">Inactive</option>
         </select>
-        <button onClick={() => setShowBulk(true)}
-          className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-          <Upload size={14} /> Bulk Import
-        </button>
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-          <Users size={14} /> Add User
-        </button>
+        <Button variant="outline" icon={Upload} onClick={() => setShowBulk(true)}>Bulk Import</Button>
+        <Button icon={Users} onClick={() => setShowAdd(true)}>Add User</Button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -583,15 +569,13 @@ export default function UserManagementPage() {
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
             <span>{total} total users</span>
             <div className="flex items-center gap-2">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40">Prev</button>
+              <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
               <span>Page {page} of {Math.ceil(total / 20)}</span>
-              <button disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-40">Next</button>
+              <Button variant="outline" size="sm" disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(p => p + 1)}>Next</Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Modals */}
       <AddUserModal isOpen={showAdd} onClose={() => setShowAdd(false)} />

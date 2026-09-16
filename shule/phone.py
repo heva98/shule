@@ -11,6 +11,8 @@ None so the caller can decide what to do (skip the recipient, report the row,
 leave the raw value untouched) rather than sending to a bad number.
 """
 
+from __future__ import annotations
+
 import re
 
 # Tanzania: country code 255, then a 9-digit national number whose first digit

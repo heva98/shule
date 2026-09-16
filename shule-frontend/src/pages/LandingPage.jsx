@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
@@ -13,13 +13,19 @@ import {
   MessageCircle,
   Phone,
   ShieldCheck,
-  Sparkles,
   Users,
   Wallet,
   X,
 } from 'lucide-react'
 import { submitDemoRequest } from '../api/communications'
 import logo from '../assets/ShuleSMSLogo.png'
+
+const BTN_PRIMARY =
+  'inline-flex items-center justify-center rounded-full px-6 py-3 md:px-7 font-semibold text-sm text-white bg-accent border border-accent hover:brightness-95 shadow-sm transition'
+const BTN_OUTLINE_LIGHT =
+  'inline-flex items-center justify-center rounded-full px-6 py-3 md:px-7 font-semibold text-sm text-white bg-white/10 border border-white/30 hover:bg-white/20 transition'
+const BTN_PILL_SM =
+  'inline-flex items-center justify-center rounded-full px-4 py-2 font-semibold text-sm text-white bg-accent hover:brightness-95 shadow-sm transition'
 
 const FEATURES = [
   {
@@ -58,13 +64,6 @@ const FEATURES = [
     description:
       'Reach parents by SMS or email — individually, by class, or school-wide.',
   },
-]
-
-const HERO_STATS = [
-  { value: '6', label: 'Core modules, one login' },
-  { value: '3', label: 'Parent alert channels' },
-  { value: 'TZS', label: 'Native currency & billing' },
-  { value: '2+4', label: 'Term & quarter calendar' },
 ]
 
 const CAPABILITIES = [
@@ -129,35 +128,69 @@ const REASONS = [
   },
 ]
 
+function SectionHeading({ tagline, title, subtitle, dark = false }) {
+  return (
+    <div className="text-center max-w-2xl mx-auto mb-14">
+      <p className={`text-xs font-bold tracking-widest uppercase ${dark ? 'text-white/70' : 'text-secondary'}`}>
+        {tagline}
+      </p>
+      <h2 className={`mt-2 text-3xl sm:text-4xl font-bold tracking-tighter ${dark ? 'text-white' : 'text-gray-900'}`}>
+        {title}
+      </h2>
+      {subtitle && (
+        <p className={`mt-4 text-base leading-relaxed ${dark ? 'text-white/70' : 'text-gray-500'}`}>{subtitle}</p>
+      )}
+    </div>
+  )
+}
+
+function IconBadge({ icon: Icon, size = 'md' }) {
+  const dims = size === 'lg' ? 'w-12 h-12' : 'w-11 h-11'
+  return (
+    <span className={`${dims} rounded-full bg-primary text-white flex items-center justify-center shrink-0`}>
+      <Icon className="w-5 h-5" />
+    </span>
+  )
+}
+
 function NavBar() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <a href="#top" className="flex items-center gap-2.5">
+    <header
+      className={`sticky top-0 z-40 bg-white/90 backdrop-blur border-b transition-shadow duration-200 ${
+        scrolled ? 'border-gray-100 shadow-sm' : 'border-transparent'
+      }`}
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between md:grid md:grid-cols-3">
+        <a href="#top" className="flex items-center gap-2.5 justify-self-start">
           <img src={logo} alt="Shule SMS" className="w-9 h-9 rounded-xl object-contain shadow-sm" />
-          <span className="font-bold text-gray-900 text-lg">Shule SMS</span>
+          <span className="font-bold tracking-tight text-gray-900 text-lg">Shule SMS</span>
         </a>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+        <nav className="hidden md:flex items-center justify-center gap-8 text-sm font-medium text-gray-600 justify-self-center">
           <a href="#features" className="hover:text-primary transition-colors">Features</a>
           <a href="#parents" className="hover:text-primary transition-colors">For parents</a>
           <a href="#roles" className="hover:text-primary transition-colors">Who it's for</a>
           <a href="#demo" className="hover:text-primary transition-colors">Request a demo</a>
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3 justify-self-end">
           <Link
             to="/login"
             className="text-sm font-medium text-gray-600 hover:text-primary transition-colors px-3 py-2"
           >
             Staff login
           </Link>
-          <a
-            href="#demo"
-            className="text-sm font-medium text-white bg-primary hover:bg-secondary transition-colors px-4 py-2 rounded-lg shadow-sm"
-          >
+          <a href="#demo" className={BTN_PILL_SM}>
             Request a demo
           </a>
         </div>
@@ -181,7 +214,7 @@ function NavBar() {
           <a
             href="#demo"
             onClick={() => setOpen(false)}
-            className="block text-center text-sm font-medium text-white bg-primary px-4 py-2 rounded-lg"
+            className="block text-center text-sm font-semibold text-white bg-accent rounded-full px-4 py-2"
           >
             Request a demo
           </a>
@@ -259,7 +292,7 @@ function DashboardMockup() {
         </div>
       </div>
 
-      <p className="mt-8 sm:mt-4 text-center text-xs text-white/40">Illustrative preview — sample data</p>
+      <p className="mt-8 sm:mt-6 text-center text-xs text-white/40">Illustrative preview — sample data</p>
     </div>
   )
 }
@@ -274,63 +307,48 @@ function Hero() {
             'radial-gradient(circle at 15% 20%, white 0, transparent 35%), radial-gradient(circle at 85% 70%, white 0, transparent 40%)',
         }}
       />
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase text-white/80 bg-white/10 px-3 py-1 rounded-full mb-6">
-              <Sparkles className="w-3.5 h-3.5" />
-              Built for Tanzanian private schools
-            </span>
-            <h1 className="text-3xl sm:text-5xl font-bold text-white leading-tight">
-              One system for students, fees, attendance, exams, staff, and{' '}
-              <span className="text-accent">parents</span>
-            </h1>
-            <p className="mt-5 text-base sm:text-lg text-white/80 max-w-xl">
-              Shule SMS brings your whole school onto one platform — TZS-native billing, a real
-              2-term / 4-quarter calendar, and SMS alerts parents actually see.
-            </p>
-            <div className="mt-9 flex flex-col sm:flex-row items-start gap-3">
-              <a
-                href="#demo"
-                className="w-full sm:w-auto text-center px-6 py-3 rounded-lg bg-accent hover:brightness-95 text-white font-semibold text-sm shadow-lg transition"
-              >
-                Request a demo
-              </a>
-              <Link
-                to="/login"
-                className="w-full sm:w-auto text-center px-6 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/30 transition"
-              >
-                Staff login
-              </Link>
-            </div>
-
-            <div className="mt-12 flex flex-wrap gap-x-8 gap-y-5">
-              {HERO_STATS.map((s, i) => (
-                <div key={s.label} className={i > 0 ? 'pl-8 border-l border-white/15' : ''}>
-                  <p className="text-xl font-bold text-white">{s.value}</p>
-                  <p className="text-xs text-white/60 mt-0.5">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="hidden lg:block">
-            <DashboardMockup />
-          </div>
+      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-12 text-center">
+        <p className="text-xs sm:text-sm font-bold tracking-widest uppercase text-white/70">
+          Built for Tanzanian private schools
+        </p>
+        <h1 className="mt-4 text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tighter text-white">
+          One system for students, fees, attendance, exams, staff, and{' '}
+          <span className="text-accent">parents</span>
+        </h1>
+        <p className="mt-6 text-base sm:text-lg text-white/80 max-w-2xl mx-auto">
+          Shule SMS brings your whole school onto one platform — TZS-native billing, a real
+          2-term / 4-quarter calendar, and SMS alerts parents actually see.
+        </p>
+        <div className="mt-9 max-w-md mx-auto flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="#demo" className={`w-full sm:w-auto ${BTN_PRIMARY}`}>
+            Request a demo
+          </a>
+          <Link to="/login" className={`w-full sm:w-auto ${BTN_OUTLINE_LIGHT}`}>
+            Staff login
+          </Link>
         </div>
+      </div>
+
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pb-20 sm:pb-28">
+        <DashboardMockup />
       </div>
     </section>
   )
 }
 
-function CapabilityBand() {
+function StatsBand() {
   return (
-    <section className="bg-gradient-to-r from-primary to-secondary">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        {CAPABILITIES.map((c) => (
-          <div key={c.label}>
-            <p className="text-xl sm:text-2xl font-bold text-white">{c.value}</p>
-            <p className="text-xs sm:text-sm text-white/70 mt-1">{c.label}</p>
+    <section className="bg-white border-b border-gray-100">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 flex flex-wrap justify-center text-center">
+        {CAPABILITIES.map((c, i) => (
+          <div
+            key={c.label}
+            className={`w-1/2 md:w-1/4 px-4 py-4 ${i > 0 ? 'md:border-l md:border-gray-100' : ''}`}
+          >
+            <p className="text-2xl sm:text-3xl font-bold tracking-tighter text-primary whitespace-nowrap">
+              {c.value}
+            </p>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-gray-500">{c.label}</p>
           </div>
         ))}
       </div>
@@ -341,25 +359,19 @@ function CapabilityBand() {
 function Features() {
   return (
     <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-      <div className="text-center max-w-xl mx-auto mb-14">
-        <span className="text-xs font-semibold tracking-widest uppercase text-secondary">What's included</span>
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">
-          Everything the school office needs
-        </h2>
-        <p className="mt-3 text-sm sm:text-base text-gray-500">
-          Six modules, one login — no more juggling spreadsheets and paper registers.
-        </p>
-      </div>
+      <SectionHeading
+        tagline="What's included"
+        title="Everything the school office needs"
+        subtitle="Six modules, one login — no more juggling spreadsheets and paper registers."
+      />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {FEATURES.map(({ icon: Icon, title, description }) => (
+        {FEATURES.map(({ icon, title, description }) => (
           <div
             key={title}
             className="p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow"
           >
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-              <Icon className="w-5 h-5 text-primary" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1.5">{title}</h3>
+            <IconBadge icon={icon} />
+            <h3 className="font-semibold text-gray-900 mt-4 mb-1.5">{title}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
           </div>
         ))}
@@ -410,32 +422,35 @@ function PhoneMockup() {
 function ParentSpotlight() {
   return (
     <section id="parents" className="bg-surface border-y border-gray-100">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
-        <div className="order-2 lg:order-1">
-          <span className="text-xs font-semibold tracking-widest uppercase text-secondary">For parents</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">
-            Parents stay in the loop, automatically
-          </h2>
-          <p className="mt-3 text-sm sm:text-base text-gray-500 max-w-md">
-            Every guardian gets their own portal — no separate app to install, no waiting for a
-            phone call from the school office.
-          </p>
-          <div className="mt-8 space-y-6">
-            {PARENT_FEATURES.map(({ icon: Icon, title, description }) => (
-              <div key={title} className="flex gap-4">
-                <span className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Icon className="w-5 h-5 text-primary" />
-                </span>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{title}</h3>
-                  <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{description}</p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="order-2 lg:order-1">
+            <p className="text-xs font-bold tracking-widest uppercase text-secondary">For parents</p>
+            <h2 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tighter text-gray-900">
+              Parents stay in the loop, automatically
+            </h2>
+            <p className="mt-4 text-base text-gray-500 max-w-md leading-relaxed">
+              Every guardian gets their own portal — no separate app to install, no waiting for a
+              phone call from the school office.
+            </p>
+            <div className="mt-8 space-y-6">
+              {PARENT_FEATURES.map(({ icon, title, description }) => (
+                <div key={title} className="flex gap-4">
+                  <IconBadge icon={icon} />
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{title}</h3>
+                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{description}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="order-1 lg:order-2">
-          <PhoneMockup />
+          <div className="order-1 lg:order-2">
+            <div className="relative">
+              <div className="absolute inset-0 -z-10 bg-primary/5 rounded-[3rem] scale-110" aria-hidden="true" />
+              <PhoneMockup />
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -445,18 +460,16 @@ function ParentSpotlight() {
 function RolesSection() {
   return (
     <section id="roles" className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-      <div className="text-center max-w-xl mx-auto mb-14">
-        <span className="text-xs font-semibold tracking-widest uppercase text-secondary">Access control</span>
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">Built for every role</h2>
-        <p className="mt-3 text-sm sm:text-base text-gray-500">
-          Each person signs in and sees exactly what their job needs — nothing more.
-        </p>
-      </div>
+      <SectionHeading
+        tagline="Access control"
+        title="Built for every role"
+        subtitle="Each person signs in and sees exactly what their job needs — nothing more."
+      />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {ROLES.map((role) => (
           <div
             key={role.name}
-            className="rounded-xl border border-gray-100 bg-white shadow-sm p-4"
+            className="rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow p-4"
           >
             <p className="font-semibold text-gray-900 text-sm">{role.name}</p>
             <p className="text-xs text-gray-500 mt-1">{role.description}</p>
@@ -471,18 +484,11 @@ function Reasons() {
   return (
     <section className="bg-surface border-y border-gray-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-        <div className="text-center max-w-xl mx-auto mb-14">
-          <span className="text-xs font-semibold tracking-widest uppercase text-secondary">Why Shule SMS</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">
-            Not a generic template
-          </h2>
-        </div>
+        <SectionHeading tagline="Why Shule SMS" title="Not a generic template" />
         <div className="grid sm:grid-cols-2 gap-6">
-          {REASONS.map(({ icon: Icon, title, description }) => (
+          {REASONS.map(({ icon, title, description }) => (
             <div key={title} className="flex gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <span className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Icon className="w-5 h-5 text-primary" />
-              </span>
+              <IconBadge icon={icon} size="lg" />
               <div>
                 <h3 className="font-semibold text-gray-900">{title}</h3>
                 <p className="text-sm text-gray-500 mt-1 leading-relaxed">{description}</p>
@@ -526,7 +532,7 @@ function DemoRequestForm() {
 
   if (submitted) {
     return (
-      <div className="max-w-md mx-auto text-center bg-white rounded-2xl shadow-sm p-8">
+      <div className="max-w-md mx-auto text-center bg-white rounded-2xl shadow-xl p-8">
         <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-6 h-6 text-success" />
         </div>
@@ -546,7 +552,7 @@ function DemoRequestForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="max-w-md mx-auto bg-white rounded-2xl shadow-sm p-6 sm:p-8 space-y-4"
+      className="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8 space-y-4"
     >
       {error && (
         <div className="px-3 py-2.5 bg-red-50 border border-red-200 text-danger text-sm rounded-lg">
@@ -614,7 +620,7 @@ function DemoRequestForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-2.5 px-4 bg-accent hover:brightness-95 text-white rounded-lg text-sm font-medium transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className={`w-full ${BTN_PRIMARY} disabled:opacity-60 disabled:cursor-not-allowed gap-2`}
       >
         {submitting && (
           <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
@@ -637,19 +643,19 @@ function DemoSection() {
         }}
       />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20">
-        <div className="text-center max-w-xl mx-auto mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">See it on your own school</h2>
-          <p className="mt-3 text-sm sm:text-base text-white/70">
-            Tell us a bit about you and we'll set up a walkthrough.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2">
-            {checklist.map((item) => (
-              <span key={item} className="inline-flex items-center gap-1.5 text-xs text-white/70">
-                <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-                {item}
-              </span>
-            ))}
-          </div>
+        <SectionHeading
+          dark
+          tagline="Get started"
+          title="See it on your own school"
+          subtitle="Tell us a bit about you and we'll set up a walkthrough."
+        />
+        <div className="-mt-8 mb-10 flex flex-wrap justify-center gap-x-6 gap-y-2">
+          {checklist.map((item) => (
+            <span key={item} className="inline-flex items-center gap-1.5 text-xs text-white/70">
+              <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              {item}
+            </span>
+          ))}
         </div>
         <DemoRequestForm />
       </div>
@@ -664,7 +670,7 @@ function Footer() {
         <div>
           <div className="flex items-center gap-2.5">
             <img src={logo} alt="Shule SMS" className="w-8 h-8 rounded-lg object-contain bg-white/10" />
-            <span className="text-white font-semibold">Shule SMS</span>
+            <span className="text-white font-bold tracking-tight">Shule SMS</span>
           </div>
           <p className="text-xs text-white/60 mt-3 leading-relaxed max-w-[220px]">
             School management built for the way Tanzanian private schools actually run.
@@ -711,7 +717,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       <NavBar />
       <Hero />
-      <CapabilityBand />
+      <StatsBand />
       <Features />
       <ParentSpotlight />
       <RolesSection />

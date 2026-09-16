@@ -23,6 +23,7 @@ import {
 import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
 import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformancePanels'
 import StatCard from '../../components/ui/StatCard'
+import Card from '../../components/ui/Card'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { getDashboardSummary } from '../../api/dashboard'
@@ -38,11 +39,11 @@ function Skeleton({ className }) {
 
 function StatCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <Card>
       <Skeleton className="h-3 w-24 mb-3" />
       <Skeleton className="h-7 w-36 mb-2" />
       <Skeleton className="h-3 w-20" />
-    </div>
+    </Card>
   )
 }
 
@@ -248,7 +249,7 @@ export default function DashboardPage() {
       {/* ── Upcoming exams + quick links ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {examsEnabled && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-700">Upcoming Exams</h2>
               <Link to="/exams" className="text-xs text-primary hover:underline">
@@ -281,7 +282,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         )}
 
         <div className={showQuickLinksBeside ? '' : 'lg:col-span-2'}>
@@ -294,7 +295,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Revenue bar chart */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             Monthly Revenue ({new Date().getFullYear()})
           </h2>
@@ -338,10 +339,10 @@ export default function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </Card>
 
         {/* Top 5 defaulters */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             Top Fee Defaulters
           </h2>
@@ -413,7 +414,7 @@ export default function DashboardPage() {
               </table>
             </div>
           )}
-        </div>
+        </Card>
       </div>
       )}
     </div>

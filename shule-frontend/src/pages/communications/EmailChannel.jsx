@@ -27,8 +27,11 @@ import {
 } from '../../api/communications'
 import { getStudents } from '../../api/students'
 import Skeleton from '../../components/ui/Skeleton'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -197,10 +200,8 @@ function QuickActionBtn({ label, desc, Icon, loading, onClick, variant }) {
 
 // ── Compose tab ───────────────────────────────────────────────────────────────
 
-const selectCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+const selectCls = `${baseSelectCls} w-full`
+const inputCls = `${baseInputCls} w-full`
 
 function ComposeTab({ onSwitchToSms }) {
   const queryClient = useQueryClient()
@@ -320,7 +321,7 @@ function ComposeTab({ onSwitchToSms }) {
     <div className="space-y-5">
 
       {/* 1 · Channel */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <Card>
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Channel</h2>
         <div className="grid grid-cols-2 gap-3">
           {CHANNELS.map(({ value, label, Icon, hint }) => {
@@ -342,10 +343,10 @@ function ComposeTab({ onSwitchToSms }) {
             )
           })}
         </div>
-      </div>
+      </Card>
 
       {/* 2 · Audience */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+      <Card className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-700">Audience</h2>
           {recipientCount !== null && (
@@ -420,11 +421,11 @@ function ComposeTab({ onSwitchToSms }) {
             />
           </div>
         )}
-      </div>
+      </Card>
 
       {/* 3 · Subject (email only) */}
       {channel === 'EMAIL' && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
           <input
             value={subject}
@@ -432,11 +433,11 @@ function ComposeTab({ onSwitchToSms }) {
             placeholder="e.g. End of Term 2 Results Available"
             className={inputCls}
           />
-        </div>
+        </Card>
       )}
 
       {/* 4 · Message body */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-2">
+      <Card className="space-y-2">
         <label className="text-sm font-semibold text-gray-700">Message</label>
         <textarea
           value={body}
@@ -446,13 +447,13 @@ function ComposeTab({ onSwitchToSms }) {
           className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-none
             focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
         />
-      </div>
+      </Card>
 
       {/* 5 · Preview */}
       {body.trim() && channel === 'EMAIL' && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <EmailPreview subject={subject} body={body} />
-        </div>
+        </Card>
       )}
 
       {/* 6 · Send */}
@@ -477,7 +478,7 @@ function ComposeTab({ onSwitchToSms }) {
 
       {/* 8 · Quick actions */}
       {(attendanceEnabled || feesEnabled) && (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+      <Card className="space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <Zap size={15} className="text-accent shrink-0" />
           <h2 className="text-sm font-semibold text-gray-700">Quick Actions</h2>
@@ -504,7 +505,7 @@ function ComposeTab({ onSwitchToSms }) {
             />
           )}
         </div>
-      </div>
+      </Card>
       )}
 
     </div>
@@ -674,7 +675,7 @@ function HistoryTab() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+      <Card padding="p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Channel</label>
@@ -706,13 +707,13 @@ function HistoryTab() {
               className={filterCls}
             />
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => { setChannelFilter(''); setDateFrom(''); setDateTo('') }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-xs text-gray-500
-              hover:bg-gray-50 transition-colors"
           >
             Clear
-          </button>
+          </Button>
           <button
             onClick={() => refetch()}
             className="p-2 border border-gray-300 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors"
@@ -721,7 +722,7 @@ function HistoryTab() {
             <RefreshCw size={14} />
           </button>
         </div>
-      </div>
+      </Card>
 
       {/* Message list */}
       {isLoading ? (
@@ -729,16 +730,16 @@ function HistoryTab() {
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
         </div>
       ) : isError ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center">
+        <Card padding="p-8" className="text-center">
           <p className="text-sm text-danger">Failed to load history.</p>
-        </div>
+        </Card>
       ) : messages.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+        <Card padding="p-12" className="text-center">
           <MessageSquare size={36} className="mx-auto text-gray-200 mb-3" />
           <p className="text-sm text-gray-400">No messages sent yet.</p>
-        </div>
+        </Card>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <Card padding="p-0" className="overflow-hidden">
           <div className="divide-y divide-gray-50">
             {messages.map((msg) => (
               <MessageRow
@@ -754,7 +755,7 @@ function HistoryTab() {
               Showing {messages.length} of {histData.count} messages
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   )

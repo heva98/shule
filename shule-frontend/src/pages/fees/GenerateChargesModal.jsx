@@ -5,11 +5,11 @@ import toast from 'react-hot-toast'
 import { getAcademicYears } from '../../api/fees'
 import { generateCharges } from '../../api/feeCharges'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
+import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
+import Button from '../../components/ui/Button'
 
-const selectCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
-const inputCls = `w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
+const selectCls = `${baseSelectCls} w-full`
+const inputCls = `${baseInputCls} w-full`
 
 const QUARTER_MAP = {
   TERM1: [{ value: 'Q1', label: 'Quarter 1' }, { value: 'Q2', label: 'Quarter 2' }],
@@ -74,10 +74,9 @@ export default function GenerateChargesModal({ onClose }) {
               {result.created} created · {result.updated} updated · {result.voided} voided<br />
               {result.skipped_paid} left (already paid) · {result.students} students touched
             </p>
-            <button onClick={onClose}
-              className="mt-6 px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary">
+            <Button onClick={onClose} className="mt-6">
               Close
-            </button>
+            </Button>
           </div>
         ) : (
           <form onSubmit={submit} className="px-6 py-5 space-y-4">
@@ -142,15 +141,13 @@ export default function GenerateChargesModal({ onClose }) {
             </p>
 
             <div className="flex justify-end gap-3 pt-1">
-              <button type="button" onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
-              </button>
-              <button type="submit" disabled={mut.isPending || !form.academic_year}
-                className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary disabled:opacity-60">
+              </Button>
+              <Button type="submit" disabled={mut.isPending || !form.academic_year}>
                 {mut.isPending && <Loader2 size={14} className="animate-spin" />}
                 {mut.isPending ? 'Generating…' : 'Generate'}
-              </button>
+              </Button>
             </div>
           </form>
         )}

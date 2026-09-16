@@ -34,6 +34,8 @@ import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import Skeleton from '../../components/ui/Skeleton'
 import Tabs from '../../components/ui/Tabs'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
 import {
@@ -175,12 +177,10 @@ function GuardianModal({ studentPublicId, guardian, onClose, onSaved }) {
           Primary contact
         </label>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={saveMut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={saveMut.isPending} className="flex-1">
             {saveMut.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Guardian'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -201,11 +201,10 @@ function DeleteGuardianModal({ guardian, onClose, onDeleted }) {
       <div className="p-6 space-y-4">
         <p className="text-sm text-gray-600">Remove <strong>{guardian.full_name}</strong> as a guardian? This cannot be undone.</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button variant="danger" onClick={() => mut.mutate()} disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Removing…' : 'Remove'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -228,7 +227,7 @@ function OverviewTab({ student, canManage }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Personal details */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <Card>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Personal Details</h3>
         <dl>
           <DetailRow label="Student ID"   value={student.student_id} />
@@ -243,7 +242,7 @@ function OverviewTab({ student, canManage }) {
             <DetailRow label="Special Needs" value={student.special_needs_notes || 'Yes'} />
           )}
         </dl>
-      </div>
+      </Card>
 
       {/* Guardian cards */}
       <div className="space-y-3">
@@ -260,16 +259,13 @@ function OverviewTab({ student, canManage }) {
         </div>
 
         {student.guardians?.length === 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-sm text-gray-400">
+          <Card className="text-sm text-gray-400">
             No guardians on record.
-          </div>
+          </Card>
         )}
         {student.guardians?.map((g) => {
           return (
-            <div
-              key={g.id}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm p-5"
-            >
+            <Card key={g.id}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{g.full_name}</p>
@@ -303,7 +299,7 @@ function OverviewTab({ student, canManage }) {
                   {g.phone}
                 </a>
               </div>
-            </div>
+            </Card>
           )
         })}
       </div>
@@ -346,30 +342,30 @@ function FeesTab({ studentId }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+      <Card className="space-y-3">
         {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
-      </div>
+      </Card>
     )
   }
 
   if (isError) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <Card>
         <p className="text-sm text-danger text-center">Failed to load invoices.</p>
-      </div>
+      </Card>
     )
   }
 
   if (invoices.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center">
+      <Card padding="p-8" className="text-center">
         <p className="text-sm text-gray-400">No invoices found for this student.</p>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <Card padding="p-0" className="overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50/60">
@@ -408,7 +404,7 @@ function FeesTab({ studentId }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </Card>
   )
 }
 
@@ -445,22 +441,19 @@ function AttendanceTab({ studentId }) {
       {/* Summary cards */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center"
-          >
+          <Card key={s.label} padding="p-4" className="text-center">
             {sumLoading ? (
               <Skeleton className="h-6 w-12 mx-auto mb-1" />
             ) : (
               <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
             )}
             <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
-          </div>
+          </Card>
         ))}
       </div>
 
       {/* Records table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100">
           <p className="text-sm font-medium text-gray-700">Recent Records</p>
         </div>
@@ -502,7 +495,7 @@ function AttendanceTab({ studentId }) {
             </tbody>
           </table>
         )}
-      </div>
+      </Card>
     </div>
   )
 }
@@ -532,7 +525,7 @@ function ResultsTab({ student }) {
   return (
     <div className="space-y-5">
       {/* Exam selector */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <Card>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">
           Select Exam
         </label>
@@ -558,23 +551,23 @@ function ResultsTab({ student }) {
             No exams found for {LEVEL_LABEL[student.level] ?? student.level}.
           </p>
         )}
-      </div>
+      </Card>
 
       {/* Report card */}
       {selectedExam && (
         <>
           {rcLoading ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+            <Card className="space-y-3">
               {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-full rounded" />)}
-            </div>
+            </Card>
           ) : rcError ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <Card>
               <p className="text-sm text-danger text-center">
                 Failed to load report card. The student may not have results for this exam.
               </p>
-            </div>
+            </Card>
           ) : reportCard ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <Card padding="p-0" className="overflow-hidden">
               {/* Report header */}
               <div className="p-5 border-b border-gray-100">
                 <div className="flex items-start justify-between">
@@ -585,22 +578,12 @@ function ResultsTab({ student }) {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={printReportCard}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300
-                        rounded-lg text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                    >
-                      <Printer size={13} />
+                    <Button variant="outline" size="sm" icon={Printer} onClick={printReportCard}>
                       Print
-                    </button>
-                    <button
-                      onClick={printReportCard}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white
-                        rounded-lg text-xs font-medium hover:bg-secondary transition-colors"
-                    >
-                      <Download size={13} />
+                    </Button>
+                    <Button size="sm" icon={Download} onClick={printReportCard}>
                       Download
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -673,7 +656,7 @@ function ResultsTab({ student }) {
                   )}
                 </div>
               )}
-            </div>
+            </Card>
           ) : null}
         </>
       )}
@@ -740,12 +723,10 @@ function UploadDocumentModal({ studentId, onClose }) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={!file || saveMut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={!file || saveMut.isPending} className="flex-1">
             {saveMut.isPending ? 'Uploading…' : 'Upload'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -770,11 +751,10 @@ function DeleteDocumentModal({ doc, studentId, onClose }) {
           Remove <strong>{doc.title || doc.category_display}</strong>? This cannot be undone.
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={() => mut.mutate()} disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-danger text-white rounded-lg text-sm font-medium hover:bg-danger/90 disabled:opacity-50">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button variant="danger" onClick={() => mut.mutate()} disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Removing…' : 'Remove'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -811,27 +791,26 @@ function DocumentsTab({ studentId }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => setShowUpload(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-          <Plus size={14} /> Upload Document
-        </button>
+        <Button icon={Plus} onClick={() => setShowUpload(true)}>
+          Upload Document
+        </Button>
       </div>
 
       {isLoading ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <Card className="space-y-3">
           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
-        </div>
+        </Card>
       ) : isError ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <Card>
           <p className="text-sm text-danger text-center">Failed to load documents.</p>
-        </div>
+        </Card>
       ) : documents.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center">
+        <Card padding="p-8" className="text-center">
           <FileText size={28} className="mx-auto text-gray-200 mb-2" />
           <p className="text-sm text-gray-400">No documents on file for this student.</p>
-        </div>
+        </Card>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+        <Card padding="p-0" className="divide-y divide-gray-50">
           {documents.map((doc) => (
             <div key={doc.id} className="flex items-center gap-3 px-4 py-3">
               <span className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -857,7 +836,7 @@ function DocumentsTab({ studentId }) {
               </button>
             </div>
           ))}
-        </div>
+        </Card>
       )}
 
       {showUpload && <UploadDocumentModal studentId={studentId} onClose={() => setShowUpload(false)} />}
@@ -898,14 +877,14 @@ export default function StudentDetailPage() {
     return (
       <div className="space-y-5">
         {/* Header skeleton */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-center gap-5">
+        <Card padding="p-6" className="flex items-center gap-5">
           <Skeleton className="w-20 h-20 rounded-full shrink-0" />
           <div className="space-y-2 flex-1">
             <Skeleton className="h-5 w-48" />
             <Skeleton className="h-3.5 w-32" />
             <Skeleton className="h-5 w-20 rounded" />
           </div>
-        </div>
+        </Card>
         <InfoSkeleton />
       </div>
     )
@@ -913,7 +892,7 @@ export default function StudentDetailPage() {
 
   if (isError || !student) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+      <Card padding="p-12" className="text-center">
         <User size={40} className="mx-auto text-gray-200 mb-3" />
         <p className="text-sm text-danger">Student not found or failed to load.</p>
         <button
@@ -922,7 +901,7 @@ export default function StudentDetailPage() {
         >
           Back to Students
         </button>
-      </div>
+      </Card>
     )
   }
 
@@ -930,7 +909,7 @@ export default function StudentDetailPage() {
     <div className="space-y-5">
 
       {/* ── Profile header ── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <Card>
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/students')}
@@ -968,16 +947,17 @@ export default function StudentDetailPage() {
           </div>
 
           {!readOnly && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => navigate(`/students/${id}/edit`)}
-              className="shrink-0 px-3 py-1.5 border border-gray-300 rounded-lg text-sm
-                text-gray-600 hover:bg-gray-50 transition-colors"
+              className="shrink-0"
             >
               Edit
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* ── Tabs ── */}
       <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />

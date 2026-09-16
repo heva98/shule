@@ -8,6 +8,8 @@ import {
 } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
 import Modal from '../../components/ui/Modal'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 
 const LG_BADGE = {
@@ -65,12 +67,10 @@ function SubjectModal({ subject, onClose }) {
           Compulsory subject
         </label>
         <div className="flex gap-3">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={mut.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
             {mut.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Subject'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -101,8 +101,7 @@ function ToggleStatusModal({ subject, onClose }) {
           }
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
           <button onClick={() => mut.mutate()} disabled={mut.isPending}
             className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50 ${activating ? 'bg-green-600 hover:bg-green-700' : 'bg-danger hover:bg-danger/90'}`}>
             {mut.isPending
@@ -145,13 +144,10 @@ function SubjectsTab() {
           <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} className="rounded" />
           Show inactive
         </label>
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90">
-          <Plus size={14} /> Add Subject
-        </button>
+        <Button icon={Plus} onClick={() => setShowAdd(true)}>Add Subject</Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -223,7 +219,7 @@ function SubjectsTab() {
             )}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       {showAdd && <SubjectModal onClose={() => setShowAdd(false)} />}
       {editSubj && <SubjectModal subject={editSubj} onClose={() => setEditSubj(null)} />}
@@ -253,19 +249,19 @@ function ClassesTab() {
       {q.isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
+            <Card key={i} padding="p-4" className="animate-pulse">
               <div className="h-5 bg-gray-100 rounded mb-2" />
               <div className="h-3 bg-gray-100 rounded w-1/2" />
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {classes.map(([cls, count]) => (
-            <div key={cls} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <Card key={cls} padding="p-4">
               <p className="font-bold text-gray-900 text-lg">{cls}</p>
               <p className="text-xs text-gray-500 mt-1">{count} student{count !== 1 ? 's' : ''}</p>
-            </div>
+            </Card>
           ))}
           {classes.length === 0 && (
             <div className="col-span-full text-center py-10 text-gray-400 text-sm">

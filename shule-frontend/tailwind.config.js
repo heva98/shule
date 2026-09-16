@@ -11,6 +11,12 @@ export default {
         danger:    '#E74C3C',
         surface:   '#F8F9FA',
       },
+      fontFamily: {
+        sans: ['"Public Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 15px 1px rgba(69, 65, 78, 0.08)',
+      },
     },
   },
   plugins: [],

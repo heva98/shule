@@ -15,6 +15,9 @@ import {
 import { getSubjects } from '../../api/exams'
 import { createUser } from '../../api/sysadmin'
 import { ROLE_LABEL } from '../../lib/constants'
+import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -87,9 +90,8 @@ const daysBetween = (s, e) => {
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
-const inputCls =
-  'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]'
-const selectCls = `${inputCls} bg-white`
+const inputCls = `${baseInputCls} w-full`
+const selectCls = `${baseSelectCls} w-full`
 
 function Bdg({ cls = '', children }) {
   return (
@@ -547,14 +549,12 @@ function AddStaffModal({ onClose }) {
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={onClose}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
-              </button>
-              <button type="submit" disabled={loading}
-                className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154060] disabled:opacity-60">
+              </Button>
+              <Button type="submit" disabled={loading}>
                 {loading ? 'Creating…' : 'Next →'}
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
@@ -563,14 +563,12 @@ function AddStaffModal({ onClose }) {
               <ProfileFields form={profile} set={setP} subjects={subjects} />
             </div>
             <div className="flex justify-between p-5 border-t">
-              <button type="button" onClick={() => setStep(1)}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+              <Button type="button" variant="outline" onClick={() => setStep(1)}>
                 ← Back
-              </button>
-              <button type="submit" disabled={loading}
-                className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154060] disabled:opacity-60">
+              </Button>
+              <Button type="submit" disabled={loading}>
                 {loading ? 'Saving…' : 'Add Staff Member'}
-              </button>
+              </Button>
             </div>
           </form>
         )}
@@ -642,12 +640,9 @@ function StaffModal({ staff, canEdit, onClose }) {
           </div>
           <div className="flex items-center gap-2">
             {canEdit && !editing && (
-              <button
-                onClick={() => setEditing(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                <Edit2 size={14} /> Edit
-              </button>
+              <Button variant="outline" size="sm" icon={Edit2} onClick={() => setEditing(true)}>
+                Edit
+              </Button>
             )}
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <X size={20} />
@@ -661,14 +656,12 @@ function StaffModal({ staff, canEdit, onClose }) {
               <ProfileFields form={form} set={set} subjects={subjects} />
             </div>
             <div className="flex justify-between p-5 border-t">
-              <button type="button" onClick={() => setEditing(false)}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+              <Button type="button" variant="outline" onClick={() => setEditing(false)}>
                 Cancel
-              </button>
-              <button type="submit" disabled={mutation.isPending}
-                className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154060] disabled:opacity-60">
+              </Button>
+              <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? 'Saving…' : 'Save Changes'}
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
@@ -813,14 +806,12 @@ function NewLeaveModal({ staffList, onClose }) {
               onChange={e => set('reason', e.target.value)} placeholder="Brief reason for leave…" />
           </F>
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" disabled={mutation.isPending}
-              className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154060] disabled:opacity-60">
+            </Button>
+            <Button type="submit" disabled={mutation.isPending}>
               {mutation.isPending ? 'Submitting…' : 'Submit Request'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -869,13 +860,13 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
           { label: 'Dept. Heads', value: hods, icon: <Shield size={16} />, clr: 'text-purple-600', bg: 'bg-purple-50' },
           { label: 'Subjects', value: '—', icon: <GraduationCap size={16} />, clr: 'text-emerald-600', bg: 'bg-emerald-50' },
         ].map(stat => (
-          <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4">
+          <Card key={stat.label} padding="p-4">
             <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg ${stat.bg} ${stat.clr} text-xs font-medium mb-2`}>
               {stat.icon}
               {stat.label}
             </div>
             <p className="text-2xl font-bold text-gray-900">{isLoading ? '…' : stat.value}</p>
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -899,17 +890,14 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
           {DESIG.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         {canCreateAccount && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1B4F72] text-white text-sm rounded-lg hover:bg-[#154060] whitespace-nowrap"
-          >
-            <Plus size={16} /> Add Staff
-          </button>
+          <Button icon={Plus} onClick={() => setShowAdd(true)} className="whitespace-nowrap">
+            Add Staff
+          </Button>
         )}
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-gray-400 text-sm">Loading staff…</div>
         ) : displayed.length === 0 ? (
@@ -989,26 +977,26 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
               –{(page - 1) * 20 + staff.length} of {total} staff members
             </p>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={!data?.previous}
-                className="px-2.5 py-1 text-xs border border-gray-300 rounded-md text-gray-600
-                  hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Prev
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setPage(p => p + 1)}
                 disabled={!data?.next}
-                className="px-2.5 py-1 text-xs border border-gray-300 rounded-md text-gray-600
-                  hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }
@@ -1065,16 +1053,13 @@ function LeaveTab({ canApprove, allStaff }) {
           ))}
         </div>
         {canApprove && (
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1B4F72] text-white text-sm rounded-lg hover:bg-[#154060]"
-          >
-            <Plus size={16} /> New Request
-          </button>
+          <Button icon={Plus} onClick={() => setShowNew(true)}>
+            New Request
+          </Button>
         )}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <Card padding="p-0" className="overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-gray-400 text-sm">Loading leave requests…</div>
         ) : leaves.length === 0 ? (
@@ -1150,7 +1135,7 @@ function LeaveTab({ canApprove, allStaff }) {
             </tbody>
           </table>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

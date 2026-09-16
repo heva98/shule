@@ -33,7 +33,7 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className={`w-full ${SIZE_CLS[size] ?? SIZE_CLS.md} bg-white rounded-xl shadow-xl`}
+        className={`w-full ${SIZE_CLS[size] ?? SIZE_CLS.md} bg-white rounded-xl shadow-card`}
         onClick={e => e.stopPropagation()}
       >
         {!hideHeader && (

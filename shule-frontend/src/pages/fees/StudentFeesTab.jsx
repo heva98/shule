@@ -8,21 +8,21 @@ import {
   reversePayment, voidInvoiceLine,
 } from '../../api/feeCharges'
 import Badge from '../../components/ui/Badge'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import ReceiptView from '../../components/fees/ReceiptView'
 import ReceivePaymentModal from '../../components/fees/ReceivePaymentModal'
 import StudentPicker from '../../components/fees/StudentPicker'
 import UniformSaleModal from '../../components/fees/UniformSaleModal'
 import { LEVEL_LABEL } from '../../lib/constants'
 import { formatTZS } from '../../lib/format'
+import { selectCls } from '../../lib/formStyles'
 import GenerateChargesModal from './GenerateChargesModal'
-
-const selectCls = `border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-  focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary`
 
 function SummaryTable({ summary }) {
   const t = summary.totals
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <Card padding="p-0" className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -76,7 +76,7 @@ function SummaryTable({ summary }) {
           <span className="font-semibold text-gray-900">{formatTZS(summary.net_outstanding)}</span>
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -105,7 +105,7 @@ function PaymentsList({ studentId, yearId }) {
   if (payments.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <Card padding="p-0" className="overflow-hidden">
       <div className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
         Payments
       </div>
@@ -149,7 +149,7 @@ function PaymentsList({ studentId, yearId }) {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -175,7 +175,7 @@ function LinesList({ studentId, yearId }) {
   if (active.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <Card padding="p-0" className="overflow-hidden">
       <div className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
         Individual charges
       </div>
@@ -204,7 +204,7 @@ function LinesList({ studentId, yearId }) {
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -249,24 +249,18 @@ export default function StudentFeesTab() {
           <option value="">Year…</option>
           {years.map((y) => <option key={y.id} value={y.id}>{y.year}{y.is_current ? ' (Current)' : ''}</option>)}
         </select>
-        <button
-          onClick={() => setShowSale(true)}
-          className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          <Shirt size={15} /> Uniform Sale
-        </button>
-        <button
-          onClick={() => setShowGenerate(true)}
-          className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary"
-        >
-          <Sparkles size={15} /> Generate Charges
-        </button>
+        <Button variant="outline" icon={Shirt} onClick={() => setShowSale(true)}>
+          Uniform Sale
+        </Button>
+        <Button icon={Sparkles} className="ml-auto" onClick={() => setShowGenerate(true)}>
+          Generate Charges
+        </Button>
       </div>
 
       {!student ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-sm text-gray-400">
+        <Card padding="p-12" className="text-center text-sm text-gray-400">
           Search for a student to view their fee assignment.
-        </div>
+        </Card>
       ) : (
         <>
           <div className="flex items-center gap-3 flex-wrap">
@@ -276,7 +270,9 @@ export default function StudentFeesTab() {
                 {student.student_id} · {LEVEL_LABEL[student.level] || student.level}
               </div>
             </div>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 const raw = window.prompt('Uniform amount override (leave blank for the standard class rate):')
                 if (raw === null) return
@@ -288,10 +284,10 @@ export default function StudentFeesTab() {
                 uniformMut.mutate(val)
               }}
               disabled={uniformMut.isPending || !yearId}
-              className="ml-auto px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className="ml-auto"
             >
               {uniformMut.isPending ? <Loader2 size={13} className="animate-spin inline" /> : 'Assign / update uniform'}
-            </button>
+            </Button>
             <button
               onClick={() => setShowReceive(true)}
               disabled={!yearId}
@@ -302,7 +298,7 @@ export default function StudentFeesTab() {
           </div>
 
           {isLoading || !summary ? (
-            <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-sm text-gray-400">Loading…</div>
+            <Card padding="p-10" className="text-center text-sm text-gray-400">Loading…</Card>
           ) : (
             <>
               <SummaryTable summary={summary} />

@@ -7,6 +7,8 @@ caller catches that and marks the recipient SKIPPED with a reason - a literal
 "{placeholder}" or "None" is never delivered.
 """
 
+from __future__ import annotations
+
 import string
 
 from .models import SmsLanguage, SmsTemplate, SmsTemplateKey
