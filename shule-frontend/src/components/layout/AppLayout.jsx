@@ -1,8 +1,10 @@
 import { Menu } from 'lucide-react'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
 import Sidebar from './Sidebar'
+import QuickSearch from './QuickSearch'
+import NotificationBell from './NotificationBell'
+import UserMenu from './UserMenu'
 
 const PATH_TITLES = {
   '/dashboard': 'Dashboard',
@@ -49,7 +51,6 @@ function ContentFallback() {
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user } = useAuth()
   const { pathname } = useLocation()
   const title = resolveTitle(pathname)
   const mainRef = useRef(null)
@@ -93,13 +94,11 @@ export default function AppLayout() {
             </button>
             <h1 className="text-base font-semibold text-gray-800">{title}</h1>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold">
-              {user?.full_name?.[0]?.toUpperCase() ?? 'U'}
-            </div>
-            <span className="hidden sm:block text-sm text-gray-700">
-              {user?.full_name}
-            </span>
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            <QuickSearch />
+            <NotificationBell />
+            <div className="w-px h-6 bg-gray-200 hidden sm:block" />
+            <UserMenu />
           </div>
         </header>
 

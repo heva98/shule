@@ -1,69 +1,9 @@
-import {
-  Activity,
-  BedDouble,
-  BookOpen,
-  Bus,
-  CalendarCheck,
-  CalendarDays,
-  CalendarRange,
-  ClipboardList,
-  Clock,
-  CreditCard,
-  FileBarChart2,
-  GraduationCap,
-  Heart,
-  HelpCircle,
-  LayoutDashboard,
-  Library,
-  LogOut,
-  MessageSquare,
-  Monitor,
-  Package,
-  ScrollText,
-  Settings,
-  Shield,
-  UserCog,
-  Users,
-  X,
-} from 'lucide-react'
+import { X } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { isModuleVisible, useEnabledModules } from '../../hooks/useEnabledModules'
+import { useNavItems } from '../../hooks/useNavItems'
 import logo from '../../assets/ShuleSMSLogo.png'
-import { FEATURE_ROLES, ROLE_LABEL } from '../../lib/constants'
-
-const ADMIN_ROLES = FEATURE_ROLES.ADMIN
-
-// `module: null` (or omitted) means core — always shown regardless of
-// ENABLED_MODULES. Everything else is filtered against it below.
-const NAV_ITEMS = [
-  { label: 'Dashboard',       path: '/dashboard',      icon: LayoutDashboard, roles: FEATURE_ROLES.DASHBOARD },
-  { label: 'Students',        path: '/students',       icon: GraduationCap,   roles: FEATURE_ROLES.STUDENTS },
-  { label: 'Fees',            path: '/fees',           icon: CreditCard,      roles: FEATURE_ROLES.FEES, module: 'fees' },
-  { label: 'Attendance',      path: '/attendance',     icon: CalendarCheck,   roles: FEATURE_ROLES.ATTENDANCE, module: 'attendance' },
-  { label: 'Timetable',       path: '/timetable',      icon: Clock,           roles: FEATURE_ROLES.TIMETABLE, module: 'timetable' },
-  { label: 'Boarding',        path: '/boarding',       icon: BedDouble,       roles: FEATURE_ROLES.BOARDING, module: 'boarding' },
-  { label: 'Library',         path: '/library',        icon: Library,         roles: FEATURE_ROLES.LIBRARY, module: 'library' },
-  { label: 'Transport',       path: '/transport',      icon: Bus,             roles: FEATURE_ROLES.TRANSPORT, module: 'transport' },
-  { label: 'Home Packages',   path: '/home-packages',  icon: Package,         roles: FEATURE_ROLES.HOME_PACKAGES, module: 'homepackages' },
-  { label: 'Exams',           path: '/exams',          icon: ClipboardList,   roles: FEATURE_ROLES.EXAMS, module: 'exams' },
-  { label: 'Exam Reports',    path: '/exams/reports',  icon: FileBarChart2,   roles: FEATURE_ROLES.EXAM_REPORTS, module: 'reports' },
-  { label: 'Staff',           path: '/staff',          icon: Users,           roles: FEATURE_ROLES.STAFF },
-  { label: 'Communications',  path: '/communications', icon: MessageSquare,   roles: FEATURE_ROLES.COMMUNICATIONS_HUB, modules: ['communications', 'sms'] },
-  { label: 'School Calendar', path: '/school-calendar',icon: CalendarRange,   roles: FEATURE_ROLES.SCHOOL_CALENDAR, module: 'school_calendar' },
-  { label: 'My Children',     path: '/parent',         icon: Heart,           roles: FEATURE_ROLES.PARENT },
-]
-
-const ADMIN_NAV_ITEMS = [
-  { label: 'System Dashboard',    path: '/admin-panel',                icon: Monitor },
-  { label: 'User Management',     path: '/admin-panel/users',          icon: UserCog },
-  { label: 'Role Assignment',     path: '/admin-panel/roles',          icon: Shield },
-  { label: 'Subjects & Classes',  path: '/admin-panel/subjects',       icon: BookOpen },
-  { label: 'Academic Year Setup', path: '/admin-panel/academic-years', icon: CalendarDays },
-  { label: 'School Settings',     path: '/admin-panel/settings',       icon: Settings },
-  { label: 'Audit Logs',          path: '/admin-panel/audit-logs',     icon: ScrollText },
-  { label: 'System Health',       path: '/admin-panel/system-health',  icon: Activity },
-]
+import { ROLE_LABEL } from '../../lib/constants'
 
 function NavItem({ item, onClose }) {
   const Icon = item.icon
@@ -83,7 +23,11 @@ function NavItem({ item, onClose }) {
     >
       {({ isActive }) => (
         <>
-          <Icon size={17} className={`shrink-0 ${isActive ? 'text-accent' : ''}`} />
+          <span className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0 transition-colors ${
+            isActive ? 'bg-accent/20 text-accent' : 'text-white/60'
+          }`}>
+            <Icon size={16} />
+          </span>
           <span className="flex-1">{item.label}</span>
         </>
       )}
@@ -92,21 +36,9 @@ function NavItem({ item, onClose }) {
 }
 
 export default function Sidebar({ onClose }) {
-  const { user, logout } = useAuth()
-  const { enabledModules, modulesLoading } = useEnabledModules()
+  const { user } = useAuth()
+  const { regularItems, adminItems, showAdmin } = useNavItems()
   const role = user?.role ?? ''
-  const isAdmin = ADMIN_ROLES.includes(role)
-
-  const regularItems = NAV_ITEMS.filter(item => {
-    if (!item.roles.includes(role)) return false
-    // `modules` (a list) means "visible if any one of these is on"; `module`
-    // (a single name) is the common case.
-    if (item.modules) {
-      return item.modules.some(m => isModuleVisible(m, enabledModules, modulesLoading))
-    }
-    return isModuleVisible(item.module, enabledModules, modulesLoading)
-  })
-  const showAdmin = isAdmin
 
   return (
     <aside className="flex flex-col h-full bg-primary text-white w-64 shrink-0">
@@ -147,7 +79,7 @@ export default function Sidebar({ onClose }) {
                 </p>
               </div>
             )}
-            {ADMIN_NAV_ITEMS.map(item => (
+            {adminItems.map(item => (
               <NavItem key={item.path} item={item} onClose={onClose} />
             ))}
           </>
@@ -155,29 +87,14 @@ export default function Sidebar({ onClose }) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-white/20 px-4 py-4 space-y-3">
-        <div>
-          <div className="text-sm font-medium truncate">{user?.full_name ?? 'User'}</div>
-          <span className="inline-block mt-1 text-[10px] bg-accent/80 text-white px-2 py-0.5 rounded-full">
-            {ROLE_LABEL[role] ?? role}
-          </span>
+      <div className="border-t border-white/20 px-4 py-3 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-xs font-semibold shrink-0">
+          {user?.full_name?.[0]?.toUpperCase() ?? 'U'}
         </div>
-        <a
-          href="/manual"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors w-full"
-        >
-          <HelpCircle size={15} />
-          User Manual
-        </a>
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors w-full"
-        >
-          <LogOut size={15} />
-          Sign out
-        </button>
+        <div className="min-w-0">
+          <div className="text-sm font-medium truncate">{user?.full_name ?? 'User'}</div>
+          <span className="text-[10px] text-white/50">{ROLE_LABEL[role] ?? role}</span>
+        </div>
       </div>
     </aside>
   )
