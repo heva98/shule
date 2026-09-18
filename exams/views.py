@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Avg, Count
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
@@ -22,11 +23,14 @@ from accounts.permissions import (
 from attendance.views import _is_own_child
 from students.models import Student
 
-from .models import Exam, LevelGroup, MarkEntry, Subject
+from .models import Exam, LevelGroup, MarkEntry, ReportCardRemark, StudentSkillAssessment, Subject
+from .report_card import render_report_card_pdf
 from .serializers import (
     BulkMarkSerializer,
     ExamSerializer,
     MarkEntrySerializer,
+    ReportCardRemarkSerializer,
+    StudentSkillAssessmentSerializer,
     SubjectSerializer,
 )
 from .utils import get_grade, get_form4_division, get_psle_aggregate
@@ -317,19 +321,22 @@ _REPORT_CARD_STAFF_ROLES = {
 }
 
 
+def _authorize_report_card_access(request, student):
+    role = request.user.role
+    if role == Role.PARENT:
+        if not _is_own_child(request.user, student.pk):
+            raise PermissionDenied('You do not have permission to view this report card.')
+    elif role not in _REPORT_CARD_STAFF_ROLES:
+        raise PermissionDenied('You do not have permission to view report cards.')
+
+
 class ReportCardView(APIView):
     module              = 'reports'
     permission_classes = [IsAuthenticated, ModuleEnabled]
 
     def get(self, request, public_id):
         student = get_object_or_404(Student, public_id=public_id)
-
-        role = request.user.role
-        if role == Role.PARENT:
-            if not _is_own_child(request.user, student.pk):
-                raise PermissionDenied('You do not have permission to view this report card.')
-        elif role not in _REPORT_CARD_STAFF_ROLES:
-            raise PermissionDenied('You do not have permission to view report cards.')
+        _authorize_report_card_access(request, student)
 
         exam_id = request.query_params.get('exam')
         if not exam_id:
@@ -429,6 +436,75 @@ class ReportCardView(APIView):
             'class_teacher': class_teacher.full_name if class_teacher else '',
             'headteacher':   headteacher.full_name if headteacher else '',
         })
+
+
+class ReportCardPDFView(APIView):
+    """GET /api/students/<public_id>/report-card/pdf/?exam=<id> — the same
+    report card as ReportCardView, rendered as a downloadable PDF using the
+    exams/report_card.html template."""
+    module              = 'reports'
+    permission_classes = [IsAuthenticated, ModuleEnabled]
+
+    def get(self, request, public_id):
+        student = get_object_or_404(Student, public_id=public_id)
+        _authorize_report_card_access(request, student)
+
+        exam_id = request.query_params.get('exam')
+        if not exam_id:
+            return Response(
+                {'detail': 'exam query param is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        exam = get_object_or_404(Exam, pk=exam_id)
+
+        pdf_bytes = render_report_card_pdf(student, exam)
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        filename = f'{student.student_id}-report-card.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+
+# ── Skills / conduct assessment ─────────────────────────────────────────────────
+
+class StudentSkillAssessmentViewSet(ModelViewSet):
+    module              = 'reports'
+    serializer_class    = StudentSkillAssessmentSerializer
+    permission_classes  = [IsAuthenticated, IsAcademicStaff, ModuleEnabled]
+
+    def get_queryset(self):
+        qs = StudentSkillAssessment.objects.select_related('student', 'exam')
+        p = self.request.query_params
+        if p.get('exam'):
+            qs = qs.filter(exam_id=p['exam'])
+        if p.get('student'):
+            qs = qs.filter(student__public_id=p['student'])
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(entered_by=self.request.user)
+
+
+# ── Report card remarks ──────────────────────────────────────────────────────────
+
+class ReportCardRemarkViewSet(ModelViewSet):
+    module              = 'reports'
+    serializer_class    = ReportCardRemarkSerializer
+    permission_classes  = [IsAuthenticated, IsAcademicStaff, ModuleEnabled]
+
+    def get_queryset(self):
+        qs = ReportCardRemark.objects.select_related('student', 'exam')
+        p = self.request.query_params
+        if p.get('exam'):
+            qs = qs.filter(exam_id=p['exam'])
+        if p.get('student'):
+            qs = qs.filter(student__public_id=p['student'])
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
 
 # ── Class Performance ─────────────────────────────────────────────────────────

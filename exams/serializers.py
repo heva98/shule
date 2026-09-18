@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from students.models import Student
 
-from .models import Exam, MarkEntry, Subject
+from .models import Exam, MarkEntry, ReportCardRemark, StudentSkillAssessment, Subject
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -78,3 +78,35 @@ class ReportCardSubjectSerializer(serializers.Serializer):
     score = serializers.DecimalField(max_digits=5, decimal_places=2)
     grade = serializers.CharField()
     remarks = serializers.CharField()
+
+
+# ── Skills / conduct assessment ───────────────────────────────────────────────
+
+class StudentSkillAssessmentSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.full_name', read_only=True)
+    skill_display = serializers.CharField(source='get_skill_display', read_only=True)
+
+    class Meta:
+        model = StudentSkillAssessment
+        fields = [
+            'id', 'exam', 'student', 'student_name',
+            'skill', 'skill_display', 'marks', 'grade', 'remarks', 'entered_by',
+        ]
+        read_only_fields = ['id', 'entered_by']
+
+
+# ── Report card remarks ───────────────────────────────────────────────────────
+
+class ReportCardRemarkSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.full_name', read_only=True)
+
+    class Meta:
+        model = ReportCardRemark
+        fields = [
+            'id', 'exam', 'student', 'student_name',
+            'class_teacher_text', 'class_teacher_name', 'class_teacher_date', 'class_teacher_signature',
+            'academic_text', 'academic_name', 'academic_date', 'academic_signature',
+            'head_teacher_text', 'head_teacher_date', 'head_teacher_signature',
+            'updated_by', 'updated_at',
+        ]
+        read_only_fields = ['id', 'updated_by', 'updated_at']

@@ -5,13 +5,17 @@ from .views import (
     ClassPerformanceView,
     ExamViewSet,
     MySubjectPerformanceView,
+    ReportCardRemarkViewSet,
     SchoolPerformanceView,
+    StudentSkillAssessmentViewSet,
     SubjectPerformanceView,
     SubjectViewSet,
 )
 
 router = DefaultRouter()
 router.register(r'subjects', SubjectViewSet, basename='subject')
+router.register(r'skill-assessments', StudentSkillAssessmentViewSet, basename='skill-assessment')
+router.register(r'report-remarks', ReportCardRemarkViewSet, basename='report-remark')
 router.register(r'', ExamViewSet, basename='exam')
 
 urlpatterns = [

@@ -96,3 +96,78 @@ class MarkEntry(models.Model):
     def save(self, *args, **kwargs):
         self.grade = get_grade(self.score)
         super().save(*args, **kwargs)
+
+
+# ── Skills / conduct assessment (report card) ──────────────────────────────────
+
+class SkillName(models.TextChoices):
+    CREATIVITY = 'CREATIVITY', 'Creativity'
+    DISCIPLINE = 'DISCIPLINE', 'Discipline'
+    SPORT = 'SPORT', 'Sport'
+    SMARTNESS = 'SMARTNESS', 'Smartness'
+    SPEAKING_SKILLS = 'SPEAKING_SKILLS', 'Speaking Skills'
+    WRITING_SKILLS = 'WRITING_SKILLS', 'Writing Skills'
+
+
+class StudentSkillAssessment(models.Model):
+    """A non-academic skill/conduct grade for one student, one exam — the
+    'skills and conduct' section of the report card. Separate from MarkEntry
+    since these have no subject and are usually ungraded on marks (grade only)."""
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='skill_assessments')
+    student = models.ForeignKey(
+        'students.Student', on_delete=models.CASCADE, related_name='skill_assessments'
+    )
+    skill = models.CharField(max_length=20, choices=SkillName.choices)
+    marks = models.PositiveSmallIntegerField(null=True, blank=True)
+    grade = models.CharField(max_length=2)
+    remarks = models.CharField(max_length=255, blank=True)
+    entered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='skill_assessments_entered',
+    )
+
+    class Meta:
+        unique_together = ('exam', 'student', 'skill')
+        ordering = ['student__last_name', 'skill']
+
+    def __str__(self):
+        return f'{self.student.student_id} | {self.get_skill_display()} | {self.grade}'
+
+
+# ── Report card remarks ─────────────────────────────────────────────────────────
+
+class ReportCardRemark(models.Model):
+    """Free-text remarks + sign-off for one student's report card for one
+    exam — class teacher, academic teacher, and head teacher sections."""
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='report_remarks')
+    student = models.ForeignKey(
+        'students.Student', on_delete=models.CASCADE, related_name='report_remarks'
+    )
+
+    class_teacher_text = models.TextField(blank=True)
+    class_teacher_name = models.CharField(max_length=255, blank=True)
+    class_teacher_date = models.DateField(null=True, blank=True)
+    class_teacher_signature = models.ImageField(upload_to='report_signatures/', blank=True, null=True)
+
+    academic_text = models.TextField(blank=True)
+    academic_name = models.CharField(max_length=255, blank=True)
+    academic_date = models.DateField(null=True, blank=True)
+    academic_signature = models.ImageField(upload_to='report_signatures/', blank=True, null=True)
+
+    head_teacher_text = models.TextField(blank=True)
+    head_teacher_date = models.DateField(null=True, blank=True)
+    head_teacher_signature = models.ImageField(upload_to='report_signatures/', blank=True, null=True)
+
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='report_remarks_updated',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('exam', 'student')
+
+    def __str__(self):
+        return f'Remarks | {self.student.student_id} | {self.exam}'

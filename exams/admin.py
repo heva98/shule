@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Exam, MarkEntry, Subject
+from .models import Exam, MarkEntry, ReportCardRemark, StudentSkillAssessment, Subject
 
 
 @admin.register(Subject)
@@ -80,3 +80,40 @@ class MarkEntryAdmin(admin.ModelAdmin):
         )
     grade_badge.short_description = 'Grade'
     grade_badge.admin_order_field = 'grade'
+
+
+@admin.register(StudentSkillAssessment)
+class StudentSkillAssessmentAdmin(admin.ModelAdmin):
+    list_display = ('student_col', 'exam', 'skill', 'marks', 'grade', 'entered_by')
+    list_filter = ('skill', 'grade', 'exam__term', 'exam__level')
+    search_fields = ('student__student_id', 'student__first_name', 'student__last_name')
+    raw_id_fields = ('student',)
+    ordering = ('exam', 'student__last_name', 'skill')
+
+    def student_col(self, obj):
+        return f'{obj.student.student_id} — {obj.student.full_name}'
+    student_col.short_description = 'Student'
+    student_col.admin_order_field = 'student__last_name'
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.entered_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ReportCardRemark)
+class ReportCardRemarkAdmin(admin.ModelAdmin):
+    list_display = ('student_col', 'exam', 'updated_at')
+    search_fields = ('student__student_id', 'student__first_name', 'student__last_name')
+    raw_id_fields = ('student',)
+    readonly_fields = ('updated_by', 'updated_at')
+    ordering = ('-updated_at',)
+
+    def student_col(self, obj):
+        return f'{obj.student.student_id} — {obj.student.full_name}'
+    student_col.short_description = 'Student'
+    student_col.admin_order_field = 'student__last_name'
+
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)

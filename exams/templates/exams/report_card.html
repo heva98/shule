@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+{% comment %}
+  Pupil/Student Academic Report – Django template (A4 portrait, print-ready)
+
+  Context (see exams/report_card.py::build_report_context):
+    school   : ministry_line, name, address, phones, logo_url (optional)
+    report   : title, period, exam_name
+    pupil    : full_name, class_name
+    subjects : list of {name, marks, grade, position, class_size, remark}
+    skills   : list of {name, marks, grade, remark}
+    bands    : list of {grade, low, high}          (grading key)
+    summary  : total, out_of, average, grade, position, class_size
+    remarks  : class_teacher / academic / head_teacher, each {text, name, date, signature_url}
+    footer   : head_teacher_name, head_teacher_phone, academic_teacher_name, academic_teacher_phone
+{% endcomment %}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ report.title }} – {{ pupil.full_name }}</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: #111; background: #fff;
+    font-family: "Times New Roman", Times, serif; font-size: 11pt; line-height: 1.3;
+  }
+  .sheet { width: 190mm; margin: 0 auto; padding: 4mm 0; }
+
+  /* Header */
+  .head { text-align: center; }
+  .head .ministry { font-weight: 700; font-size: 12pt; letter-spacing: 0.3pt; }
+  .head .school   { font-weight: 700; font-size: 16pt; margin-top: 1mm; }
+  .head .contact  { font-size: 9.5pt; margin-top: 1mm; }
+  .head .logo     { height: 20mm; margin-bottom: 1mm; }
+  .head .title    { font-weight: 700; font-size: 13pt; margin-top: 3mm; text-decoration: underline; }
+  .head .exam     { font-weight: 700; font-size: 11.5pt; margin-top: 1mm; }
+
+  /* xhtml2pdf (the PDF backend) has no flexbox support, and it also ignores
+     `border` on inline-block elements entirely — only block-level elements
+     (like a <td>) get borders — so the fill-in-the-blank underline needs a
+     table here rather than `display: flex` or inline-block spans. */
+  table.idline { margin: 4mm 0 3mm; font-weight: 700; }
+  table.idline td { border: 0; padding: 0 2mm 0 0; text-align: left; white-space: nowrap; }
+  table.idline td.fill { border-bottom: 1px solid #111; font-weight: 400; white-space: normal; }
+  table.idline td.class-fill { width: 42mm; }
+
+  /* Tables. Fixed mm width, not 100% — xhtml2pdf (the PDF backend) has a
+     column-width rounding bug with percentage-based table/col widths that
+     renders a phantom sliver column; absolute mm widths avoid it. */
+  table { width: 190mm; border-collapse: collapse; margin-bottom: 4mm; }
+  th, td { border: 1px solid #111; padding: 1.6mm 2mm; text-align: center; }
+  th { font-size: 9.5pt; font-weight: 700; background: #f0f0f0; }
+  td.label, th.label { text-align: left; font-weight: 700; }
+  tfoot td { font-weight: 700; background: #f7f7f7; }
+
+  /* Grading key + summary */
+  .key { font-size: 9.5pt; font-weight: 700; margin: 0 0 2mm; }
+  .key span { margin-right: 4mm; white-space: nowrap; }
+  table.summary { margin-bottom: 4mm; }
+  table.summary td { border: 0; padding: 1mm 1mm; text-align: left; font-weight: 700; white-space: nowrap; font-size: 10pt; }
+  table.summary td.val { border-bottom: 1px solid #111; text-align: center; font-weight: 400; width: 22mm; }
+
+  /* Remarks */
+  .remark { margin-bottom: 3.5mm; break-inside: avoid; }
+  .remark .text { min-height: 11mm; }
+  table.who { font-size: 9.5pt; margin-top: 1mm; margin-bottom: 0; }
+  table.who td { border: 0; border-bottom: 1px dotted #111; padding: 0 3mm 0.5mm 0; text-align: left; width: 33.33%; }
+  table.who .sig img { height: 8mm; vertical-align: bottom; }
+
+  .foot { margin-top: 5mm; text-align: center; font-size: 9pt; }
+
+  @media screen { body { background: #e9e9e9; } .sheet { background: #fff; padding: 10mm; margin: 8mm auto; box-shadow: 0 1px 8px rgba(0,0,0,.25); } }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="head">
+    {% if school.logo_url %}<img class="logo" src="{{ school.logo_url }}" alt="">{% endif %}
+    <div class="ministry">{{ school.ministry_line }}</div>
+    <div class="school">{{ school.name }}</div>
+    <div class="contact">{{ school.address }}{% if school.phones %} &nbsp;|&nbsp; Phone: {{ school.phones }}{% endif %}</div>
+    <div class="title">{{ report.title }} {{ report.period }}</div>
+    <div class="exam">{{ report.exam_name }}</div>
+  </header>
+
+  <table class="idline">
+    <tr>
+      <td>PUPIL'S NAME</td><td class="fill">{{ pupil.full_name }}</td>
+      <td>CLASS:</td><td class="fill class-fill">{{ pupil.class_name }}</td>
+    </tr>
+  </table>
+
+  <!-- Table 1: academic results.
+       A single flat header row (no nested MID-TERM/EXAMINATION/RESULT
+       grouping row) for simplicity. Note: the TOTAL row's REMARKS cell uses
+       &nbsp; rather than being left empty — xhtml2pdf (the PDF backend)
+       corrupts a table's last column when one row's cell in that column is
+       completely empty while others aren't. -->
+  <table class="results">
+    <colgroup>
+      <col style="width: 60mm"><col style="width: 24mm"><col style="width: 20mm">
+      <col style="width: 38mm"><col style="width: 48mm">
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="label">SUBJECTS</th>
+        <th>MARKS</th>
+        <th>GRADE</th>
+        <th>POSITION</th>
+        <th>REMARKS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in subjects %}
+      <tr>
+        <td class="label">{{ s.name }}</td>
+        <td>{{ s.marks }}</td>
+        <td>{{ s.grade }}</td>
+        <td>{{ s.position }} out of {{ s.class_size }}</td>
+        <td>{{ s.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td class="label">TOTAL</td>
+        <td>{{ summary.total }}</td>
+        <td>{{ summary.grade }}</td>
+        <td>{{ summary.position }} out of {{ summary.class_size }}</td>
+        <td>&nbsp;</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Table 2: skills and conduct -->
+  <table>
+    <thead>
+      <tr>
+        <th class="label"></th>
+        <th>MARKS</th>
+        <th>GRADE</th>
+        <th>REMARKS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for k in skills %}
+      <tr>
+        <td class="label">{{ k.name }}</td>
+        <td>{{ k.marks|default:"-" }}</td>
+        <td>{{ k.grade }}</td>
+        <td>{{ k.remark }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Grading key -->
+  <p class="key">
+    GRADE-
+    {% for b in bands %}<span>[{{ b.low }}{% if b.high %} - {{ b.high }}{% endif %} = {{ b.grade }}]</span>{% endfor %}
+  </p>
+
+  <!-- Summary -->
+  <table class="summary">
+    <tr>
+      <td>TOTAL MARKS</td><td class="val">{{ summary.total }}</td>
+      <td>OUT OF</td><td class="val">{{ summary.out_of }}</td>
+      <td>AVERAGE</td><td class="val">{{ summary.average }}</td>
+      <td>GRADE</td><td class="val">{{ summary.grade }}</td>
+    </tr>
+    <tr>
+      <td colspan="3">POSITION HELD IN CLASS</td><td class="val">{{ summary.position }}</td>
+      <td colspan="3">TOTAL NUMBER OF PUPILS IN THE CLASS</td><td class="val">{{ summary.class_size }}</td>
+    </tr>
+  </table>
+
+  <!-- Remarks -->
+  <section class="remark">
+    <div class="text"><strong>CLASS TEACHER REMARK'S:</strong> {{ remarks.class_teacher.text }}</div>
+    <table class="who">
+      <tr>
+        <td>NAME: {{ remarks.class_teacher.name }}</td>
+        <td class="sig">SIGNATURE: {% if remarks.class_teacher.signature_url %}<img src="{{ remarks.class_teacher.signature_url }}" alt="">{% endif %}</td>
+        <td>DATE: {{ remarks.class_teacher.date|date:"d/m/Y" }}</td>
+      </tr>
+    </table>
+  </section>
+
+  <section class="remark">
+    <div class="text"><strong>ACADEMIC REMARK'S:</strong> {{ remarks.academic.text }}</div>
+    <table class="who">
+      <tr>
+        <td>NAME: {{ remarks.academic.name }}</td>
+        <td class="sig">SIGNATURE: {% if remarks.academic.signature_url %}<img src="{{ remarks.academic.signature_url }}" alt="">{% endif %}</td>
+        <td>DATE: {{ remarks.academic.date|date:"d/m/Y" }}</td>
+      </tr>
+    </table>
+  </section>
+
+  <section class="remark">
+    <div class="text"><strong>HEAD TEACHER REMARK'S:</strong> {{ remarks.head_teacher.text }}</div>
+    <table class="who">
+      <tr>
+        <td class="sig">SIGNATURE: {% if remarks.head_teacher.signature_url %}<img src="{{ remarks.head_teacher.signature_url }}" alt="">{% endif %}</td>
+        <td>DATE: {{ remarks.head_teacher.date|date:"d/m/Y" }}</td>
+      </tr>
+    </table>
+  </section>
+
+  <footer class="foot">
+    {{ footer.head_teacher_name }} – HEAD TEACHER, CONTACT: {{ footer.head_teacher_phone }}
+    &nbsp;|&nbsp;
+    {{ footer.academic_teacher_name }} – ACADEMIC TEACHER, CONTACT: {{ footer.academic_teacher_phone }}
+  </footer>
+
+</div>
+</body>
+</html>

@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle' });
   await page.fill('input[type="email"]', 'design-qa-temp@shule.local');
-  await page.fill('input[type="password"]', 'TempQA!2026x');
+  await page.fill('input[type="password"]', 'TempQA12026x');
   await Promise.all([
     page.waitForURL('**/dashboard', { timeout: 15000 }).catch(() => {}),
     page.click('button[type="submit"]'),
