@@ -17,7 +17,7 @@ import {
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { getAnnouncements } from '../../api/communications'
-import { getReportCard, getExams } from '../../api/exams'
+import { getReportCard, downloadStudentReportCardPdf, getExams } from '../../api/exams'
 import { getInvoices } from '../../api/fees'
 import { getAttendanceSummary, getAttendance } from '../../api/attendance'
 import { getHomePackages } from '../../api/homepackages'
@@ -319,12 +319,25 @@ function ResultsTab({ child }) {
 
           {/* Download */}
           <button
-            onClick={() => printReportCard(rc)}
+            onClick={() =>
+              downloadStudentReportCardPdf(
+                child.public_id,
+                examId,
+                `${child.student_id || 'report-card'}.pdf`
+              )
+            }
             className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl
               bg-primary text-white text-sm font-medium hover:bg-secondary transition-colors"
           >
             <Download size={16} />
             Download Report Card
+          </button>
+          <button
+            onClick={() => printReportCard(rc)}
+            className="w-full flex items-center justify-center gap-2 min-h-[44px] rounded-xl
+              border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            Print (quick view)
           </button>
 
           {/* Subject rows */}

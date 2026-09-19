@@ -38,7 +38,7 @@ export const getMySubjectPerformance = (params = {}) =>
   api.get('/exams/subject-performance/mine/', { params }).then((r) => r.data)
 
 // Report card lives at the students endpoint — single source of truth in students.js
-export { getStudentReportCard as getReportCard } from './students'
+export { getStudentReportCard as getReportCard, downloadStudentReportCardPdf } from './students'
 
 // Kept for backward compatibility
 export const getExamResults = getResults

@@ -72,7 +72,7 @@ function ReportCardModal({ studentPk, examId, onClose }) {
             <button onClick={onClose} className="mt-4 text-sm text-primary hover:underline">Close</button>
           </div>
         ) : (
-          <ReportCardView reportCard={data} onClose={onClose} />
+          <ReportCardView reportCard={data} studentPk={studentPk} onClose={onClose} />
         )}
       </div>
     </div>

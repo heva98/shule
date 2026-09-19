@@ -26,6 +26,7 @@ import {
 import {
   addGuardian,
   deleteGuardian,
+  downloadStudentReportCardPdf,
   getStudent,
   getStudentReportCard,
   updateGuardian,
@@ -522,6 +523,14 @@ function ResultsTab({ student }) {
     window.print()
   }
 
+  function downloadReportCardPdf() {
+    downloadStudentReportCardPdf(
+      student.public_id,
+      selectedExam,
+      `${student.student_id}-report-card.pdf`
+    )
+  }
+
   return (
     <div className="space-y-5">
       {/* Exam selector */}
@@ -581,7 +590,7 @@ function ResultsTab({ student }) {
                     <Button variant="outline" size="sm" icon={Printer} onClick={printReportCard}>
                       Print
                     </Button>
-                    <Button size="sm" icon={Download} onClick={printReportCard}>
+                    <Button size="sm" icon={Download} onClick={downloadReportCardPdf}>
                       Download
                     </Button>
                   </div>

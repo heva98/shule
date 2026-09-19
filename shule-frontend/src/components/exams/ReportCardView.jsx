@@ -1,4 +1,5 @@
-import { Printer, X } from 'lucide-react'
+import { Download, Printer, X } from 'lucide-react'
+import { downloadStudentReportCardPdf } from '../../api/students'
 import Button from '../ui/Button'
 
 // Tanzania grading scale
@@ -160,7 +161,7 @@ function buildPrintHtml(rc) {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function ReportCardView({ reportCard: rc, onClose }) {
+export default function ReportCardView({ reportCard: rc, studentPk, onClose }) {
   if (!rc) return null
 
   const student  = rc.student  ?? {}
@@ -176,6 +177,14 @@ export default function ReportCardView({ reportCard: rc, onClose }) {
     setTimeout(() => { w.print(); w.close() }, 400)
   }
 
+  function handleDownloadPdf() {
+    downloadStudentReportCardPdf(
+      studentPk,
+      exam.id,
+      `${student.student_id || 'report-card'}.pdf`
+    )
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Modal header */}
@@ -185,9 +194,14 @@ export default function ReportCardView({ reportCard: rc, onClose }) {
           <p className="text-xs text-gray-400 mt-0.5">{student.full_name} · {exam.name}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button icon={Printer} onClick={handlePrint}>
+          <Button variant="outline" icon={Printer} onClick={handlePrint}>
             Print
           </Button>
+          {studentPk && (
+            <Button icon={Download} onClick={handleDownloadPdf}>
+              Download PDF
+            </Button>
+          )}
           {onClose && (
             <button
               onClick={onClose}

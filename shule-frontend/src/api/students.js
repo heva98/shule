@@ -35,5 +35,22 @@ export const deleteGuardian = (id) =>
 export const getStudentReportCard = (studentId, examId) =>
   api.get(`/students/${studentId}/report-card/`, { params: { exam: examId } }).then((r) => r.data)
 
+// PDF report card (server-rendered from exams/report_card.html), for a real
+// download/print rather than the JS-built print view above.
+export const downloadStudentReportCardPdf = async (studentId, examId, filename) => {
+  const res = await api.get(`/students/${studentId}/report-card/pdf/`, {
+    params: { exam: examId },
+    responseType: 'blob',
+  })
+  const url = window.URL.createObjectURL(res.data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename || 'report-card.pdf'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export const getMyChildren = () =>
   api.get('/students/my-children/').then((r) => r.data)
