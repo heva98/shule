@@ -4,7 +4,9 @@ import {
   FileSpreadsheet,
   FileText,
   Printer,
+  Search,
   Trophy,
+  UserRound,
   Users,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -13,9 +15,13 @@ import {
   getClassPerformance,
   getExams,
   getMySubjects,
+  getReportCard,
   getSubjectPerformance,
   getSubjects,
 } from '../../api/exams'
+import { getMyClass } from '../../api/staff'
+import { getStudents } from '../../api/students'
+import ReportCardView from '../../components/exams/ReportCardView'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
 import Card from '../../components/ui/Card'
@@ -626,6 +632,169 @@ function SubjectPerformanceReport({ role, exams, levelOptions, school }) {
   )
 }
 
+// ── Student Report (individual report card) ───────────────────────────────────
+
+function StudentReport({ role, exams, levelOptions }) {
+  const isClassTeacher = role === 'CLASS_TEACHER'
+  const [examId, setExamId] = useState('')
+  const [level, setLevel] = useState('')
+  const [stream, setStream] = useState('')
+  const [search, setSearch] = useState('')
+  const [selectedPk, setSelectedPk] = useState(null)
+
+  // Class teachers are tied to their assigned class, same as the class and
+  // subject reports — the backend doesn't scope the students list for them,
+  // so the class comes from their assignment rather than the filters.
+  const { data: myClass, isError: myClassError } = useQuery({
+    queryKey: ['my-class'],
+    queryFn: getMyClass,
+    enabled: isClassTeacher,
+    retry: false,
+  })
+  const classLevel = isClassTeacher ? myClass?.level : level
+  const classStream = isClassTeacher ? myClass?.stream : stream
+
+  const { data: studentsData, isLoading: studentsLoading } = useQuery({
+    queryKey: ['report-students', classLevel, classStream],
+    queryFn: () => getStudents({
+      level: classLevel,
+      stream: classStream || undefined,
+      status: 'ACTIVE',
+      all: 'true',
+    }),
+    enabled: !!classLevel,
+  })
+  const students = useMemo(() => {
+    const list = studentsData?.results ?? studentsData ?? []
+    const q = search.trim().toLowerCase()
+    const filtered = q
+      ? list.filter((s) => `${s.full_name} ${s.student_id}`.toLowerCase().includes(q))
+      : list
+    return [...filtered].sort((a, b) => a.full_name.localeCompare(b.full_name))
+  }, [studentsData, search])
+
+  const selected = students.find((s) => s.public_id === selectedPk)
+
+  const { data: reportCard, isLoading: cardLoading, isError: cardError } = useQuery({
+    queryKey: ['report-card', selectedPk, examId],
+    queryFn: () => getReportCard(selectedPk, examId),
+    enabled: !!selectedPk && !!examId,
+  })
+
+  function handleLevelChange(value) {
+    setLevel(value)
+    setSelectedPk(null)
+  }
+
+  function handleStreamChange(value) {
+    setStream(value)
+    setSelectedPk(null)
+  }
+
+  let body
+  if (!examId) {
+    body = <EmptyHint text="Select an exam to view student reports." />
+  } else if (isClassTeacher && myClassError) {
+    body = <ErrorHint text="You have no active class assignment for the current academic year." />
+  } else if (!classLevel) {
+    body = <EmptyHint text="Select a level to list its students." />
+  } else {
+    body = (
+      <div className="grid gap-5 lg:grid-cols-[320px_1fr] items-start">
+        <Card padding="p-0" className="overflow-hidden">
+          <div className="p-3 border-b border-gray-100">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className={`${inputCls} pl-8 w-full`}
+                placeholder="Search name or ID…"
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 mt-2">
+              {students.length} student{students.length === 1 ? '' : 's'}
+            </p>
+          </div>
+          <div className="max-h-[70vh] overflow-y-auto divide-y divide-gray-50">
+            {studentsLoading ? (
+              <div className="p-3 space-y-2">
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded" />)}
+              </div>
+            ) : students.length === 0 ? (
+              <p className="p-6 text-center text-sm text-gray-400">No students found.</p>
+            ) : (
+              students.map((s) => (
+                <button
+                  key={s.public_id}
+                  onClick={() => setSelectedPk(s.public_id)}
+                  className={`w-full text-left px-4 py-2.5 transition-colors
+                    ${s.public_id === selectedPk ? 'bg-primary/5' : 'hover:bg-gray-50/60'}`}
+                >
+                  <div className={`text-sm font-medium ${s.public_id === selectedPk ? 'text-primary' : 'text-gray-900'}`}>
+                    {s.full_name}
+                  </div>
+                  <div className="text-xs text-gray-400 font-mono">{s.student_id}</div>
+                </button>
+              ))
+            )}
+          </div>
+        </Card>
+
+        <Card padding="p-0" className="overflow-hidden">
+          {!selectedPk ? (
+            <div className="p-14 text-center">
+              <UserRound size={36} className="mx-auto text-gray-200 mb-3" />
+              <p className="text-sm text-gray-400">Select a student to view their report.</p>
+            </div>
+          ) : cardLoading ? (
+            <div className="p-6 space-y-3">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-6 w-full rounded" />)}
+            </div>
+          ) : cardError || !reportCard ? (
+            <p className="p-12 text-center text-sm text-danger">
+              Report not available for {selected?.full_name ?? 'this student'}.
+            </p>
+          ) : !reportCard.subjects?.length ? (
+            <p className="p-12 text-center text-sm text-gray-400">
+              No marks entered for {selected?.full_name ?? 'this student'} in this exam yet.
+            </p>
+          ) : (
+            <ReportCardView reportCard={reportCard} studentPk={selectedPk} />
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      <FiltersBar>
+        <Field label="Exam">
+          <select value={examId} onChange={(e) => setExamId(e.target.value)} className={selectCls}>
+            <option value="">Select exam…</option>
+            {exams.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+          </select>
+        </Field>
+        {!isClassTeacher && (
+          <>
+            <Field label="Level">
+              <select value={level} onChange={(e) => handleLevelChange(e.target.value)} className={selectCls}>
+                <option value="">Select level…</option>
+                {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Stream (optional)">
+              <input value={stream} onChange={(e) => handleStreamChange(e.target.value)} className={inputCls} placeholder="e.g. A" />
+            </Field>
+          </>
+        )}
+      </FiltersBar>
+      {body}
+    </div>
+  )
+}
+
 // ── Small shared bits ──────────────────────────────────────────────────────────
 
 function StatCard({ label, value, highlight }) {
@@ -667,6 +836,7 @@ function ReportSkeleton() {
 const TAB_META = {
   class:   { label: 'Class Performance',   icon: Users },
   subject: { label: 'Subject Performance', icon: FileBarChart2 },
+  student: { label: 'Student Reports',     icon: UserRound },
 }
 
 export default function ReportsPage() {
@@ -676,7 +846,10 @@ export default function ReportsPage() {
 
   const canClass = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'CLASS_TEACHER'].includes(role)
   const canSubject = ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER'].includes(role)
-  const availableTabs = [canClass && 'class', canSubject && 'subject'].filter(Boolean)
+  // Individual report cards — the backend also allows SUBJECT_TEACHER/TEACHER, but
+  // browsing a class list is a class-level task, so it mirrors the class report.
+  const canStudent = canClass
+  const availableTabs = [canClass && 'class', canSubject && 'subject', canStudent && 'student'].filter(Boolean)
 
   const [selectedTab, setSelectedTab] = useState(null)
   const tab = availableTabs.includes(selectedTab) ? selectedTab : availableTabs[0]
@@ -704,7 +877,7 @@ export default function ReportsPage() {
           Examination Reports
         </h1>
         <p className="text-sm text-gray-400 mt-0.5">
-          Class and subject performance across exams.
+          Class, subject and individual student performance across exams.
         </p>
       </div>
 
@@ -733,6 +906,8 @@ export default function ReportsPage() {
         <ClassPerformanceReport role={role} exams={exams} levelOptions={levelOptions} school={school} />
       ) : tab === 'subject' && canSubject ? (
         <SubjectPerformanceReport role={role} exams={exams} levelOptions={levelOptions} school={school} />
+      ) : tab === 'student' && canStudent ? (
+        <StudentReport role={role} exams={exams} levelOptions={levelOptions} />
       ) : (
         <EmptyHint text="You do not have access to any report type." />
       )}
