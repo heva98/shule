@@ -488,6 +488,7 @@ export default function UserManagementPage() {
           <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
+                <th className="w-12 text-left px-4 py-3">#</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">User</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 hidden md:table-cell">Email</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 hidden lg:table-cell">Phone</th>
@@ -501,7 +502,7 @@ export default function UserManagementPage() {
               {q.isLoading ? (
                 [...Array(8)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(7)].map((_, j) => (
+                    {[...Array(8)].map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 bg-gray-100 animate-pulse rounded w-full" />
                       </td>
@@ -510,13 +511,14 @@ export default function UserManagementPage() {
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm">
                     No users found.
                   </td>
                 </tr>
               ) : (
-                users.map(user => (
+                users.map((user, rowIdx) => (
                   <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="text-gray-500">{rowIdx + 1}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center shrink-0">

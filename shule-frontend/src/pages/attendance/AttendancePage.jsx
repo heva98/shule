@@ -574,6 +574,7 @@ function ReportsTab() {
               <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
+                    <th className="w-12 text-left px-4 py-3">#</th>
                     {['Date', 'Session', 'Status', 'Reason', 'Marked by'].map((h) => (
                       <th
                         key={h}
@@ -585,8 +586,9 @@ function ReportsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {rows.map((r) => (
+                  {rows.map((r, rowIdx) => (
                     <tr key={r.id} className="hover:bg-gray-50/40 transition-colors">
+                      <td className="text-gray-500">{rowIdx + 1}</td>
                       <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{r.date}</td>
                       <td className="px-4 py-2.5 text-gray-500 capitalize">
                         {r.session?.toLowerCase()}
@@ -691,6 +693,7 @@ function AbsenteesTab() {
             <table className="data-table w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
+                  <th className="w-12 text-left px-4 py-3">#</th>
                   {['Name', 'Level', 'Stream', 'Guardian', 'Phone', 'Reason'].map((h) => (
                     <th
                       key={h}
@@ -702,8 +705,9 @@ function AbsenteesTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {absentees.map((a) => (
+                {absentees.map((a, rowIdx) => (
                   <tr key={a.student_id} className="hover:bg-red-50/20 transition-colors">
+                    <td className="text-gray-500">{rowIdx + 1}</td>
                     <td className="px-4 py-3 font-medium text-gray-900">{a.student_name}</td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                       {LEVEL_LABEL[a.level] ?? a.level}

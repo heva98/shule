@@ -398,6 +398,7 @@ function BorrowRecordsTab({ canManage }) {
         <table className="data-table w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
+              <th className="w-12 text-left px-4 py-3">#</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Student</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Book</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Borrowed</th>
@@ -409,15 +410,16 @@ function BorrowRecordsTab({ canManage }) {
           <tbody className="divide-y divide-gray-50">
             {isLoading ? (
               [...Array(4)].map((_, i) => (
-                <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-4 bg-gray-100 animate-pulse rounded" /></td></tr>
+                <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-gray-100 animate-pulse rounded" /></td></tr>
               ))
             ) : records.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm">
+              <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
                 <LibraryIcon size={28} className="mx-auto text-gray-200 mb-2" />
                 No borrow records found.
               </td></tr>
-            ) : records.map((r) => (
+            ) : records.map((r, rowIdx) => (
               <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="text-gray-500">{rowIdx + 1}</td>
                 <td className="px-4 py-3 font-medium text-gray-800">{r.student_name}</td>
                 <td className="px-4 py-3 text-gray-600">{r.book_title}</td>
                 <td className="px-4 py-3 text-gray-500">{fmtDate(r.borrowed_date)}</td>

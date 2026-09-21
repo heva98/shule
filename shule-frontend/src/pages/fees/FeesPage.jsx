@@ -159,6 +159,7 @@ function InvoicesTab() {
           <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
+                <th className="w-12 text-left px-4 py-3">#</th>
                 {['Student', 'Level', 'Period', 'Invoiced', 'Paid', 'Balance', 'Status'].map((h) => (
                   <th
                     key={h}
@@ -173,7 +174,7 @@ function InvoicesTab() {
               {isLoading ? (
                 [...Array(6)].map((_, i) => (
                   <tr key={i} className="border-b border-gray-50">
-                    {[...Array(7)].map((__, j) => (
+                    {[...Array(8)].map((__, j) => (
                       <td key={j} className="px-4 py-3">
                         <Skeleton className="h-3.5 w-20" />
                       </td>
@@ -182,18 +183,18 @@ function InvoicesTab() {
                 ))
               ) : isError ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-danger">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-danger">
                     Failed to load invoices.
                   </td>
                 </tr>
               ) : invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-14 text-center text-sm text-gray-400">
+                  <td colSpan={8} className="px-4 py-14 text-center text-sm text-gray-400">
                     No invoices found. Try adjusting the filters.
                   </td>
                 </tr>
               ) : (
-                invoices.map((inv) => {
+                invoices.map((inv, rowIdx) => {
                   const bal = Number(inv.balance)
                   return (
                     <tr
@@ -201,6 +202,7 @@ function InvoicesTab() {
                       onClick={() => setPayInvoice(inv)}
                       className="hover:bg-blue-50/40 cursor-pointer transition-colors"
                     >
+                      <td className="text-gray-500">{(page - 1) * 20 + rowIdx + 1}</td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">{inv.student_name}</div>
                         <div className="text-xs text-gray-400 font-mono">{inv.student_id_display}</div>
@@ -351,6 +353,7 @@ function DefaultersTab() {
           <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
+                <th className="w-12 text-left px-4 py-3">#</th>
                 {['Student', 'Level', 'Period', 'Balance (TZS)', 'Days Overdue', 'Action'].map((h) => (
                   <th
                     key={h}
@@ -365,28 +368,29 @@ function DefaultersTab() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(6)].map((__, j) => (
+                    {[...Array(7)].map((__, j) => (
                       <td key={j} className="px-4 py-3"><Skeleton className="h-3.5 w-20" /></td>
                     ))}
                   </tr>
                 ))
               ) : isError ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-danger">
+                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-danger">
                     Failed to load defaulters.
                   </td>
                 </tr>
               ) : defaulters.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-14 text-center text-sm text-gray-400">
+                  <td colSpan={7} className="px-4 py-14 text-center text-sm text-gray-400">
                     No outstanding balances. All fees are up to date!
                   </td>
                 </tr>
               ) : (
-                defaulters.map((d) => {
+                defaulters.map((d, rowIdx) => {
                   const overdue = daysOverdue(d.due_date)
                   return (
                     <tr key={`${d.student_id}-${d.term}-${d.quarter}`} className="hover:bg-gray-50/40 transition-colors">
+                      <td className="text-gray-500">{rowIdx + 1}</td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">{d.student_name}</div>
                         <div className="text-xs text-gray-400 font-mono">{d.student_id}</div>
@@ -528,14 +532,16 @@ function AcademicYearsTab() {
           <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="w-12 text-left px-4 py-3">#</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Year</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {years.map(y => (
+              {years.map((y, rowIdx) => (
                 <tr key={y.id} className="hover:bg-gray-50">
+                  <td className="text-gray-500">{rowIdx + 1}</td>
                   <td className="px-4 py-3 font-medium text-gray-900">{y.year}</td>
                   <td className="px-4 py-3">
                     {y.is_current ? (

@@ -217,6 +217,7 @@ export default function StudentsListPage() {
           <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
+                <th className="w-12 text-left px-4 py-3">#</th>
                 {['Student ID', 'Name', 'Level', 'Stream', 'Status', 'Admitted'].map((h) => (
                   <th
                     key={h}
@@ -232,25 +233,26 @@ export default function StudentsListPage() {
                 <TableSkeleton />
               ) : isError ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-danger">
+                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-danger">
                     Failed to load students. Check your connection and try again.
                   </td>
                 </tr>
               ) : students.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center text-sm text-gray-400">
+                  <td colSpan={7} className="px-4 py-16 text-center text-sm text-gray-400">
                     {debouncedSearch || levelFilter || statusFilter
                       ? 'No students match the current filters.'
                       : 'No students enrolled yet. Click "Add Student" to get started.'}
                   </td>
                 </tr>
               ) : (
-                students.map((student) => (
+                students.map((student, rowIdx) => (
                   <tr
                     key={student.id}
                     onClick={() => navigate(`/students/${student.public_id}`)}
                     className="hover:bg-blue-50/40 cursor-pointer transition-colors"
                   >
+                    <td className="text-gray-500">{(page - 1) * 20 + rowIdx + 1}</td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">
                       {student.student_id}
                     </td>

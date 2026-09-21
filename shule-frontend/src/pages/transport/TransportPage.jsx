@@ -740,6 +740,7 @@ function AssignmentsTab({ canManage }) {
         <table className="data-table w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
+              <th className="w-12 text-left px-4 py-3">#</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Student</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Route</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Pickup Point</th>
@@ -751,15 +752,16 @@ function AssignmentsTab({ canManage }) {
           <tbody className="divide-y divide-gray-50">
             {isLoading ? (
               [...Array(4)].map((_, i) => (
-                <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-4 bg-gray-100 animate-pulse rounded" /></td></tr>
+                <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-gray-100 animate-pulse rounded" /></td></tr>
               ))
             ) : assignments.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm">
+              <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
                 <Bus size={28} className="mx-auto text-gray-200 mb-2" />
                 No transport assignments found.
               </td></tr>
-            ) : assignments.map((a) => (
+            ) : assignments.map((a, rowIdx) => (
               <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="text-gray-500">{rowIdx + 1}</td>
                 <td className="px-4 py-3 font-medium text-gray-800">{a.student_name}</td>
                 <td className="px-4 py-3 text-gray-600">{a.route_name}</td>
                 <td className="px-4 py-3 text-gray-500">{a.pickup_point_name || '—'}</td>

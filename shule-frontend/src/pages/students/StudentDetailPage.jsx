@@ -370,6 +370,7 @@ function FeesTab({ studentId }) {
       <table className="data-table w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50/60">
+            <th className="w-12 text-left px-4 py-3">#</th>
             {['Term', 'Amount Due', 'Paid', 'Balance', 'Due Date', 'Status'].map((h) => (
               <th
                 key={h}
@@ -381,8 +382,9 @@ function FeesTab({ studentId }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
-          {invoices.map((inv) => (
+          {invoices.map((inv, rowIdx) => (
             <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors">
+              <td className="text-gray-500">{rowIdx + 1}</td>
               <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                 {inv.academic_year} · {inv.term?.replace('TERM', 'Term ')}
               </td>
@@ -468,6 +470,7 @@ function AttendanceTab({ studentId }) {
           <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
+                <th className="w-12 text-left px-4 py-3">#</th>
                 {['Date', 'Session', 'Status', 'Reason'].map((h) => (
                   <th
                     key={h}
@@ -479,8 +482,9 @@ function AttendanceTab({ studentId }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {rows.slice(0, 30).map((r) => (
+              {rows.slice(0, 30).map((r, rowIdx) => (
                 <tr key={r.id} className="hover:bg-gray-50/50">
+                  <td className="text-gray-500">{rowIdx + 1}</td>
                   <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{r.date}</td>
                   <td className="px-4 py-2.5 text-gray-500 capitalize">
                     {r.session?.toLowerCase()}
@@ -629,6 +633,7 @@ function ResultsTab({ student }) {
               <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
+                    <th className="w-12 text-left px-4 py-3">#</th>
                     {['Subject', 'Code', 'Score', 'Grade', 'Remarks'].map((h) => (
                       <th
                         key={h}
@@ -640,8 +645,9 @@ function ResultsTab({ student }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {reportCard.subjects?.map((s) => (
+                  {reportCard.subjects?.map((s, rowIdx) => (
                     <tr key={s.subject_code} className="hover:bg-gray-50/50">
+                      <td className="text-gray-500">{rowIdx + 1}</td>
                       <td className="px-4 py-3 text-gray-800 font-medium">{s.subject_name}</td>
                       <td className="px-4 py-3 text-gray-500 font-mono text-xs">{s.subject_code}</td>
                       <td className="px-4 py-3 text-gray-700 font-mono">{s.score}</td>

@@ -909,6 +909,7 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
           <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="w-12 text-left px-4 py-3">#</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Staff Member
                 </th>
@@ -928,12 +929,13 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {displayed.map(s => (
+              {displayed.map((s, rowIdx) => (
                 <tr
                   key={s.id}
                   onClick={() => setSelected(s)}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                 >
+                  <td className="text-gray-500">{rowIdx + 1}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[#177dff] flex items-center justify-center text-white text-xs font-semibold shrink-0">
@@ -1071,6 +1073,7 @@ function LeaveTab({ canApprove, allStaff }) {
           <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="w-12 text-left px-4 py-3">#</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Staff</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Type</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Period</th>
@@ -1083,8 +1086,9 @@ function LeaveTab({ canApprove, allStaff }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {leaves.map(lv => (
+              {leaves.map((lv, rowIdx) => (
                 <tr key={lv.id} className="hover:bg-gray-50">
+                  <td className="text-gray-500">{rowIdx + 1}</td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{lv.staff_name}</p>
                     <p className="text-xs text-gray-400">{lv.employee_id}</p>

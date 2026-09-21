@@ -351,6 +351,7 @@ function LogTab() {
               <table className="data-table w-full text-xs">
                 <thead className="bg-gray-50 text-gray-500">
                   <tr>
+                    <th className="w-12 text-left px-4 py-3">#</th>
                     <th className="text-left px-3 py-2">Pupil</th>
                     <th className="text-left px-3 py-2">Phone</th>
                     <th className="text-left px-3 py-2">Status</th>
@@ -358,8 +359,9 @@ function LogTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(b.messages ?? []).map((m) => (
+                  {(b.messages ?? []).map((m, rowIdx) => (
                     <tr key={m.id} className="border-t border-gray-50">
+                      <td className="text-gray-500">{rowIdx + 1}</td>
                       <td className="px-3 py-2">{m.student_name || m.recipient_name || '—'}</td>
                       <td className="px-3 py-2 tabular-nums">{m.recipient_phone || '—'}</td>
                       <td className="px-3 py-2">

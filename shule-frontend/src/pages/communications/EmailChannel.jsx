@@ -605,6 +605,7 @@ function MessageRow({ msg, expanded, onToggle }) {
                   <table className="data-table w-full text-xs">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
+                        <th className="w-12 text-left px-4 py-3">#</th>
                         <th className="px-3 py-2 text-left text-gray-500 font-medium">Recipient</th>
                         <th className="px-3 py-2 text-left text-gray-500 font-medium hidden sm:table-cell">Contact</th>
                         <th className="px-3 py-2 text-center text-gray-500 font-medium w-20">Status</th>
@@ -612,8 +613,9 @@ function MessageRow({ msg, expanded, onToggle }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {msg.logs.slice(0, 25).map((log) => (
+                      {msg.logs.slice(0, 25).map((log, rowIdx) => (
                         <tr key={log.id} className="hover:bg-gray-50/50">
+                          <td className="text-gray-500">{rowIdx + 1}</td>
                           <td className="px-3 py-2 font-medium text-gray-800">{log.recipient_name}</td>
                           <td className="px-3 py-2 text-gray-500 hidden sm:table-cell">
                             {log.recipient_phone || log.recipient_email || '—'}

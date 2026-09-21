@@ -151,6 +151,7 @@ function SubjectsTab() {
         <table className="data-table w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
+              <th className="w-12 text-left px-4 py-3">#</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Code</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Name</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Level Group</th>
@@ -163,21 +164,22 @@ function SubjectsTab() {
             {q.isLoading ? (
               [...Array(6)].map((_, i) => (
                 <tr key={i}>
-                  {[...Array(6)].map((_, j) => (
+                  {[...Array(7)].map((_, j) => (
                     <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 animate-pulse rounded" /></td>
                   ))}
                 </tr>
               ))
             ) : subjects.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm">
+                <td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
                   <BookOpen size={28} className="mx-auto text-gray-200 mb-2" />
                   No subjects found.
                 </td>
               </tr>
             ) : (
-              subjects.map(s => (
+              subjects.map((s, rowIdx) => (
                 <tr key={s.id} className={`hover:bg-gray-50/50 transition-colors ${!s.is_active ? 'opacity-60' : ''}`}>
+                  <td className="text-gray-500">{rowIdx + 1}</td>
                   <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-700">{s.code}</td>
                   <td className="px-4 py-3 font-medium text-gray-800">{s.name}</td>
                   <td className="px-4 py-3">

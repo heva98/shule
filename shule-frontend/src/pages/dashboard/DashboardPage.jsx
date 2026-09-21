@@ -389,6 +389,7 @@ export default function DashboardPage() {
               <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100">
+                    <th className="w-12 text-left px-4 py-3">#</th>
                     <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-3">
                       Student
                     </th>
@@ -402,8 +403,9 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {defaulters.map((row) => (
+                  {defaulters.map((row, rowIdx) => (
                     <tr key={row.student_id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="text-gray-500">{rowIdx + 1}</td>
                       <td className="py-2.5 pr-3">
                         <div className="font-medium text-gray-800 truncate max-w-[140px]">
                           {row.student_name}
