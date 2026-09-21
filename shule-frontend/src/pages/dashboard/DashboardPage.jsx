@@ -23,6 +23,7 @@ import {
 import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
 import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformancePanels'
 import StatCard from '../../components/ui/StatCard'
+import KpiCard from '../../components/ui/KpiCard'
 import Card from '../../components/ui/Card'
 import { useAuth } from '../../context/AuthContext'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
@@ -44,6 +45,12 @@ function StatCardSkeleton() {
       <Skeleton className="h-7 w-36 mb-2" />
       <Skeleton className="h-3 w-20" />
     </Card>
+  )
+}
+
+function KpiCardSkeleton() {
+  return (
+    <div className="rounded-xl bg-gray-200 animate-pulse p-5 h-[132px]" />
   )
 }
 
@@ -134,6 +141,13 @@ export default function DashboardPage() {
   const feesCollected = data?.fees?.total_collected ?? null
   const feesOutstanding = data?.fees?.total_outstanding ?? null
   const attendanceRate = data?.attendance?.rate_percent ?? null
+  const collectionRateRaw = parseFloat(data?.fees?.collection_rate_percent)
+  const collectionRate = Number.isFinite(collectionRateRaw) ? collectionRateRaw : null
+  // Nothing billed yet → no meaningful share (avoid showing "100% outstanding").
+  const outstandingShare =
+    collectionRate !== null && (parseFloat(feesCollected) > 0 || parseFloat(feesOutstanding) > 0)
+      ? 100 - collectionRate
+      : null
 
   // Already filtered to "ends today or later", sorted by start_date, and
   // capped at 5 server-side — see DashboardSummaryView.
@@ -158,7 +172,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {isLoading ? (
           <StatCardSkeleton />
         ) : (
@@ -194,55 +208,61 @@ export default function DashboardPage() {
             subtitle={upcomingExams[0] ? `Next: ${upcomingExams[0].name}` : 'None scheduled'}
           />
         ))}
-
-        {feesEnabled && (isLoading ? (
-          <StatCardSkeleton />
-        ) : (
-          <StatCard
-            title="Fees Collected"
-            value={feesCollected !== null ? formatTZS(feesCollected) : '—'}
-            icon={CreditCard}
-            color="bg-success"
-            subtitle={
-              data?.fees?.collection_rate_percent
-                ? `${data.fees.collection_rate_percent}% collection rate`
-                : 'Current year'
-            }
-          />
-        ))}
-
-        {feesEnabled && (isLoading ? (
-          <StatCardSkeleton />
-        ) : (
-          <StatCard
-            title="Outstanding Fees"
-            value={feesOutstanding !== null ? formatTZS(feesOutstanding) : '—'}
-            icon={TrendingDown}
-            color="bg-danger"
-            subtitle="Unpaid + partial invoices"
-          />
-        ))}
-
-        {attendanceEnabled && (isLoading ? (
-          <StatCardSkeleton />
-        ) : (
-          <StatCard
-            title="Today's Attendance"
-            value={
-              attendanceRate !== null
-                ? `${parseFloat(attendanceRate).toFixed(1)}%`
-                : '—'
-            }
-            icon={CalendarCheck}
-            color="bg-purple"
-            subtitle={
-              data?.attendance?.total_records
-                ? `${data.attendance.present} present of ${data.attendance.total_records}`
-                : 'No records today'
-            }
-          />
-        ))}
       </div>
+
+      {/* ── Headline KPI widgets ── */}
+      {(feesEnabled || attendanceEnabled) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {feesEnabled && (isLoading ? (
+            <KpiCardSkeleton />
+          ) : (
+            <KpiCard
+              title="Fees Collected"
+              value={feesCollected !== null ? formatTZS(feesCollected) : '—'}
+              icon={CreditCard}
+              tone="success"
+              percent={collectionRate}
+              percentLabel="collection rate"
+              subtitle="Current year"
+            />
+          ))}
+
+          {feesEnabled && (isLoading ? (
+            <KpiCardSkeleton />
+          ) : (
+            <KpiCard
+              title="Outstanding Fees"
+              value={feesOutstanding !== null ? formatTZS(feesOutstanding) : '—'}
+              icon={TrendingDown}
+              tone="danger"
+              percent={outstandingShare}
+              percentLabel="of billed"
+              subtitle="Unpaid + partial invoices"
+            />
+          ))}
+
+          {attendanceEnabled && (isLoading ? (
+            <KpiCardSkeleton />
+          ) : (
+            <KpiCard
+              title="Today's Attendance"
+              value={
+                attendanceRate !== null
+                  ? `${parseFloat(attendanceRate).toFixed(1)}%`
+                  : '—'
+              }
+              icon={CalendarCheck}
+              tone="purple"
+              percent={attendanceRate !== null ? parseFloat(attendanceRate) : null}
+              subtitle={
+                data?.attendance?.total_records
+                  ? `${data.attendance.present} present of ${data.attendance.total_records}`
+                  : 'No records today'
+              }
+            />
+          ))}
+        </div>
+      )}
 
       <SchoolPerformancePanels role={role} enabledModules={enabledModules} />
 

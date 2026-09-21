@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Decorative translucent bubbles behind gradient KPI cards (Kaiadmin
+   "bubble-shadow" widget). */
+.kpi-bubbles {
+  position: relative;
+  overflow: hidden;
+}
+.kpi-bubbles::before,
+.kpi-bubbles::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+.kpi-bubbles::before { top: -20%; right: -120px; width: 260px; height: 260px; }
+.kpi-bubbles::after  { top: -60px; right: 70px;  width: 130px; height: 130px; }
+
 /* Content transition when moving between modules / pages */
 @keyframes route-fade-in {
   from { opacity: 0; transform: translateY(6px); }
