@@ -4,6 +4,18 @@ const api = axios.create({
   baseURL: '/api',
 })
 
+// AuthProvider registers a callback here so it can clear its in-memory
+// user/token state on a 401. Without this, a stale token in localStorage
+// would 401 on the silent background /auth/me check and hard-redirect
+// visitors away from public pages (e.g. the landing page at "/") — the
+// redirect belongs to ProtectedRoute, which only fires for routes that
+// actually require auth.
+let onUnauthorized = () => {}
+
+export function setUnauthorizedHandler(fn) {
+  onUnauthorized = fn
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('shule_access')
   if (token) {
@@ -18,7 +30,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('shule_access')
       localStorage.removeItem('shule_refresh')
-      window.location.href = '/login'
+      onUnauthorized()
     }
     return Promise.reject(error)
   }

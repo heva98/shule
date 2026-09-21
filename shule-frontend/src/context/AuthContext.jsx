@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import api from '../lib/axios'
+import api, { setUnauthorizedHandler } from '../lib/axios'
 
 const AuthContext = createContext(null)
 
@@ -19,6 +19,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [accessToken, setAccessToken] = useState(() => localStorage.getItem('shule_access'))
   const [loading, setLoading] = useState(!!localStorage.getItem('shule_access'))
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null)
+      setAccessToken(null)
+    })
+  }, [])
 
   useEffect(() => {
     const token = localStorage.getItem('shule_access')
