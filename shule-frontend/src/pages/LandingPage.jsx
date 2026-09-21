@@ -62,7 +62,7 @@ const FEATURES = [
     icon: MessageCircle,
     title: 'Communications',
     description:
-      'Reach parents by SMS or email — individually, by class, or school-wide.',
+      'Reach parents by SMS or email, individually, by class, or school-wide.',
   },
 ]
 
@@ -77,12 +77,12 @@ const PARENT_FEATURES = [
   {
     icon: Bell,
     title: 'Live absence alerts',
-    description: 'The moment a child is marked absent, guardians get an SMS — no waiting for a phone call home.',
+    description: 'The moment a child is marked absent, guardians get an SMS, no waiting for a phone call home.',
   },
   {
     icon: CreditCard,
     title: 'Fee invoices & payment history',
-    description: 'Guardians see every invoice, every payment, and what is still owed — in Tanzanian shillings, per term.',
+    description: 'Guardians see every invoice, every payment, and what is still owed, in Tanzanian shillings, per term.',
   },
   {
     icon: FileText,
@@ -92,7 +92,7 @@ const PARENT_FEATURES = [
   {
     icon: MessageCircle,
     title: 'School announcements',
-    description: 'Class-wide or school-wide messages land straight in the parent portal — no missed notice-board flyers.',
+    description: 'Class-wide or school-wide messages land straight in the parent portal, no missed notice-board flyers.',
   },
 ]
 
@@ -109,7 +109,7 @@ const REASONS = [
   {
     icon: Wallet,
     title: 'Actually built for Tanzania',
-    description: 'TZS-native billing on the real 2-term / 4-quarter calendar schools here run on — not a generic template.',
+    description: 'TZS-native billing on the real 2-term / 4-quarter calendar schools here run on, not a generic template.',
   },
   {
     icon: MessageCircle,
@@ -119,7 +119,7 @@ const REASONS = [
   {
     icon: ClipboardList,
     title: 'Every action is logged',
-    description: 'Role changes, payments, and admin actions write to an audit trail — accountability by default.',
+    description: 'Role changes, payments, and admin actions write to an audit trail, accountability by default.',
   },
   {
     icon: ShieldCheck,
@@ -292,7 +292,7 @@ function DashboardMockup() {
         </div>
       </div>
 
-      <p className="mt-8 sm:mt-6 text-center text-xs text-white/40">Illustrative preview — sample data</p>
+      <p className="mt-8 sm:mt-6 text-center text-xs text-white/40">Illustrative preview</p>
     </div>
   )
 }
@@ -309,14 +309,14 @@ function Hero() {
       />
       <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-12 text-center">
         <p className="text-xs sm:text-sm font-bold tracking-widest uppercase text-white/70">
-          Built for Tanzanian private schools
+          Built for Tanzanian schools
         </p>
         <h1 className="mt-4 text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tighter text-white">
           One system for students, fees, attendance, exams, staff, and{' '}
           <span className="text-accent">parents</span>
         </h1>
         <p className="mt-6 text-base sm:text-lg text-white/80 max-w-2xl mx-auto">
-          Shule SMS brings your whole school onto one platform — TZS-native billing, a real
+          Shule SMS brings your whole school onto one platform: TZS-native billing, a real
           2-term / 4-quarter calendar, and SMS alerts parents actually see.
         </p>
         <div className="mt-9 max-w-md mx-auto flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -362,7 +362,7 @@ function Features() {
       <SectionHeading
         tagline="What's included"
         title="Everything the school office needs"
-        subtitle="Six modules, one login — no more juggling spreadsheets and paper registers."
+        subtitle="Six modules, one login. No more juggling spreadsheets and paper registers."
       />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {FEATURES.map(({ icon, title, description }) => (
@@ -430,7 +430,7 @@ function ParentSpotlight() {
               Parents stay in the loop, automatically
             </h2>
             <p className="mt-4 text-base text-gray-500 max-w-md leading-relaxed">
-              Every guardian gets their own portal — no separate app to install, no waiting for a
+              Every guardian gets their own portal, no separate app to install, no waiting for a
               phone call from the school office.
             </p>
             <div className="mt-8 space-y-6">
@@ -536,7 +536,7 @@ function DemoRequestForm() {
         <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-6 h-6 text-success" />
         </div>
-        <h3 className="font-semibold text-gray-900 text-lg mb-1.5">Thanks — request received</h3>
+        <h3 className="font-semibold text-gray-900 text-lg mb-1.5">Thanks, request received</h3>
         <p className="text-sm text-gray-500">
           We'll reach out shortly to walk you through Shule SMS. In the meantime, staff with an
           account can{' '}
