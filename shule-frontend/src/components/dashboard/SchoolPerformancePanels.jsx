@@ -10,6 +10,12 @@ function Skeleton({ className }) {
   return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
 }
 
+// API returns 2dp strings ("79.00"); the dashboard shows 1dp.
+const formatAverage = (v) => {
+  const n = parseFloat(v)
+  return Number.isFinite(n) ? n.toFixed(1) : v
+}
+
 const defaultSubtitle = (it) => `${it.student_count} student${it.student_count !== 1 ? 's' : ''}`
 
 function RankTile({ title, icon: Icon, tone, items, labelFn, subtitleFn = defaultSubtitle, loading }) {
@@ -34,7 +40,7 @@ function RankTile({ title, icon: Icon, tone, items, labelFn, subtitleFn = defaul
                 <p className="text-sm font-medium text-gray-800 truncate">{i + 1}. {labelFn(it)}</p>
                 <p className="text-[11px] text-gray-400 truncate">{subtitleFn(it)}</p>
               </div>
-              <span className="font-mono font-semibold text-gray-800 shrink-0">{it.average}</span>
+              <span className="font-mono font-semibold text-gray-800 shrink-0">{formatAverage(it.average)}</span>
             </div>
           ))}
         </div>
