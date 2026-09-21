@@ -2,6 +2,7 @@ import {
   Activity,
   BedDouble,
   BookOpen,
+  Building2,
   Bus,
   CalendarCheck,
   CalendarDays,
@@ -37,17 +38,25 @@ export const NAV_ITEMS = [
   { label: 'Fees',            path: '/fees',           icon: CreditCard,      roles: FEATURE_ROLES.FEES, module: 'fees' },
   { label: 'Attendance',      path: '/attendance',     icon: CalendarCheck,   roles: FEATURE_ROLES.ATTENDANCE, module: 'attendance' },
   { label: 'Timetable',       path: '/timetable',      icon: Clock,           roles: FEATURE_ROLES.TIMETABLE, module: 'timetable' },
-  { label: 'Boarding',        path: '/boarding',       icon: BedDouble,       roles: FEATURE_ROLES.BOARDING, module: 'boarding' },
+  { label: 'Boarding',        path: '/boarding',       icon: BedDouble,       roles: FEATURE_ROLES.BOARDING, module: 'boarding', group: 'student_services' },
   { label: 'Library',         path: '/library',        icon: Library,         roles: FEATURE_ROLES.LIBRARY, module: 'library' },
-  { label: 'Transport',       path: '/transport',      icon: Bus,             roles: FEATURE_ROLES.TRANSPORT, module: 'transport' },
+  { label: 'Transport',       path: '/transport',      icon: Bus,             roles: FEATURE_ROLES.TRANSPORT, module: 'transport', group: 'student_services' },
   { label: 'Home Packages',   path: '/home-packages',  icon: Package,         roles: FEATURE_ROLES.HOME_PACKAGES, module: 'homepackages' },
-  { label: 'Exams',           path: '/exams',          icon: ClipboardList,   roles: FEATURE_ROLES.EXAMS, module: 'exams' },
-  { label: 'Exam Reports',    path: '/exams/reports',  icon: FileBarChart2,   roles: FEATURE_ROLES.EXAM_REPORTS, module: 'reports' },
+  { label: 'Exams',           path: '/exams',          icon: ClipboardList,   roles: FEATURE_ROLES.EXAMS, module: 'exams', group: 'examinations' },
+  { label: 'Exam Reports',    path: '/exams/reports',  icon: FileBarChart2,   roles: FEATURE_ROLES.EXAM_REPORTS, module: 'reports', group: 'examinations' },
   { label: 'Staff',           path: '/staff',          icon: Users,           roles: FEATURE_ROLES.STAFF },
   { label: 'Communications',  path: '/communications', icon: MessageSquare,   roles: FEATURE_ROLES.COMMUNICATIONS_HUB, modules: ['communications', 'sms'] },
   { label: 'School Calendar', path: '/school-calendar',icon: CalendarRange,   roles: FEATURE_ROLES.SCHOOL_CALENDAR, module: 'school_calendar' },
   { label: 'My Children',     path: '/parent',         icon: Heart,           roles: FEATURE_ROLES.PARENT },
 ]
+
+// Items carrying a `group` key are rendered as children of a collapsible
+// parent in the sidebar. The parent sits where its first visible child sits
+// and only appears if at least one child is visible for this user.
+export const NAV_GROUPS = {
+  examinations:     { label: 'Examinations',     icon: ClipboardList },
+  student_services: { label: 'Student Services', icon: Building2 },
+}
 
 export const ADMIN_NAV_ITEMS = [
   { label: 'System Dashboard',    path: '/admin-panel',                icon: Monitor },
@@ -76,5 +85,22 @@ export function useNavItems() {
     return isModuleVisible(item.module, enabledModules, modulesLoading)
   })
 
-  return { regularItems, adminItems: isAdmin ? ADMIN_NAV_ITEMS : [], showAdmin: isAdmin }
+  // Sidebar structure: leaves stay as-is, grouped items collapse into one
+  // { type: 'group' } entry. `regularItems` stays flat for quick search.
+  const navEntries = []
+  const groupEntries = {}
+  for (const item of regularItems) {
+    if (!item.group) {
+      navEntries.push({ type: 'item', ...item })
+      continue
+    }
+    if (!groupEntries[item.group]) {
+      const { label, icon } = NAV_GROUPS[item.group]
+      groupEntries[item.group] = { type: 'group', key: item.group, label, icon, children: [] }
+      navEntries.push(groupEntries[item.group])
+    }
+    groupEntries[item.group].children.push(item)
+  }
+
+  return { regularItems, navEntries, adminItems: isAdmin ? ADMIN_NAV_ITEMS : [], showAdmin: isAdmin }
 }

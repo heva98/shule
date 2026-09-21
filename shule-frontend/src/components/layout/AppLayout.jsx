@@ -88,7 +88,7 @@ export default function AppLayout() {
     <div className="flex h-screen bg-surface overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex">
-        <Sidebar collapsed={collapsed} />
+        <Sidebar collapsed={collapsed} onExpand={toggleCollapsed} />
       </div>
 
       {/* Mobile sidebar overlay */}
