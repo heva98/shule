@@ -34,7 +34,7 @@ const DESIG_CLR = {
   TEACHER: 'bg-blue-100 text-blue-700',
   HOD: 'bg-purple-100 text-purple-700',
   DEPUTY_HEAD: 'bg-indigo-100 text-indigo-700',
-  HEADTEACHER: 'bg-[#1B4F72]/10 text-[#1B4F72]',
+  HEADTEACHER: 'bg-[#177dff]/10 text-[#177dff]',
   BURSAR: 'bg-emerald-100 text-emerald-700',
   ADMIN: 'bg-orange-100 text-orange-700',
 }
@@ -168,7 +168,7 @@ function SubjectsDropdown({ value, onChange, subjects }) {
                   type="checkbox"
                   checked={value.includes(s.id)}
                   onChange={() => toggle(s.id)}
-                  className="rounded accent-[#1B4F72]"
+                  className="rounded accent-[#177dff]"
                 />
                 <span className="text-sm">{s.code} — {s.name}</span>
               </label>
@@ -257,7 +257,7 @@ function QualificationsBuilder({ value, onChange }) {
       <button
         type="button"
         onClick={add}
-        className="text-xs text-[#1B4F72] hover:underline flex items-center gap-1"
+        className="text-xs text-[#177dff] hover:underline flex items-center gap-1"
       >
         <Plus size={12} /> Add qualification
       </button>
@@ -362,12 +362,12 @@ function ProfileFields({ form, set, subjects }) {
                 }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
                   checked
-                    ? 'border-[#1B4F72] bg-[#1B4F72]/5 text-[#1B4F72] font-medium'
+                    ? 'border-[#177dff] bg-[#177dff]/5 text-[#177dff] font-medium'
                     : 'border-gray-200 text-gray-500 hover:border-gray-300'
                 }`}
               >
                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
-                  checked ? 'border-[#1B4F72] bg-[#1B4F72]' : 'border-gray-300'
+                  checked ? 'border-[#177dff] bg-[#177dff]' : 'border-gray-300'
                 }`}>
                   {checked && <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                 </div>
@@ -503,7 +503,7 @@ function AddStaffModal({ onClose }) {
 
         <div className="flex gap-2 px-5 pt-4">
           {[1, 2].map(s => (
-            <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? 'bg-[#1B4F72]' : 'bg-gray-200'}`} />
+            <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? 'bg-[#177dff]' : 'bg-gray-200'}`} />
           ))}
         </div>
 
@@ -628,7 +628,7 @@ function StaffModal({ staff, canEdit, onClose }) {
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl">
         <div className="flex items-center justify-between p-5 border-b">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#1B4F72] flex items-center justify-center text-white font-semibold text-sm overflow-hidden shrink-0">
+            <div className="w-10 h-10 rounded-full bg-[#177dff] flex items-center justify-center text-white font-semibold text-sm overflow-hidden shrink-0">
               {photo
                 ? <img src={photo} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
                 : initials(staff.full_name)}
@@ -855,7 +855,7 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Staff', value: total, icon: <User size={16} />, clr: 'text-[#1B4F72]', bg: 'bg-[#1B4F72]/5' },
+          { label: 'Total Staff', value: total, icon: <User size={16} />, clr: 'text-[#177dff]', bg: 'bg-[#177dff]/5' },
           { label: 'Teachers', value: teachers, icon: <Briefcase size={16} />, clr: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Dept. Heads', value: hods, icon: <Shield size={16} />, clr: 'text-purple-600', bg: 'bg-purple-50' },
           { label: 'Subjects', value: '—', icon: <GraduationCap size={16} />, clr: 'text-emerald-600', bg: 'bg-emerald-50' },
@@ -875,14 +875,14 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
-            className="w-full border border-gray-300 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]"
+            className="w-full border border-gray-300 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#177dff]/30 focus:border-[#177dff]"
             placeholder="Search by name, employee ID, TSC…"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
           />
         </div>
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 w-full sm:w-44"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#177dff]/30 w-full sm:w-44"
           value={desigFilter}
           onChange={e => { setDesigFilter(e.target.value); setPage(1) }}
         >
@@ -936,7 +936,7 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#1B4F72] flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[#177dff] flex items-center justify-center text-white text-xs font-semibold shrink-0">
                         {initials(s.full_name)}
                       </div>
                       <div>
@@ -1172,7 +1172,7 @@ export default function StaffPage() {
               onClick={() => setTab(key)}
               className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === key
-                  ? 'border-[#1B4F72] text-[#1B4F72]'
+                  ? 'border-[#177dff] text-[#177dff]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >

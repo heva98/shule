@@ -4,12 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary:   '#1B4F72',
-        secondary: '#2E86C1',
-        accent:    '#F39C12',
-        success:   '#27AE60',
-        danger:    '#E74C3C',
-        surface:   '#F8F9FA',
+        // Kaiadmin palette
+        primary:   '#177dff',
+        secondary: '#36a3f7',
+        purple:    '#716aca',
+        accent:    '#ffa534',
+        success:   '#35cd3a',
+        danger:    '#f3545d',
+        surface:   '#f9fbfd',
+        sidebar:   '#1a2035',
+        ink:       '#2a2f5b',
       },
       fontFamily: {
         sans: ['"Public Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],

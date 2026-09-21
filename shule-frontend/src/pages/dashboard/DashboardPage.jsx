@@ -234,7 +234,7 @@ export default function DashboardPage() {
                 : '—'
             }
             icon={CalendarCheck}
-            color="bg-secondary"
+            color="bg-purple"
             subtitle={
               data?.attendance?.total_records
                 ? `${data.attendance.present} present of ${data.attendance.total_records}`
@@ -332,7 +332,7 @@ export default function DashboardPage() {
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f3f4f6' }} />
                 <Bar
                   dataKey="collected"
-                  fill="#1B4F72"
+                  fill="#177dff"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={40}
                 />

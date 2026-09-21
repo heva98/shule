@@ -1,4 +1,4 @@
-import { Menu } from 'lucide-react'
+import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
@@ -49,8 +49,19 @@ function ContentFallback() {
   )
 }
 
+const COLLAPSE_KEY = 'shule.sidebarCollapsed'
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(readCollapsed)
   const { pathname } = useLocation()
   const title = resolveTitle(pathname)
   const mainRef = useRef(null)
@@ -61,11 +72,23 @@ export default function AppLayout() {
     mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
   }, [pathname])
 
+  function toggleCollapsed() {
+    setCollapsed(c => {
+      const next = !c
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0')
+      } catch {
+        /* storage unavailable — collapse state just won't persist */
+      }
+      return next
+    })
+  }
+
   return (
     <div className="flex h-screen bg-surface overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex">
-        <Sidebar />
+        <Sidebar collapsed={collapsed} />
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -84,7 +107,7 @@ export default function AppLayout() {
       {/* Main column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Topbar */}
-        <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 shrink-0">
+        <header className="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-100 shadow-[0_1px_8px_rgba(69,65,78,0.06)] shrink-0 z-10">
           <div className="flex items-center gap-3">
             <button
               className="lg:hidden p-1.5 rounded-md hover:bg-gray-100 transition-colors"
@@ -92,7 +115,17 @@ export default function AppLayout() {
             >
               <Menu size={20} className="text-gray-600" />
             </button>
-            <h1 className="text-base font-semibold text-gray-800">{title}</h1>
+            <button
+              className="hidden lg:inline-flex p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed
+                ? <PanelLeftOpen size={20} className="text-gray-600" />
+                : <PanelLeftClose size={20} className="text-gray-600" />}
+            </button>
+            <h1 className="text-base font-semibold text-ink">{title}</h1>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-3">
             <QuickSearch />

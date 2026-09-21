@@ -102,7 +102,7 @@ export const ROLE_LABEL = {
 export const ROLE_BADGE = {
   OWNER:              'bg-purple-100 text-purple-700',
   SYSTEM_ADMIN:       'bg-red-100 text-red-700',
-  HEADTEACHER:        'bg-[#1B4F72]/10 text-[#1B4F72]',
+  HEADTEACHER:        'bg-[#177dff]/10 text-[#177dff]',
   ACADEMIC_TEACHER:   'bg-orange-100 text-orange-700',
   DISCIPLINE_TEACHER: 'bg-violet-100 text-violet-700',
   CLASS_TEACHER:      'bg-green-100 text-green-700',
