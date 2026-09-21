@@ -1,4 +1,4 @@
-import { ChevronDown, X } from 'lucide-react'
+import { ChevronDown, ShieldCheck, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -178,19 +178,16 @@ export default function Sidebar({ onClose, collapsed = false, onExpand }) {
         {showAdmin && (
           <>
             {regularItems.length > 0 && (
-              <div className="pt-4 pb-2">
-                {collapsed ? (
-                  <div className="h-px bg-white/10 mx-4" />
-                ) : (
-                  <p className="px-5 text-[11px] font-semibold text-white/40 uppercase tracking-widest">
-                    Admin Panel
-                  </p>
-                )}
+              <div className="py-2">
+                <div className={`h-px bg-white/10 ${collapsed ? 'mx-4' : 'mx-5'}`} />
               </div>
             )}
-            {adminItems.map(item => (
-              <NavItem key={item.path} item={item} onClose={onClose} collapsed={collapsed} />
-            ))}
+            <NavGroup
+              group={{ key: 'admin', label: 'Admin Panel', icon: ShieldCheck, children: adminItems }}
+              onClose={onClose}
+              collapsed={collapsed}
+              onExpand={onExpand}
+            />
           </>
         )}
       </nav>
