@@ -19,6 +19,16 @@ const StudentsListPage = lazy(() => import('./pages/students/StudentsListPage'))
 const StudentFormPage = lazy(() => import('./pages/students/StudentFormPage'))
 const StudentDetailPage = lazy(() => import('./pages/students/StudentDetailPage'))
 const FeesPage = lazy(() => import('./pages/fees/FeesPage'))
+
+// Fees sub-menu pages (see NAV_ITEMS group 'fees'); '/fees' is Invoices.
+const FEE_SECTIONS = [
+  ['/fees', 'invoices'],
+  ['/fees/student', 'student'],
+  ['/fees/reports', 'reports'],
+  ['/fees/defaulters', 'defaulters'],
+  ['/fees/config', 'config'],
+  ['/fees/academic-years', 'years'],
+]
 const InvoicesPage = lazy(() => import('./pages/fees/InvoicesPage'))
 const RecordPaymentPage = lazy(() => import('./pages/fees/RecordPaymentPage'))
 const AttendancePage = lazy(() => import('./pages/attendance/AttendancePage'))
@@ -115,14 +125,17 @@ export default function App() {
                   }
                 />
 
-                <Route
-                  path="/fees"
-                  element={
-                    <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES} requiredModule="fees">
-                      <FeesPage />
-                    </ProtectedRoute>
-                  }
-                />
+                {FEE_SECTIONS.map(([path, section]) => (
+                  <Route
+                    key={path}
+                    path={path}
+                    element={
+                      <ProtectedRoute allowedRoles={FEATURE_ROLES.FEES} requiredModule="fees">
+                        <FeesPage section={section} />
+                      </ProtectedRoute>
+                    }
+                  />
+                ))}
                 <Route
                   path="/fees/invoices"
                   element={

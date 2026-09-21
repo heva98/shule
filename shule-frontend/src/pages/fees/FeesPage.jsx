@@ -23,7 +23,6 @@ import StudentFeesTab from './StudentFeesTab'
 import RecordPaymentModal from '../../components/fees/RecordPaymentModal'
 import Badge from '../../components/ui/Badge'
 import Skeleton from '../../components/ui/Skeleton'
-import Tabs from '../../components/ui/Tabs'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import {
@@ -576,27 +575,17 @@ function AcademicYearsTab() {
 
 // ── Main Page ──────────────────────────────────────────────────────────────
 
-const TABS = [
-  { id: 'invoices',    label: 'Invoices' },
-  { id: 'student',     label: 'Student Fees' },
-  { id: 'reports',     label: 'Reports' },
-  { id: 'defaulters',  label: 'Defaulters' },
-  { id: 'config',      label: 'Fee Configuration' },
-  { id: 'years',       label: 'Academic Years' },
-]
+// One page per sidebar sub-menu entry — the route decides which section shows.
+const SECTIONS = {
+  invoices:   InvoicesTab,
+  student:    StudentFeesTab,
+  reports:    ReportsTab,
+  defaulters: DefaultersTab,
+  config:     FeeConfigTab,
+  years:      AcademicYearsTab,
+}
 
-export default function FeesPage() {
-  const [activeTab, setActiveTab] = useState('invoices')
-
-  return (
-    <div className="space-y-5">
-      <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
-      {activeTab === 'invoices'    && <InvoicesTab />}
-      {activeTab === 'student'     && <StudentFeesTab />}
-      {activeTab === 'reports'     && <ReportsTab />}
-      {activeTab === 'defaulters'  && <DefaultersTab />}
-      {activeTab === 'config'      && <FeeConfigTab />}
-      {activeTab === 'years'       && <AcademicYearsTab />}
-    </div>
-  )
+export default function FeesPage({ section = 'invoices' }) {
+  const Section = SECTIONS[section] ?? InvoicesTab
+  return <Section />
 }

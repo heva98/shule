@@ -1,5 +1,6 @@
 import {
   Activity,
+  AlertTriangle,
   BedDouble,
   BookOpen,
   Building2,
@@ -11,6 +12,7 @@ import {
   Clock,
   CreditCard,
   FileBarChart2,
+  FileText,
   GraduationCap,
   Heart,
   LayoutDashboard,
@@ -35,7 +37,12 @@ const ADMIN_ROLES = FEATURE_ROLES.ADMIN
 export const NAV_ITEMS = [
   { label: 'Dashboard',       path: '/dashboard',      icon: LayoutDashboard, roles: FEATURE_ROLES.DASHBOARD },
   { label: 'Students',        path: '/students',       icon: GraduationCap,   roles: FEATURE_ROLES.STUDENTS },
-  { label: 'Fees',            path: '/fees',           icon: CreditCard,      roles: FEATURE_ROLES.FEES, module: 'fees' },
+  { label: 'Invoices',        path: '/fees',                   icon: FileText,      roles: FEATURE_ROLES.FEES, module: 'fees', group: 'fees' },
+  { label: 'Student Fees',    path: '/fees/student',           icon: GraduationCap, roles: FEATURE_ROLES.FEES, module: 'fees', group: 'fees' },
+  { label: 'Fee Reports',     path: '/fees/reports',           icon: FileBarChart2, roles: FEATURE_ROLES.FEES, module: 'fees', group: 'fees' },
+  { label: 'Defaulters',      path: '/fees/defaulters',        icon: AlertTriangle, roles: FEATURE_ROLES.FEES, module: 'fees', group: 'fees' },
+  { label: 'Fee Configuration', path: '/fees/config',          icon: Settings,      roles: FEATURE_ROLES.FEES, module: 'fees', group: 'fees' },
+  { label: 'Academic Years',  path: '/fees/academic-years',    icon: CalendarDays,  roles: FEATURE_ROLES.FEES, module: 'fees', group: 'fees' },
   { label: 'Attendance',      path: '/attendance',     icon: CalendarCheck,   roles: FEATURE_ROLES.ATTENDANCE, module: 'attendance' },
   { label: 'Timetable',       path: '/timetable',      icon: Clock,           roles: FEATURE_ROLES.TIMETABLE, module: 'timetable', group: 'academics' },
   { label: 'Boarding',        path: '/boarding',       icon: BedDouble,       roles: FEATURE_ROLES.BOARDING, module: 'boarding', group: 'student_services' },
@@ -54,6 +61,7 @@ export const NAV_ITEMS = [
 // parent in the sidebar. The parent sits where its first visible child sits
 // and only appears if at least one child is visible for this user.
 export const NAV_GROUPS = {
+  fees:             { label: 'Fees',             icon: CreditCard },
   examinations:     { label: 'Examinations',     icon: ClipboardList },
   academics:        { label: 'Academics',        icon: BookOpen },
   student_services: { label: 'Student Services', icon: Building2 },
