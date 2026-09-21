@@ -602,7 +602,7 @@ function MessageRow({ msg, expanded, onToggle }) {
               </p>
               <div className="rounded-xl border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                  <table className="data-table w-full text-xs">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
                         <th className="px-3 py-2 text-left text-gray-500 font-medium">Recipient</th>

@@ -90,7 +90,7 @@ export default function UniformSaleModal({ student: initialStudent, onClose, onS
                 <StudentPicker onPick={setStudent} />
               )}
 
-              <table className="w-full text-sm">
+              <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="text-xs text-gray-400 uppercase tracking-wide">
                     <th className="text-left py-2">Item</th>

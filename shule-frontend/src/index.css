@@ -19,6 +19,57 @@
 .kpi-bubbles::before { top: -20%; right: -120px; width: 260px; height: 260px; }
 .kpi-bubbles::after  { top: -60px; right: 70px;  width: 130px; height: 130px; }
 
+/* Data tables — Kaiadmin "striped" + "hoverable" combined: light uppercase
+   header, alternating row shading with no dividers, blue tint on hover.
+   Opt in with class="data-table" (list tables only — not print layouts or
+   the mark-entry / timetable grids). !important is deliberate: the tables
+   also carry per-cell Tailwind utilities (borders, padding, bg) that this
+   should uniformly replace. */
+.data-table {
+  border-collapse: collapse;
+}
+.data-table thead th {
+  background-color: #f6f9fc !important;
+  color: #8898aa !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 20px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #ebedf2 !important;
+  vertical-align: middle;
+}
+.data-table thead tr {
+  background-color: transparent !important;
+  border: 0 !important;
+}
+.data-table tbody tr,
+.data-table tfoot tr {
+  border: 0 !important;
+  transition: background-color 0.15s ease;
+}
+.data-table tbody td,
+.data-table tfoot td {
+  padding: 14px 20px !important;
+  border: 0 !important;
+  vertical-align: middle;
+}
+.data-table.text-xs tbody td,
+.data-table.text-xs tfoot td {
+  padding: 10px 16px !important;
+}
+.data-table.text-xs thead th {
+  padding: 10px 16px !important;
+}
+/* Striping — skipped for rows that set their own bg-* (status highlights). */
+.data-table tbody tr:nth-child(odd):not([class^="bg-"]):not([class*=" bg-"]) {
+  background-color: #f7f9fc;
+}
+.data-table tbody tr:hover:not([class^="bg-"]):not([class*=" bg-"]) {
+  background-color: #eaf3ff;
+}
+
 /* Content transition when moving between modules / pages */
 @keyframes route-fade-in {
   from { opacity: 0; transform: translateY(6px); }

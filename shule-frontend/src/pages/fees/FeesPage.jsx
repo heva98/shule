@@ -156,7 +156,7 @@ function InvoicesTab() {
 
       <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
                 {['Student', 'Level', 'Period', 'Invoiced', 'Paid', 'Balance', 'Status'].map((h) => (
@@ -348,7 +348,7 @@ function DefaultersTab() {
 
       <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
                 {['Student', 'Level', 'Period', 'Balance (TZS)', 'Days Overdue', 'Action'].map((h) => (
@@ -525,7 +525,7 @@ function AcademicYearsTab() {
             <p className="text-xs text-gray-400">Click <strong>New Year</strong> to add one, or run <code className="bg-gray-100 px-1 rounded">python manage.py seed_academic_year</code></p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Year</th>

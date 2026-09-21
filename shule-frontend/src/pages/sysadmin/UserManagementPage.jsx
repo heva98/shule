@@ -353,7 +353,7 @@ function BulkImportModal({ onClose }) {
 
         {preview && (
           <div className="overflow-x-auto rounded-lg border border-gray-100">
-            <table className="w-full text-xs">
+            <table className="data-table w-full text-xs">
               <thead className="bg-gray-50">
                 <tr>
                   {Object.keys(preview[0]).map(h => (
@@ -485,7 +485,7 @@ export default function UserManagementPage() {
       {/* Table */}
       <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">User</th>

@@ -124,7 +124,7 @@ export default function ReceivePaymentModal({ student, academicYear, onClose, on
               ) : lines.length === 0 ? (
                 <div className="py-10 text-center text-sm text-gray-400">Nothing outstanding for this year.</div>
               ) : (
-                <table className="w-full text-sm">
+                <table className="data-table w-full text-sm">
                   <thead>
                     <tr className="text-xs text-gray-400 uppercase tracking-wide">
                       <th className="text-left py-2">Fee</th>

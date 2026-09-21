@@ -386,7 +386,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="overflow-x-auto -mx-1">
-              <table className="w-full text-sm">
+              <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-3">

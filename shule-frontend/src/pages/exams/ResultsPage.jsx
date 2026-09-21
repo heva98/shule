@@ -252,7 +252,7 @@ export default function ResultsPage() {
       {/* Ranking table */}
       <Card padding="p-0" className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60 sticky top-0">
                 <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide text-left whitespace-nowrap">Pos</th>

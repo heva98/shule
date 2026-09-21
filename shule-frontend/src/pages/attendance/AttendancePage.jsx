@@ -273,7 +273,7 @@ function RegisterTab() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
                     <th className="w-10 px-4 py-2.5 text-xs font-medium text-gray-500 text-left">#</th>
@@ -571,7 +571,7 @@ function ReportsTab() {
                 No records for {MONTHS[month - 1]} {year}.
               </p>
             ) : (
-              <table className="w-full text-sm">
+              <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
                     {['Date', 'Session', 'Status', 'Reason', 'Marked by'].map((h) => (
@@ -688,7 +688,7 @@ function AbsenteesTab() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   {['Name', 'Level', 'Stream', 'Guardian', 'Phone', 'Reason'].map((h) => (

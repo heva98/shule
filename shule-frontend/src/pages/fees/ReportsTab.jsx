@@ -37,7 +37,7 @@ function SimpleTable({ head, rows, empty }) {
   return (
     <Card padding="p-0" className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="data-table w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/60 text-xs font-medium text-gray-500 uppercase tracking-wide">
               {head.map((h, i) => (

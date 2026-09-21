@@ -367,7 +367,7 @@ function FeesTab({ studentId }) {
 
   return (
     <Card padding="p-0" className="overflow-hidden">
-      <table className="w-full text-sm">
+      <table className="data-table w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50/60">
             {['Term', 'Amount Due', 'Paid', 'Balance', 'Due Date', 'Status'].map((h) => (
@@ -465,7 +465,7 @@ function AttendanceTab({ studentId }) {
         ) : rows.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-gray-400">No attendance records found.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
                 {['Date', 'Session', 'Status', 'Reason'].map((h) => (
@@ -626,7 +626,7 @@ function ResultsTab({ student }) {
               </div>
 
               {/* Subjects table */}
-              <table className="w-full text-sm">
+              <table className="data-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
                     {['Subject', 'Code', 'Score', 'Grade', 'Remarks'].map((h) => (

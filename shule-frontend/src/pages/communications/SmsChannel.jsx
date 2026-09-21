@@ -348,7 +348,7 @@ function LogTab() {
               {b.dry_run && <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100">DRY RUN</span>}
             </div>
             <div className="overflow-x-auto border border-gray-100 rounded-lg">
-              <table className="w-full text-xs">
+              <table className="data-table w-full text-xs">
                 <thead className="bg-gray-50 text-gray-500">
                   <tr>
                     <th className="text-left px-3 py-2">Pupil</th>

@@ -906,7 +906,7 @@ function StaffDirectoryTab({ canEdit, canCreateAccount }) {
             <p className="text-sm text-gray-400">No staff found</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -1068,7 +1068,7 @@ function LeaveTab({ canApprove, allStaff }) {
             <p className="text-sm text-gray-400">No leave requests</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="data-table w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Staff</th>
