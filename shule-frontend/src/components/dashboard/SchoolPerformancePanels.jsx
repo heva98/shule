@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Award, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react'
+import { Award, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
 import { getSchoolPerformance } from '../../api/exams'
 import Card from '../ui/Card'
 import { LEVEL_LABEL } from '../../lib/constants'
@@ -17,7 +17,7 @@ function RankTile({ title, icon: Icon, tone, items, labelFn, subtitleFn = defaul
   return (
     <Card>
       <div className="flex items-center gap-2 mb-3">
-        <Icon size={15} className={toneCls} />
+        <Icon size={18} strokeWidth={3} className={toneCls} />
         <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{title}</h3>
       </div>
       {loading ? (
@@ -76,11 +76,11 @@ export default function SchoolPerformancePanels({ role, enabledModules }) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <RankTile
-          title="Top Classes" icon={TrendingUp} tone="up"
+          title="Top Classes" icon={ChevronUp} tone="up"
           items={data?.top_classes} labelFn={classLabel} loading={isLoading}
         />
         <RankTile
-          title="Classes Needing Attention" icon={TrendingDown} tone="down"
+          title="Classes Needing Attention" icon={ChevronDown} tone="down"
           items={data?.bottom_classes} labelFn={classLabel} loading={isLoading}
         />
         <RankTile
