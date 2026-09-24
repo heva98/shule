@@ -11,6 +11,7 @@ from accounts.models import Role
 
 from .models import Guardian, Student, StudentStatus
 from .serializers import (
+    EnrolmentSerializer,
     GuardianSerializer,
     StudentSerializer,
     StudentWriteSerializer,
@@ -116,6 +117,13 @@ class StudentViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], url_path='enrolments')
+    def enrolments(self, request, public_id=None):
+        """Year-by-year class history, newest first (see students.enrolment)."""
+        student = self.get_object()
+        rows = student.enrolments.select_related('academic_year').order_by('-academic_year__year')
+        return Response(EnrolmentSerializer(rows, many=True).data)
 
 
 class GuardianViewSet(ModelViewSet):

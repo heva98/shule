@@ -28,6 +28,7 @@ import {
   deleteGuardian,
   downloadStudentReportCardPdf,
   getStudent,
+  getStudentEnrolments,
   getStudentReportCard,
   updateGuardian,
 } from '../../api/students'
@@ -403,6 +404,81 @@ function FeesTab({ studentId }) {
               <td className="px-4 py-3">
                 <Badge label={inv.status} colorClass={INVOICE_BADGE[inv.status]} />
               </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  )
+}
+
+// ── Class history tab ──────────────────────────────────────────────────────
+
+function HistoryTab({ studentPublicId }) {
+  const { data: rows = [], isLoading, isError } = useQuery({
+    queryKey: ['student-enrolments', studentPublicId],
+    queryFn: () => getStudentEnrolments(studentPublicId),
+  })
+
+  if (isLoading) {
+    return (
+      <Card className="space-y-3">
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <p className="text-sm text-danger text-center">Failed to load class history.</p>
+      </Card>
+    )
+  }
+
+  if (rows.length === 0) {
+    return (
+      <Card padding="p-8" className="text-center">
+        <p className="text-sm text-gray-400">
+          No class history yet. History is recorded from the year it was switched on.
+        </p>
+      </Card>
+    )
+  }
+
+  return (
+    <Card padding="p-0" className="overflow-hidden">
+      <table className="data-table w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-100 bg-gray-50/60">
+            <th className="w-12 text-left px-4 py-3">#</th>
+            {['Year', 'Class', 'Stream', 'Status', 'Enrolled', 'Left'].map((h) => (
+              <th
+                key={h}
+                className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-50">
+          {rows.map((row, rowIdx) => (
+            <tr key={row.academic_year} className="hover:bg-gray-50/50 transition-colors">
+              <td className="text-gray-500">{rowIdx + 1}</td>
+              <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                {row.academic_year}
+                {row.is_current && <span className="ml-2 text-xs text-primary">Current</span>}
+              </td>
+              <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                {LEVEL_LABEL[row.level] ?? row.level}
+              </td>
+              <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{row.stream || '—'}</td>
+              <td className="px-4 py-3">
+                <Badge label={row.status} colorClass={STATUS_BADGE[row.status]} />
+              </td>
+              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.enrolled_on}</td>
+              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{row.left_on || '—'}</td>
             </tr>
           ))}
         </tbody>
@@ -867,6 +943,7 @@ const BASE_TABS = [
   { id: 'fees',        label: 'Fees',       module: 'fees' },
   { id: 'attendance',  label: 'Attendance', module: 'attendance' },
   { id: 'results',     label: 'Results',    module: 'reports' },
+  { id: 'history',     label: 'Class History' },
 ]
 
 export default function StudentDetailPage() {
@@ -983,6 +1060,7 @@ export default function StudentDetailPage() {
         {activeTab === 'fees'       && enabledModules.includes('fees')       && <FeesTab studentId={student.id} />}
         {activeTab === 'attendance' && enabledModules.includes('attendance') && <AttendanceTab studentId={student.id} />}
         {activeTab === 'results'    && enabledModules.includes('reports')    && <ResultsTab student={student} />}
+        {activeTab === 'history'    && <HistoryTab studentPublicId={id} />}
         {activeTab === 'documents'  && canSeeDocuments && <DocumentsTab studentId={student.id} />}
       </div>
 

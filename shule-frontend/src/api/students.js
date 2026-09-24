@@ -20,6 +20,10 @@ export const updateStudent = (id, formData) =>
     })
     .then((r) => r.data)
 
+// Year-by-year class history (students.Enrolment), newest first.
+export const getStudentEnrolments = (id) =>
+  api.get(`/students/${id}/enrolments/`).then((r) => r.data)
+
 export const getStudentGuardians = (id) =>
   api.get(`/students/${id}/guardians/`).then((r) => r.data)
 

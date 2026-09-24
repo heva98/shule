@@ -91,6 +91,53 @@ class Student(models.Model):
         return ' '.join(p for p in parts if p)
 
 
+class Enrolment(models.Model):
+    """
+    One row per student per academic year: the class and status the student
+    held in that year. `Student.level/stream/status` are only ever today's
+    values; this table is what remembers the past.
+
+    Rows are written by `students.enrolment` (via signals in
+    `students.signals`): the current year's row mirrors every save of the
+    student, and a row is seeded for every enrolled student when a year
+    becomes current. Once a year stops being current its rows are never
+    touched again, so they are the year-end record.
+    """
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrolments')
+    academic_year = models.ForeignKey(
+        'fees.AcademicYear', on_delete=models.PROTECT, related_name='enrolments'
+    )
+
+    level = models.CharField(max_length=10, choices=Level.choices)
+    stream = models.CharField(max_length=10, blank=True)
+    status = models.CharField(max_length=15, choices=StudentStatus.choices)
+
+    enrolled_on = models.DateField()
+    # Set when the student stops being ACTIVE/SUSPENDED during the year
+    # (transferred, graduated, expelled); cleared if they are reinstated.
+    left_on = models.DateField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-academic_year__year', 'level', 'stream']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'academic_year'], name='enrolment_student_year_uniq'
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=['academic_year', 'level', 'stream', 'status'],
+                name='enrolment_yr_lvl_strm_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.student} — {self.academic_year}: {self.level} {self.stream}'.rstrip()
+
+
 class Relationship(models.TextChoices):
     FATHER = 'FATHER', 'Father'
     MOTHER = 'MOTHER', 'Mother'

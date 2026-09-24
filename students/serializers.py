@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Guardian, Student
+from .models import Enrolment, Guardian, Student
 
 
 class GuardianSerializer(serializers.ModelSerializer):
@@ -74,3 +74,13 @@ class StudentWriteSerializer(serializers.ModelSerializer):
             'has_special_needs', 'special_needs_notes', 'user',
         ]
         read_only_fields = ['id', 'public_id', 'student_id', 'full_name']
+
+
+class EnrolmentSerializer(serializers.ModelSerializer):
+    academic_year = serializers.IntegerField(source='academic_year.year', read_only=True)
+    is_current = serializers.BooleanField(source='academic_year.is_current', read_only=True)
+
+    class Meta:
+        model = Enrolment
+        fields = ['academic_year', 'is_current', 'level', 'stream', 'status', 'enrolled_on', 'left_on']
+        read_only_fields = fields
