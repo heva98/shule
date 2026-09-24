@@ -28,13 +28,58 @@ class FeeConfigApiTests(TestCase):
             c.post('/api/fees/config/lunch/', {}, format='json').status_code, 403
         )
 
+    QUARTERS = {
+        'q1_amount': '150000', 'q2_amount': '150000',
+        'q3_amount': '100000', 'q4_amount': '100000',
+    }
+
     def test_create_tuition_plan_for_level_group(self):
+        resp = self.client.post('/api/fees/config/tuition/', {
+            'academic_year': self.year.id, 'scope': 'LEVEL_GROUP',
+            'level_group': 'PRIMARY', 'amount': '500000', **self.QUARTERS,
+        }, format='json')
+        self.assertEqual(resp.status_code, 201, resp.data)
+        self.assertEqual(resp.data['level'], '')
+        self.assertEqual(resp.data['q1_amount'], '150000.00')
+        self.assertEqual(resp.data['q4_amount'], '100000.00')
+
+    def test_tuition_plan_requires_quarter_breakdown(self):
         resp = self.client.post('/api/fees/config/tuition/', {
             'academic_year': self.year.id, 'scope': 'LEVEL_GROUP',
             'level_group': 'PRIMARY', 'amount': '500000',
         }, format='json')
-        self.assertEqual(resp.status_code, 201, resp.data)
-        self.assertEqual(resp.data['level'], '')
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('q1_amount', resp.data)
+
+    def test_tuition_plan_quarters_must_sum_to_annual(self):
+        resp = self.client.post('/api/fees/config/tuition/', {
+            'academic_year': self.year.id, 'scope': 'LEVEL_GROUP',
+            'level_group': 'PRIMARY', 'amount': '500000',
+            **self.QUARTERS, 'q4_amount': '90000',
+        }, format='json')
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('q4_amount', resp.data)
+
+    def test_tuition_plan_patch_amount_rechecks_breakdown(self):
+        resp = self.client.post('/api/fees/config/tuition/', {
+            'academic_year': self.year.id, 'scope': 'LEVEL_GROUP',
+            'level_group': 'PRIMARY', 'amount': '500000', **self.QUARTERS,
+        }, format='json')
+        pk = resp.data['id']
+        url = f'/api/fees/config/tuition/{pk}/'
+        self.assertEqual(self.client.patch(url, {'amount': '600000'}, format='json').status_code, 400)
+        self.assertEqual(self.client.patch(url, {'is_active': False}, format='json').status_code, 200)
+        resp = self.client.patch(url, {'amount': '600000', 'q4_amount': '200000'}, format='json')
+        self.assertEqual(resp.status_code, 200, resp.data)
+
+    def test_tuition_plan_saved_without_breakdown_splits_equally(self):
+        plan = TuitionFeePlan.objects.create(
+            academic_year=self.year, scope='LEVEL', level='STD1', amount=Decimal('100003'),
+        )
+        self.assertEqual(
+            [plan.q1_amount, plan.q2_amount, plan.q3_amount, plan.q4_amount],
+            [Decimal('25000'), Decimal('25000'), Decimal('25000'), Decimal('25003')],
+        )
 
     def test_tuition_plan_level_group_requires_group(self):
         resp = self.client.post('/api/fees/config/tuition/', {

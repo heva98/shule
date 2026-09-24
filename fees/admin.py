@@ -165,7 +165,10 @@ class UniformSaleItemAdmin(admin.ModelAdmin):
 
 @admin.register(TuitionFeePlan)
 class TuitionFeePlanAdmin(admin.ModelAdmin):
-    list_display = ('academic_year', 'scope', 'level_group', 'level', 'amount', 'is_active')
+    list_display = (
+        'academic_year', 'scope', 'level_group', 'level', 'amount',
+        'q1_amount', 'q2_amount', 'q3_amount', 'q4_amount', 'is_active',
+    )
     list_filter = ('academic_year', 'scope', 'is_active', 'level_group')
 
 

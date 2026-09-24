@@ -264,10 +264,14 @@ class TuitionFeePlanSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'academic_year', 'academic_year_label', 'scope',
             'level_group', 'level_group_display', 'level', 'level_display',
-            'amount', 'is_active', 'created_at', 'updated_at',
+            'amount', 'q1_amount', 'q2_amount', 'q3_amount', 'q4_amount',
+            'is_active', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         validators = []  # conditional UniqueConstraints handled in validate()
+        extra_kwargs = {
+            f: {'required': True, 'min_value': 0} for f in TuitionFeePlan.QUARTER_FIELDS
+        }
 
     def validate(self, attrs):
         inst = self.instance
@@ -291,6 +295,18 @@ class TuitionFeePlanSerializer(serializers.ModelSerializer):
                 level_group if scope == TuitionFeePlan.Scope.LEVEL_GROUP else level
             )
             _reject_duplicate_active_plan(self, TuitionFeePlan, key)
+
+        touched = ('amount', *TuitionFeePlan.QUARTER_FIELDS)
+        if any(f in attrs for f in touched):
+            amount = attrs.get('amount', getattr(inst, 'amount', None))
+            total = sum(
+                attrs.get(f, getattr(inst, f, 0)) or 0 for f in TuitionFeePlan.QUARTER_FIELDS
+            )
+            if amount is not None and total != amount:
+                raise serializers.ValidationError({
+                    'q4_amount': f'Quarter amounts add up to {total:,.0f}, '
+                                 f'but the annual amount is {amount:,.0f}.',
+                })
         return attrs
 
 

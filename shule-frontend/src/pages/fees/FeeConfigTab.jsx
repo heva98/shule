@@ -28,7 +28,7 @@ const QUARTER_MAP = {
 }
 
 const SUB_TABS = [
-  { id: 'tuition', label: 'Tuition', hint: 'Annual · by level group or class' },
+  { id: 'tuition', label: 'Tuition', hint: 'Annual · split per quarter · by level group or class' },
   { id: 'uniform', label: 'Uniform', hint: 'Annual · per class · opt-in' },
   { id: 'lunch', label: 'Lunch', hint: 'Quarterly · school-wide day / boarding rates' },
   { id: 'activity', label: 'Activity', hint: 'Quarterly · per class' },
@@ -156,9 +156,28 @@ function confirmDelete(row, mut) {
 }
 
 // ── Tuition ──────────────────────────────────────────────────────────────
+const TUITION_QUARTERS = [
+  { key: 'q1_amount', label: 'Q1', term: 'Term 1' },
+  { key: 'q2_amount', label: 'Q2', term: 'Term 1' },
+  { key: 'q3_amount', label: 'Q3', term: 'Term 2' },
+  { key: 'q4_amount', label: 'Q4', term: 'Term 2' },
+]
+
+// Whole-shilling equal split; any remainder goes on Q4 (matches the backend).
+function splitEqually(amount) {
+  const total = Math.max(0, Math.floor(Number(amount) || 0))
+  const part = Math.floor(total / 4)
+  return { q1_amount: String(part), q2_amount: String(part), q3_amount: String(part), q4_amount: String(total - 3 * part) }
+}
+
+const EMPTY_TUITION = {
+  scope: 'LEVEL_GROUP', level_group: 'PRIMARY', level: '', amount: '',
+  q1_amount: '', q2_amount: '', q3_amount: '', q4_amount: '',
+}
+
 function TuitionSection({ yearId }) {
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ scope: 'LEVEL_GROUP', level_group: 'PRIMARY', level: '', amount: '' })
+  const [form, setForm] = useState(EMPTY_TUITION)
   const { levelOptions } = useSchoolLevels()
 
   const { data, isLoading, isError } = useQuery({
@@ -171,20 +190,30 @@ function TuitionSection({ yearId }) {
     create: createTuitionPlan, update: updateTuitionPlan, remove: deleteTuitionPlan,
   })
 
+  const annual = Number(form.amount) || 0
+  const quarterTotal = TUITION_QUARTERS.reduce((sum, q) => sum + (Number(form[q.key]) || 0), 0)
+  const remaining = annual - quarterTotal
+  const balanced = form.amount !== '' && remaining === 0
+
   function submit(e) {
     e.preventDefault()
+    if (!balanced) {
+      toast.error('Quarter amounts must add up to the annual amount.')
+      return
+    }
     const payload = {
       academic_year: yearId, scope: form.scope, amount: form.amount,
       level_group: form.scope === 'LEVEL_GROUP' ? form.level_group : '',
       level: form.scope === 'LEVEL' ? form.level : '',
+      ...Object.fromEntries(TUITION_QUARTERS.map((q) => [q.key, form[q.key]])),
     }
-    mut.create.mutate(payload, { onSuccess: () => setOpen(false) })
+    mut.create.mutate(payload, { onSuccess: () => { setOpen(false); setForm(EMPTY_TUITION) } })
   }
 
   return (
     <>
       <div className="flex items-center gap-3 mb-4">
-        <p className="text-sm text-gray-500">Annual tuition. A single-class plan overrides the level-group plan for that class.</p>
+        <p className="text-sm text-gray-500">Annual tuition, broken down per quarter. A single-class plan overrides the level-group plan for that class.</p>
         <AddBar open={open} onToggle={() => setOpen((o) => !o)} label="Add Tuition Plan" />
       </div>
 
@@ -214,17 +243,48 @@ function TuitionSection({ yearId }) {
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Amount (TZS)</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Annual amount (TZS)</label>
             <input type="number" min="0" step="1" className={inputCls + ' w-40'} value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
           </div>
-          <Button type="submit" disabled={mut.create.isPending}>
-            {mut.create.isPending && <Loader2 size={14} className="animate-spin" />} Save
-          </Button>
+
+          <div className="basis-full border-t border-blue-200 pt-3">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <span className="text-xs font-medium text-gray-600">Per-quarter breakdown (TZS)</span>
+              <button type="button" disabled={!annual}
+                onClick={() => setForm({ ...form, ...splitEqually(form.amount) })}
+                className="text-xs text-primary hover:underline disabled:opacity-40 disabled:no-underline">
+                Split equally
+              </button>
+              {form.amount !== '' && (
+                <span className={`text-xs ${balanced ? 'text-emerald-700' : 'text-danger'}`}>
+                  {balanced
+                    ? 'Quarters add up to the annual amount'
+                    : remaining > 0
+                      ? `${formatTZS(remaining)} still to allocate`
+                      : `${formatTZS(-remaining)} over the annual amount`}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              {TUITION_QUARTERS.map((q) => (
+                <div key={q.key}>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {q.label} <span className="text-gray-400 font-normal">· {q.term}</span>
+                  </label>
+                  <input type="number" min="0" step="1" className={inputCls + ' w-32'} value={form[q.key]}
+                    onChange={(e) => setForm({ ...form, [q.key]: e.target.value })} required />
+                </div>
+              ))}
+              <Button type="submit" disabled={mut.create.isPending || !balanced}>
+                {mut.create.isPending && <Loader2 size={14} className="animate-spin" />} Save
+              </Button>
+            </div>
+          </div>
         </form>
       )}
 
-      <ConfigTable headers={['Scope', 'Target', 'Amount', 'Status']}
+      <ConfigTable headers={['Scope', 'Target', 'Annual', 'Q1', 'Q2', 'Q3', 'Q4', 'Status']}
         isLoading={isLoading} isError={isError} isEmpty={rows.length === 0}>
         {rows.map((r) => (
           <tr key={r.id} className="hover:bg-gray-50/60">
@@ -232,7 +292,10 @@ function TuitionSection({ yearId }) {
             <td className="px-4 py-3 font-medium text-gray-900">
               {r.scope === 'LEVEL_GROUP' ? (r.level_group_display || r.level_group) : (LEVEL_LABEL[r.level] || r.level)}
             </td>
-            <td className="px-4 py-3">{formatTZS(r.amount)}</td>
+            <td className="px-4 py-3 font-medium">{formatTZS(r.amount)}</td>
+            {TUITION_QUARTERS.map((q) => (
+              <td key={q.key} className="px-4 py-3 text-gray-600">{formatTZS(r[q.key])}</td>
+            ))}
             <td className="px-4 py-3"><ActiveCell active={r.is_active} /></td>
             <RowActions row={r} busy={mut.toggle.isPending || mut.remove.isPending}
               onToggle={(row) => mut.toggle.mutate(row)} onDelete={(row) => confirmDelete(row, mut)} />

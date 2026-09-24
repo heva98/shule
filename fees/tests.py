@@ -99,6 +99,8 @@ class FeesPermissionTests(TestCase):
         resp = client.post('/api/fees/config/tuition/', {
             'academic_year': self.academic_year.id, 'scope': 'LEVEL_GROUP',
             'level_group': 'PRIMARY', 'amount': '500000',
+            'q1_amount': '125000', 'q2_amount': '125000',
+            'q3_amount': '125000', 'q4_amount': '125000',
         }, format='json')
         self.assertEqual(resp.status_code, 201)
 

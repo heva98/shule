@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -154,9 +154,16 @@ class TuitionFeePlan(models.Model):
     level_group = models.CharField(max_length=10, choices=LevelGroup.choices, blank=True)
     level = models.CharField(max_length=10, choices=Level.choices, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    # Per-quarter breakdown of the annual ``amount``; the four must sum to it.
+    q1_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    q2_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    q3_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    q4_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    QUARTER_FIELDS = ('q1_amount', 'q2_amount', 'q3_amount', 'q4_amount')
 
     class Meta:
         ordering = ['academic_year', 'level_group', 'level']
@@ -189,6 +196,26 @@ class TuitionFeePlan(models.Model):
             raise ValidationError({'level_group': 'Required for a level-group plan.'})
         if self.scope == self.Scope.LEVEL and not self.level:
             raise ValidationError({'level': 'Required for a single-class plan.'})
+        if self.quarter_total() != Decimal(self.amount):
+            raise ValidationError('Quarter amounts must add up to the annual amount.')
+
+    def save(self, *args, **kwargs):
+        # A plan saved without a breakdown gets an equal split.
+        if not any(getattr(self, f) for f in self.QUARTER_FIELDS):
+            for f, v in zip(self.QUARTER_FIELDS, split_quarterly(self.amount)):
+                setattr(self, f, v)
+        super().save(*args, **kwargs)
+
+    def quarter_total(self):
+        return sum((Decimal(getattr(self, f) or 0) for f in self.QUARTER_FIELDS), Decimal('0'))
+
+
+def split_quarterly(amount):
+    """Split an annual amount into four whole-shilling quarters; any remainder
+    goes on Q4."""
+    amount = Decimal(amount or 0)
+    part = (amount / 4).quantize(Decimal('1'), rounding=ROUND_DOWN)
+    return [part, part, part, amount - 3 * part]
 
 
 class UniformFeePlan(models.Model):
