@@ -20,6 +20,7 @@ import Button from '../../components/ui/Button'
 import { LEVEL_LABEL } from '../../lib/constants'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 const TERM_OPTIONS = [
   { value: 'TERM1', label: 'Term 1' },
@@ -180,7 +181,7 @@ function CreateExamModal({ onClose }) {
             </Field>
 
             <Field label="Stream">
-              <input {...register('stream')} className={inputCls} placeholder="Optional (e.g. A)" />
+              <StreamSelect {...register('stream')} value={watch('stream')} className={selectCls} />
             </Field>
           </div>
 

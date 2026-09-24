@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 
 from fees.models import Quarter
+from students.fields import StreamField
 from students.models import Level
 
 
@@ -13,7 +14,7 @@ class HomePackage(models.Model):
         'exams.Subject', on_delete=models.PROTECT, related_name='home_packages'
     )
     level = models.CharField(max_length=10, choices=Level.choices)
-    stream = models.CharField(max_length=10, blank=True)
+    stream = StreamField(blank=True)
     academic_year = models.ForeignKey(
         'fees.AcademicYear', on_delete=models.PROTECT, related_name='home_packages'
     )

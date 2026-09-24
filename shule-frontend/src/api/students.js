@@ -58,3 +58,7 @@ export const downloadStudentReportCardPdf = async (studentId, examId, filename) 
 
 export const getMyChildren = () =>
   api.get('/students/my-children/').then((r) => r.data)
+
+// Managed stream names (e.g. A, B, BLUE) for stream pickers.
+export const getStreams = () =>
+  api.get('/students/streams/').then((r) => r.data)

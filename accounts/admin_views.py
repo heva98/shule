@@ -20,6 +20,9 @@ from rest_framework.views import APIView
 from exams.models import Subject, LevelGroup
 from fees.models import AcademicYear, SchoolCalendarEvent
 from fees.serializers import SchoolCalendarEventSerializer
+from students.fields import normalize_stream
+from students.models import Stream
+from students.streams import stream_in_use
 
 from .models import AuditLog, Role, SchoolSettings, User
 from .permissions import IsCalendarManager, IsCalendarManagerOrReadOnly, IsSystemAdmin, ModuleEnabled
@@ -483,6 +486,112 @@ class AdminSubjectDetailView(APIView):
             description=f'Deactivated subject {subject.code} — {subject.name}',
             request=request,
         )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ── Stream management ─────────────────────────────────────────────────────────
+
+def _stream_payload(stream):
+    return {'id': stream.pk, 'name': stream.name, 'in_use': stream_in_use(stream.name)}
+
+
+def _clean_stream_name(request):
+    """Return (name, error_response) for the submitted stream name."""
+    name = normalize_stream(request.data.get('name') or '')
+    if not name:
+        return None, Response({'detail': 'Stream name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(name) > 10:
+        return None, Response({'detail': 'Stream name must be at most 10 characters.'},
+                              status=status.HTTP_400_BAD_REQUEST)
+    return name, None
+
+
+class AdminStreamListView(APIView):
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def get(self, request):
+        return Response([_stream_payload(s) for s in Stream.objects.all()])
+
+    def post(self, request):
+        name, error = _clean_stream_name(request)
+        if error:
+            return error
+        if Stream.objects.filter(name=name).exists():
+            return Response({'detail': 'A stream with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        stream = Stream.objects.create(name=name)
+        log_action(
+            user=request.user,
+            action=AuditLog.Action.STREAM_ADDED,
+            target_model='Stream',
+            target_id=stream.pk,
+            description=f'Added stream {name}',
+            request=request,
+        )
+        return Response(_stream_payload(stream), status=status.HTTP_201_CREATED)
+
+
+class AdminStreamDetailView(APIView):
+    """
+    Rename or delete a stream. Other tables hold the stream name as text, not
+    a foreign key, so both are refused while any record still uses the name.
+    """
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def _get(self, pk):
+        try:
+            return Stream.objects.get(pk=pk)
+        except Stream.DoesNotExist:
+            return None
+
+    def put(self, request, pk):
+        stream = self._get(pk)
+        if not stream:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        name, error = _clean_stream_name(request)
+        if error:
+            return error
+        if name == stream.name:
+            return Response(_stream_payload(stream))
+        if Stream.objects.filter(name=name).exists():
+            return Response({'detail': 'A stream with this name already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        if stream_in_use(stream.name):
+            return Response(
+                {'detail': f'Stream {stream.name} is in use and cannot be renamed.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_name = stream.name
+        stream.name = name
+        stream.save()
+        log_action(
+            user=request.user,
+            action=AuditLog.Action.STREAM_UPDATED,
+            target_model='Stream',
+            target_id=stream.pk,
+            description=f'Renamed stream {old_name} to {name}',
+            request=request,
+        )
+        return Response(_stream_payload(stream))
+
+    def delete(self, request, pk):
+        stream = self._get(pk)
+        if not stream:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if stream_in_use(stream.name):
+            return Response(
+                {'detail': f'Stream {stream.name} is in use and cannot be deleted.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        log_action(
+            user=request.user,
+            action=AuditLog.Action.STREAM_DELETED,
+            target_model='Stream',
+            target_id=stream.pk,
+            description=f'Deleted stream {stream.name}',
+            request=request,
+        )
+        stream.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

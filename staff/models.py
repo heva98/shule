@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from students.fields import StreamField
 from students.models import Level
 
 
@@ -49,7 +50,7 @@ class StaffProfile(models.Model):
     )
     # Legacy simple class-teacher reference (kept; replaced by ClassTeacherAssignment)
     class_teacher_of_level  = models.CharField(max_length=10, choices=Level.choices, blank=True)
-    class_teacher_of_stream = models.CharField(max_length=10, blank=True)
+    class_teacher_of_stream = StreamField(blank=True)
 
     # Level groups this staff member is associated with — [] means all levels
     taught_levels  = models.JSONField(
@@ -131,7 +132,7 @@ class ClassTeacherAssignment(models.Model):
         StaffProfile, on_delete=models.CASCADE, related_name='class_assignments'
     )
     level        = models.CharField(max_length=10, choices=Level.choices)
-    stream       = models.CharField(max_length=10)
+    stream       = StreamField()
     academic_year = models.ForeignKey(
         'fees.AcademicYear', on_delete=models.PROTECT, related_name='class_assignments'
     )

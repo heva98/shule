@@ -6,6 +6,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+from .fields import StreamField, normalize_stream
+
 
 class Level(models.TextChoices):
     NURSERY_BABY = 'N_BABY', 'Baby Class'
@@ -24,6 +26,25 @@ class Level(models.TextChoices):
     FORM4 = 'FORM4', 'Form 4'
     FORM5 = 'FORM5', 'Form 5'
     FORM6 = 'FORM6', 'Form 6'
+
+
+class Stream(models.Model):
+    """
+    A class stream (e.g. "A", "BLUE") — the managed list of names that
+    `StreamField` columns may hold. Names are always stored in uppercase.
+    """
+    name = models.CharField(max_length=10, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        self.name = normalize_stream(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 
 class StudentStatus(models.TextChoices):
@@ -52,7 +73,7 @@ class Student(models.Model):
     photo = models.ImageField(upload_to='students/', blank=True, null=True)
 
     level = models.CharField(max_length=10, choices=Level.choices, db_index=True)
-    stream = models.CharField(max_length=10, blank=True)
+    stream = StreamField(blank=True)
 
     admission_date = models.DateField(default=timezone.localdate)
     status = models.CharField(
@@ -109,7 +130,7 @@ class Enrolment(models.Model):
     )
 
     level = models.CharField(max_length=10, choices=Level.choices)
-    stream = models.CharField(max_length=10, blank=True)
+    stream = StreamField(blank=True)
     status = models.CharField(max_length=15, choices=StudentStatus.choices)
 
     enrolled_on = models.DateField()

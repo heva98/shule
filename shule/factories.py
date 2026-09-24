@@ -12,7 +12,7 @@ from django.db import connection
 from accounts.models import Role, User
 from fees.models import AcademicYear
 from staff.models import ContractType, Designation, StaffProfile
-from students.models import Student
+from students.models import Stream, Student
 
 _counter = itertools.count(1)
 
@@ -78,6 +78,10 @@ def make_student(gender='M', level='STD1', **extra):
     extra.setdefault('date_of_birth', datetime.date(2012, 1, 1))
     extra.setdefault('student_id', f'TST-{n:04d}')
     return Student.objects.create(gender=gender, level=level, **extra)
+
+
+def make_stream(name='A'):
+    return Stream.objects.get_or_create(name=name.strip().upper())[0]
 
 
 def make_subject(level_group='PRIMARY', **extra):

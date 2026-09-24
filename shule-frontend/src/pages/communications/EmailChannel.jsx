@@ -32,6 +32,7 @@ import Button from '../../components/ui/Button'
 import { useEnabledModules } from '../../hooks/useEnabledModules'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -396,11 +397,11 @@ function ComposeTab({ onSwitchToSms }) {
             {audience === 'CLASS' && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Stream (optional)</label>
-                <input
+                <StreamSelect
                   value={targetStream}
                   onChange={(e) => setTargetStream(e.target.value)}
-                  placeholder="e.g. A"
-                  className={inputCls}
+                  emptyLabel="All streams"
+                  className={selectCls}
                 />
               </div>
             )}

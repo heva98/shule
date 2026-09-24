@@ -57,6 +57,19 @@ export const deactivateSubject = (id) =>
 export const activateSubject = (id) =>
   api.put(`/admin/subjects/${id}/`, { is_active: true }).then(r => r.data)
 
+// Streams
+export const getAdminStreams = () =>
+  api.get('/admin/streams/').then(r => r.data)
+
+export const createAdminStream = (data) =>
+  api.post('/admin/streams/', data).then(r => r.data)
+
+export const updateAdminStream = (id, data) =>
+  api.put(`/admin/streams/${id}/`, data).then(r => r.data)
+
+export const deleteAdminStream = (id) =>
+  api.delete(`/admin/streams/${id}/`).then(r => r.data)
+
 export const getAcademicYears = () =>
   api.get('/admin/academic-years/').then(r => r.data)
 

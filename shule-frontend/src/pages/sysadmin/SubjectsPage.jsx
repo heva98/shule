@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, CheckCircle, Edit2, Plus, RotateCcw, Trash2, XCircle } from 'lucide-react'
+import { BookOpen, CheckCircle, Edit2, Layers, Plus, RotateCcw, Trash2, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
-  activateSubject, createAdminSubject, deactivateSubject, getAdminSubjects, updateAdminSubject,
+  activateSubject, createAdminStream, createAdminSubject, deactivateSubject, deleteAdminStream,
+  getAdminStreams, getAdminSubjects, updateAdminStream, updateAdminSubject,
 } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
 import Modal from '../../components/ui/Modal'
@@ -230,6 +231,160 @@ function SubjectsTab() {
   )
 }
 
+// ── Streams ───────────────────────────────────────────────────────────────────
+
+function StreamModal({ stream, onClose }) {
+  const qc = useQueryClient()
+  const isEdit = !!stream
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: { name: stream?.name ?? '' },
+  })
+  const mut = useMutation({
+    mutationFn: (data) => isEdit ? updateAdminStream(stream.id, data) : createAdminStream(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-streams'] })
+      qc.invalidateQueries({ queryKey: ['streams'] })
+      toast.success(isEdit ? 'Stream renamed.' : 'Stream added.')
+      onClose()
+    },
+    onError: (err) => toast.error(err.response?.data?.detail ?? 'Failed.'),
+  })
+  return (
+    <Modal isOpen title={isEdit ? 'Rename Stream' : 'Add Stream'} onClose={onClose} size="sm">
+      <form onSubmit={handleSubmit(d => mut.mutate({ name: d.name.trim().toUpperCase() }))} className="p-6 space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Stream Name *</label>
+          <input {...register('name', {
+              required: 'Required',
+              maxLength: { value: 10, message: 'At most 10 characters' },
+            })}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-primary/30"
+            placeholder="e.g. A or BLUE" />
+          {errors.name && <p className="text-xs text-danger mt-1">{errors.name.message}</p>}
+          <p className="text-xs text-gray-400 mt-1">Stream names are always saved in capital letters.</p>
+        </div>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={mut.isPending} className="flex-1">
+            {mut.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Stream'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+function DeleteStreamModal({ stream, onClose }) {
+  const qc = useQueryClient()
+  const mut = useMutation({
+    mutationFn: () => deleteAdminStream(stream.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-streams'] })
+      qc.invalidateQueries({ queryKey: ['streams'] })
+      toast.success('Stream deleted.')
+      onClose()
+    },
+    onError: (err) => toast.error(err.response?.data?.detail ?? 'Failed.'),
+  })
+  return (
+    <Modal isOpen title="Delete Stream" onClose={onClose} size="sm">
+      <div className="p-6 space-y-4">
+        <p className="text-sm text-gray-600">
+          Delete stream <strong>{stream.name}</strong>? It will no longer be available to pick.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <button onClick={() => mut.mutate()} disabled={mut.isPending}
+            className="flex-1 py-2.5 text-white rounded-lg text-sm font-medium disabled:opacity-50 bg-danger hover:bg-danger/90">
+            {mut.isPending ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function StreamsTab() {
+  const [showAdd, setShowAdd] = useState(false)
+  const [editStream, setEditStream] = useState(null)
+  const [deleteStream, setDeleteStream] = useState(null)
+  const q = useQuery({ queryKey: ['admin-streams'], queryFn: getAdminStreams })
+  const streams = q.data ?? []
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <p className="text-xs text-gray-500">
+          Streams offered in stream pickers across the system. A stream that is in use by students,
+          exams, timetables or other records cannot be renamed or deleted.
+        </p>
+        <Button icon={Plus} onClick={() => setShowAdd(true)} className="sm:ml-auto shrink-0">Add Stream</Button>
+      </div>
+
+      <Card padding="p-0" className="overflow-hidden">
+        <table className="data-table w-full text-sm">
+          <thead className="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th className="w-12 text-left px-4 py-3">#</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Stream</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Status</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {q.isLoading ? (
+              [...Array(4)].map((_, i) => (
+                <tr key={i}>
+                  {[...Array(4)].map((_, j) => (
+                    <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 animate-pulse rounded" /></td>
+                  ))}
+                </tr>
+              ))
+            ) : streams.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-gray-400 text-sm">
+                  <Layers size={28} className="mx-auto text-gray-200 mb-2" />
+                  No streams yet.
+                </td>
+              </tr>
+            ) : (
+              streams.map((s, rowIdx) => (
+                <tr key={s.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="text-gray-500">{rowIdx + 1}</td>
+                  <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-700">{s.name}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${s.in_use ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {s.in_use ? 'In use' : 'Unused'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {!s.in_use && (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setEditStream(s)} title="Rename"
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-400 transition-colors">
+                          <Edit2 size={13} />
+                        </button>
+                        <button onClick={() => setDeleteStream(s)} title="Delete"
+                          className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-danger transition-colors">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </Card>
+
+      {showAdd && <StreamModal onClose={() => setShowAdd(false)} />}
+      {editStream && <StreamModal stream={editStream} onClose={() => setEditStream(null)} />}
+      {deleteStream && <DeleteStreamModal stream={deleteStream} onClose={() => setDeleteStream(null)} />}
+    </div>
+  )
+}
+
 function ClassesTab() {
   const q = useQuery({
     queryKey: ['students-all-classes'],
@@ -246,7 +401,7 @@ function ClassesTab() {
   return (
     <div className="space-y-4">
       <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-        Classes are derived from active student enrolments. To add a stream, enrol a student into the new class.
+        Classes are derived from active student enrolments. Add new streams on the Streams tab, then enrol students into them.
       </p>
       {q.isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -286,7 +441,8 @@ export default function SubjectsPage() {
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
         {[
           { key: 'subjects', label: 'Subjects' },
-          { key: 'classes',  label: 'Classes & Streams' },
+          { key: 'streams',  label: 'Streams' },
+          { key: 'classes',  label: 'Classes' },
         ].map(t => (
           <button
             key={t.key}
@@ -301,6 +457,7 @@ export default function SubjectsPage() {
       </div>
 
       {tab === 'subjects' && <SubjectsTab />}
+      {tab === 'streams'  && <StreamsTab />}
       {tab === 'classes'  && <ClassesTab />}
     </div>
   )

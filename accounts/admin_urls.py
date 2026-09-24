@@ -7,6 +7,8 @@ from .admin_views import (
     AdminAuditLogView,
     AdminBulkImportView,
     AdminSettingsView,
+    AdminStreamDetailView,
+    AdminStreamListView,
     AdminSubjectDetailView,
     AdminSubjectListView,
     AdminSystemHealthView,
@@ -37,6 +39,10 @@ urlpatterns = [
     # Subjects
     path('subjects/',                      AdminSubjectListView.as_view(),        name='admin-subjects'),
     path('subjects/<int:pk>/',             AdminSubjectDetailView.as_view(),      name='admin-subject-detail'),
+
+    # Streams
+    path('streams/',                       AdminStreamListView.as_view(),         name='admin-streams'),
+    path('streams/<int:pk>/',              AdminStreamDetailView.as_view(),       name='admin-stream-detail'),
 
     # Academic years
     path('academic-years/',                AdminAcademicYearListView.as_view(),   name='admin-academic-years'),

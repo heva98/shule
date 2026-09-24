@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from accounts.models import Role
-from shule.factories import make_academic_year, make_staff, make_student, make_user
+from shule.factories import make_academic_year, make_staff, make_stream, make_student, make_user
 
 from .models import ClassTeacherAssignment, Designation, DisciplinaryIncident, LeaveRequest
 
@@ -112,6 +112,7 @@ class ClassAssignmentPermissionTests(TestCase):
         teacher_staff = make_staff(role=Role.TEACHER)
         ay = make_academic_year()
         headteacher = make_user(role=Role.HEADTEACHER)
+        make_stream('A')
         client = APIClient()
         client.force_authenticate(user=headteacher)
         resp = client.post('/api/staff/class-assignments/', {

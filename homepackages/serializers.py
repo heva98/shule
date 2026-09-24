@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from shule.utils import TERM_QUARTER_MAP
+from students.streams import StreamSerializerField
 
 from .models import HomePackage
 
@@ -10,6 +11,7 @@ class HomePackageSerializer(serializers.ModelSerializer):
     subject_code = serializers.CharField(source='subject.code', read_only=True)
     posted_by_name = serializers.CharField(source='posted_by.full_name', read_only=True, default=None)
     term = serializers.SerializerMethodField()
+    stream = StreamSerializerField()
 
     class Meta:
         model = HomePackage

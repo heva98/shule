@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from accounts.serializers import UserSerializer
+from students.streams import StreamSerializerField
 
 from .models import (
     ClassTeacherAssignment,
@@ -54,6 +55,8 @@ class StaffProfileSerializer(serializers.ModelSerializer):
 
 
 class StaffProfileWriteSerializer(serializers.ModelSerializer):
+    class_teacher_of_stream = StreamSerializerField()
+
     class Meta:
         model = StaffProfile
         fields = [
@@ -138,7 +141,7 @@ class ClassTeacherAssignmentSerializer(serializers.ModelSerializer):
 class ClassTeacherAssignmentCreateSerializer(serializers.Serializer):
     teacher_id       = serializers.IntegerField()
     level            = serializers.CharField(max_length=10)
-    stream           = serializers.CharField(max_length=10)
+    stream           = StreamSerializerField(required=True, allow_blank=False)
     academic_year_id = serializers.IntegerField()
 
     def validate_teacher_id(self, value):

@@ -16,6 +16,7 @@ import Button from '../../components/ui/Button'
 import { ATT_BADGE, LEVEL_LABEL } from '../../lib/constants'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { selectCls } from '../../lib/formStyles'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 // ── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -239,12 +240,11 @@ function RegisterTab() {
 
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Stream</label>
-            <input
-              type="text"
+            <StreamSelect
               value={stream}
               onChange={(e) => { setStream(e.target.value); setLoaded(false) }}
-              className={`${selectCls} w-24`}
-              placeholder="e.g. A"
+              className={`${selectCls} w-28`}
+              emptyLabel="All"
             />
           </div>
 

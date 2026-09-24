@@ -14,6 +14,7 @@ import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -337,10 +338,10 @@ export default function StudentFormPage() {
             </Field>
 
             <Field label="Stream" error={errors.stream?.message}>
-              <input
+              <StreamSelect
                 {...register('stream')}
-                className={inputCls}
-                placeholder="e.g. A, Blue (optional)"
+                value={watch('stream')}
+                className={selectCls}
               />
             </Field>
 

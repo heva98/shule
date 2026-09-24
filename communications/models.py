@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from students.fields import StreamField
+
 
 class MessageType(models.TextChoices):
     SMS = 'SMS', 'SMS'
@@ -28,7 +30,7 @@ class Message(models.Model):
 
     # Scoping fields — used when audience != SCHOOL
     target_level = models.CharField(max_length=10, blank=True)
-    target_stream = models.CharField(max_length=10, blank=True)
+    target_stream = StreamField(blank=True)
     # For INDIVIDUAL audience, store the recipient student/guardian pk
     target_student = models.ForeignKey(
         'students.Student',

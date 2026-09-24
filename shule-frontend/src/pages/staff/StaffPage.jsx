@@ -18,6 +18,7 @@ import { ROLE_LABEL } from '../../lib/constants'
 import { inputCls as baseInputCls, selectCls as baseSelectCls } from '../../lib/formStyles'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -339,9 +340,8 @@ function ProfileFields({ form, set, subjects }) {
             </select>
           </F>
           <F label="Stream">
-            <input className={inputCls} value={form.class_teacher_of_stream}
-              onChange={e => set('class_teacher_of_stream', e.target.value)}
-              placeholder="e.g. A, B, Science" />
+            <StreamSelect className={selectCls} value={form.class_teacher_of_stream}
+              onChange={e => set('class_teacher_of_stream', e.target.value)} />
           </F>
         </div>
       </div>

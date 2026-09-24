@@ -24,6 +24,7 @@ import Tabs from '../../components/ui/Tabs'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import { selectCls } from '../../lib/formStyles'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 const MANAGE_ROLES = FEATURE_ROLES.BOARDING
 
@@ -360,11 +361,11 @@ function AssignModal({ onClose }) {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Stream</label>
-            <input
+            <StreamSelect
               value={stream}
               onChange={(e) => { setStream(e.target.value); setStudent(null) }}
               disabled={!dormitory}
-              placeholder="Optional"
+              emptyLabel="All streams"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-50"
             />
           </div>

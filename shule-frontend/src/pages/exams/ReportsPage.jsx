@@ -30,6 +30,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import { GRADE_BADGE, LEVEL_LABEL } from '../../lib/constants'
 import { inputCls, selectCls } from '../../lib/formStyles'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 // ── Print helper ─────────────────────────────────────────────────────────────
 // Shared by both report types so the "Reports" module doesn't grow yet
@@ -371,7 +372,7 @@ function ClassPerformanceReport({ role, exams, levelOptions, school }) {
               </select>
             </Field>
             <Field label="Stream (optional)">
-              <input value={stream} onChange={(e) => setStream(e.target.value)} className={inputCls} placeholder="e.g. A" />
+              <StreamSelect value={stream} onChange={(e) => setStream(e.target.value)} className={inputCls} emptyLabel="All streams" />
             </Field>
           </>
         )}
@@ -554,7 +555,7 @@ function SubjectPerformanceReport({ role, exams, levelOptions, school }) {
               </select>
             </Field>
             <Field label="Stream (optional)">
-              <input value={stream} onChange={(e) => setStream(e.target.value)} className={inputCls} placeholder="e.g. A" />
+              <StreamSelect value={stream} onChange={(e) => setStream(e.target.value)} className={inputCls} emptyLabel="All streams" />
             </Field>
           </>
         )}
@@ -785,7 +786,7 @@ function StudentReport({ role, exams, levelOptions }) {
               </select>
             </Field>
             <Field label="Stream (optional)">
-              <input value={stream} onChange={(e) => handleStreamChange(e.target.value)} className={inputCls} placeholder="e.g. A" />
+              <StreamSelect value={stream} onChange={(e) => handleStreamChange(e.target.value)} className={inputCls} emptyLabel="All streams" />
             </Field>
           </>
         )}

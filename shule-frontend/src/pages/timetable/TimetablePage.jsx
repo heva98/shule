@@ -24,6 +24,7 @@ import Tabs from '../../components/ui/Tabs'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import { selectCls } from '../../lib/formStyles'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 const EDIT_ROLES = SENIOR_STAFF_ROLES
 const MINE_DEFAULT_ROLES = ['TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'DISCIPLINE_TEACHER']
@@ -332,7 +333,7 @@ function GridTab({ canEdit }) {
               <option value="">Select level…</option>
               {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
-            <input value={stream} onChange={(e) => setStream(e.target.value)} placeholder="Stream (optional)"
+            <StreamSelect value={stream} onChange={(e) => setStream(e.target.value)} emptyLabel="No stream"
               className={`${selectCls} sm:w-40`} />
           </>
         ) : myClasses.length > 1 ? (

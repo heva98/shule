@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from fees.models import AcademicYear, Term, Quarter
+from students.fields import StreamField
 from students.models import Level
 from shule.utils import validate_term_quarter
 
@@ -47,7 +48,7 @@ class Exam(models.Model):
     term = models.CharField(max_length=10, choices=Term.choices)
     quarter = models.CharField(max_length=5, choices=Quarter.choices)
     level = models.CharField(max_length=10, choices=Level.choices)
-    stream = models.CharField(max_length=10, blank=True)
+    stream = StreamField(blank=True)
     exam_type = models.CharField(max_length=10, choices=ExamType.choices)
     start_date = models.DateField()
     end_date = models.DateField()

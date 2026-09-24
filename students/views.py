@@ -3,17 +3,19 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from accounts.models import Role
 
-from .models import Guardian, Student, StudentStatus
+from .models import Guardian, Stream, Student, StudentStatus
 from .serializers import (
     EnrolmentSerializer,
     GuardianSerializer,
     StudentSerializer,
+    StreamSerializer,
     StudentWriteSerializer,
 )
 
@@ -31,6 +33,15 @@ _EDIT_ROLES = {
     Role.OWNER, Role.HEADTEACHER, Role.ACADEMIC_TEACHER,
     Role.CLASS_TEACHER, Role.SUBJECT_TEACHER, Role.DISCIPLINE_TEACHER,
 }
+
+
+class StreamListView(ListAPIView):
+    """GET /api/students/streams/ — the managed stream names, for pickers.
+    Managing the list is an admin-panel job (/api/admin/streams/)."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = StreamSerializer
+    queryset = Stream.objects.all()
+    pagination_class = None
 
 
 class StudentViewSet(ModelViewSet):

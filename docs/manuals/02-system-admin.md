@@ -169,10 +169,21 @@ Click the **trash icon** → confirm. The subject is soft-deleted — historical
 **Show inactive subjects:**
 Tick **Show inactive** to see deactivated subjects.
 
-### Classes & Streams (Classes tab)
+### Managing Streams (Streams tab)
+Streams (e.g. A, B, BLUE) are a fixed list that you manage here. Everywhere else in the system (student form, exams, timetable, attendance, home packages, SMS) the stream is picked from a dropdown of this list.
+
+**Adding a stream:**
+1. Click **+ Add Stream**.
+2. Enter the name, up to 10 characters. It is always saved in CAPITAL letters, so "blue" becomes "BLUE".
+3. Click **Add Stream**.
+
+**Renaming or deleting a stream:**
+Use the **pencil** or **trash icon** on the row. These appear only for streams marked **Unused**. A stream that is in use by any student, exam, timetable entry, home package, class-teacher assignment or message cannot be renamed or deleted.
+
+### Classes (Classes tab)
 The Classes tab shows a grid of all classes derived from active student enrolments (e.g. Form 2A, Std 3B). Each card shows the class name and student count.
 
-> Classes are created automatically when students are enrolled into them. To add a new stream, enrol at least one student into the new level+stream combination.
+> Classes are created automatically when students are enrolled into them. To start a new class, add its stream on the Streams tab if needed, then enrol students into that level + stream.
 
 ---
 

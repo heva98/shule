@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from students.streams import StreamSerializerField
+
 from .models import Period, TimetableEntry
 
 
@@ -16,6 +18,7 @@ class TimetableEntrySerializer(serializers.ModelSerializer):
     period_name = serializers.CharField(source='period.name', read_only=True)
     period_order = serializers.IntegerField(source='period.order', read_only=True)
     day_of_week_display = serializers.CharField(source='get_day_of_week_display', read_only=True)
+    stream = StreamSerializerField()
 
     class Meta:
         model = TimetableEntry

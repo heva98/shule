@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
-from .models import Enrolment, Guardian, Student
+from .models import Enrolment, Guardian, Stream, Student
+from .streams import StreamSerializerField
+
+
+class StreamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stream
+        fields = ['id', 'name']
 
 
 class GuardianSerializer(serializers.ModelSerializer):
@@ -63,6 +70,7 @@ class StudentWriteSerializer(serializers.ModelSerializer):
     id/public_id/student_id/full_name are included read-only so the frontend
     can show a confirmation and redirect to the new record after creation."""
     full_name = serializers.CharField(read_only=True)
+    stream = StreamSerializerField()
 
     class Meta:
         model = Student

@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from students.streams import StreamSerializerField
+
 from .models import (
     DemoRequest,
     Message,
@@ -43,6 +45,8 @@ class MessageSerializer(serializers.ModelSerializer):
 
 class BroadcastSerializer(serializers.ModelSerializer):
     """Write serializer for POST /api/communications/broadcast/."""
+    target_stream = StreamSerializerField()
+
     class Meta:
         model = Message
         fields = [

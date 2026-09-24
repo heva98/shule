@@ -14,6 +14,7 @@ import { useSchoolLevels } from '../../hooks/useSchoolLevels'
 import Skeleton from '../../components/ui/Skeleton'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 const KINDS = [
   { value: 'EXAM_RESULTS', label: 'Exam results', Icon: GraduationCap,
@@ -161,8 +162,8 @@ function ComposeTab({ config }) {
               </label>
               <label className="block text-sm">
                 <span className="text-gray-600">Stream (optional)</span>
-                <input value={form.stream} onChange={(e) => set({ stream: e.target.value })}
-                  className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="e.g. A" />
+                <StreamSelect value={form.stream} onChange={(e) => set({ stream: e.target.value })} emptyLabel="All streams"
+                  className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
               </label>
             </div>
             <p className="text-xs text-gray-400">
@@ -196,8 +197,8 @@ function ComposeTab({ config }) {
                 {form.audience === 'CLASS' && (
                   <label className="block text-sm">
                     <span className="text-gray-600">Stream</span>
-                    <input value={form.stream} onChange={(e) => set({ stream: e.target.value })}
-                      className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="e.g. A" />
+                    <StreamSelect value={form.stream} onChange={(e) => set({ stream: e.target.value })} emptyLabel="Select…"
+                      className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
                   </label>
                 )}
               </div>

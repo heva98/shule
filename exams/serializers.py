@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from students.models import Student
+from students.streams import StreamSerializerField
 
 from .models import Exam, MarkEntry, ReportCardRemark, StudentSkillAssessment, Subject
 
@@ -13,6 +14,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 class ExamSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
+    stream = StreamSerializerField()
 
     class Meta:
         model = Exam

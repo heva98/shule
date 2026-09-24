@@ -18,6 +18,7 @@ import Modal from '../../components/ui/Modal'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import { selectCls } from '../../lib/formStyles'
+import StreamSelect from '../../components/ui/StreamSelect'
 
 const CREATE_ROLES = CONTENT_CREATOR_ROLES
 const SENIOR_ROLES = SENIOR_STAFF_ROLES
@@ -49,7 +50,7 @@ function PackageModal({ pkg, onClose }) {
 
   const [attachment, setAttachment] = useState(null)
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: pkg
       ? {
           title: pkg.title, instructions: pkg.instructions, subject: pkg.subject,
@@ -113,7 +114,7 @@ function PackageModal({ pkg, onClose }) {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Stream</label>
-            <input {...register('stream')} placeholder="Optional"
+            <StreamSelect {...register('stream')} value={watch('stream')}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div>
@@ -228,7 +229,7 @@ export default function HomePackagesPage() {
           <option value="">All levels</option>
           {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <input value={stream} onChange={(e) => setStream(e.target.value)} placeholder="Stream (optional)"
+        <StreamSelect value={stream} onChange={(e) => setStream(e.target.value)} emptyLabel="All streams"
           className={`${selectCls} sm:w-40`} />
         <select value={quarter} onChange={(e) => setQuarter(e.target.value)} className={selectCls}>
           <option value="">All quarters</option>

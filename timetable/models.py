@@ -1,5 +1,6 @@
 from django.db import models
 
+from students.fields import StreamField
 from students.models import Level
 
 
@@ -33,7 +34,7 @@ class TimetableEntry(models.Model):
         'fees.AcademicYear', on_delete=models.PROTECT, related_name='timetable_entries'
     )
     level = models.CharField(max_length=10, choices=Level.choices)
-    stream = models.CharField(max_length=10, blank=True)
+    stream = StreamField(blank=True)
     day_of_week = models.CharField(max_length=3, choices=DayOfWeek.choices)
     period = models.ForeignKey(Period, on_delete=models.PROTECT, related_name='entries')
     subject = models.ForeignKey(
