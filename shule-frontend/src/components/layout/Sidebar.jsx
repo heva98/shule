@@ -1,5 +1,5 @@
 import { ChevronDown, ShieldCheck, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useNavItems } from '../../hooks/useNavItems'
@@ -54,11 +54,13 @@ function NavGroup({ group, onClose, collapsed, onExpand }) {
   const Icon = group.icon
   const anyActive = group.children.some(c => isChildActive(c, group.children, pathname))
   const [open, setOpen] = useState(anyActive)
+  const [prevActive, setPrevActive] = useState(anyActive)
 
   // Navigating to a child (e.g. from quick search) should reveal it.
-  useEffect(() => {
+  if (anyActive !== prevActive) {
+    setPrevActive(anyActive)
     if (anyActive) setOpen(true)
-  }, [anyActive])
+  }
 
   function handleClick() {
     if (collapsed) {
