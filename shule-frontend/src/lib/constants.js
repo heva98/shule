@@ -165,6 +165,9 @@ export const FEATURE_ROLES = {
   // SMS: class teachers send exam results for their own class; head/bursar
   // send fee reminders and announcements. Server enforces the finer scope.
   SMS:             ['OWNER', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'BURSAR', 'CLASS_TEACHER'],
+  // Mirrors analytics.permissions.ANALYTICS_ROLES (the union of the metric
+  // role groups); the API narrows each role to its own groups' metrics.
+  ANALYTICS:       ['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'BURSAR', 'CLASS_TEACHER'],
   SCHOOL_CALENDAR: ['OWNER', 'SYSTEM_ADMIN', 'HEADTEACHER', 'ACADEMIC_TEACHER', 'DISCIPLINE_TEACHER', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'TEACHER', 'BURSAR'],
   PARENT:          ['PARENT'],
 }

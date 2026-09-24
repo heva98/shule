@@ -21,6 +21,7 @@ const PATH_TITLES = {
   '/attendance': 'Attendance',
   '/exams': 'Exams',
   '/staff': 'Staff',
+  '/analytics': 'Analytics',
   '/communications': 'Communications',
   '/parent': 'Parent Portal',
   '/admin-panel': 'System Dashboard',

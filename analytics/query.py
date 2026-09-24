@@ -557,17 +557,21 @@ def run_query(params, user) -> dict:
         rows.append([items[c] for c in columns] + [_format(metric, value), suppressed])
     rows.sort(key=lambda r: [order[c].get(r[i], len(order[c])) for i, c in enumerate(columns)])
 
-    names = {'dx': 'Data'}
-    names.update({m.id: {'name': m.label, 'unit': m.unit} for m in query.metrics})
+    # Item names are keyed by dimension. Unlike DHIS2's UIDs, item ids here
+    # are only unique within a dimension (grade F and gender F), so one flat
+    # map would let one dimension's name overwrite another's.
+    items = {'dx': {'name': 'Data', 'items': {
+        m.id: {'name': m.label, 'unit': m.unit} for m in query.metrics
+    }}}
     for axis in query.axes:
         if axis.dim_id == 'class_scope':
             continue
-        names[axis.dim_id] = axis.label
-        names.update(axis.names)
+        names = {i: {'name': n} for i, n in axis.names.items()}
         for item in dimensions[axis.dim_id]:
             if item not in names:
-                names[item] = getattr(axis, 'all_items', {}).get(item) or item or '(blank)'
-    items = {k: v if isinstance(v, dict) else {'name': v} for k, v in names.items()}
+                label = getattr(axis, 'all_items', {}).get(item) or item or '(blank)'
+                names[item] = {'name': label}
+        items[axis.dim_id] = {'name': axis.label, 'items': names}
 
     headers = [
         {'name': c, 'column': 'Data' if c == 'dx' else axes[c].label,

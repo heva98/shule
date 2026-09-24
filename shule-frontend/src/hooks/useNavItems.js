@@ -1,6 +1,7 @@
 import {
   Activity,
   AlertTriangle,
+  ChartColumn,
   BedDouble,
   BookOpen,
   Building2,
@@ -51,6 +52,7 @@ export const NAV_ITEMS = [
   { label: 'Home Packages',   path: '/home-packages',  icon: Package,         roles: FEATURE_ROLES.HOME_PACKAGES, module: 'homepackages', group: 'student_services' },
   { label: 'Exams',           path: '/exams',          icon: ClipboardList,   roles: FEATURE_ROLES.EXAMS, module: 'exams', group: 'examinations' },
   { label: 'Exam Reports',    path: '/exams/reports',  icon: FileBarChart2,   roles: FEATURE_ROLES.EXAM_REPORTS, module: 'reports', group: 'examinations' },
+  { label: 'Analytics',       path: '/analytics',      icon: ChartColumn,     roles: FEATURE_ROLES.ANALYTICS, module: 'analytics' },
   { label: 'Staff',           path: '/staff',          icon: Users,           roles: FEATURE_ROLES.STAFF },
   { label: 'Communications',  path: '/communications', icon: MessageSquare,   roles: FEATURE_ROLES.COMMUNICATIONS_HUB, modules: ['communications', 'sms'] },
   { label: 'School Calendar', path: '/school-calendar',icon: CalendarRange,   roles: FEATURE_ROLES.SCHOOL_CALENDAR, module: 'school_calendar', group: 'academics' },

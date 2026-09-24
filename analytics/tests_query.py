@@ -116,11 +116,11 @@ class QueryEndpointTests(MarksFixture, TestCase):
         self.assertEqual(data['rows'], [['exam.mean_score', '2026T1', 'FORM1', 62.5, False],
                                         ['exam.mean_score', '2026T2', 'FORM1', 40.0, False]])
         items = data['metaData']['items']
-        self.assertEqual(items['exam.mean_score']['name'], 'Mean score (%)')
-        self.assertEqual(items['2026T1'], {'name': 'Term 1 2026'})
-        self.assertEqual(items['THIS_TERM'], {'name': 'This term'})
-        self.assertEqual(items['FORM1'], {'name': 'Form 1'})
-        self.assertEqual(items['pe'], {'name': 'Period'})
+        self.assertEqual(items['dx']['items']['exam.mean_score']['name'], 'Mean score (%)')
+        self.assertEqual(items['pe']['name'], 'Period')
+        self.assertEqual(items['pe']['items']['2026T1'], {'name': 'Term 1 2026'})
+        self.assertEqual(items['pe']['items']['THIS_TERM'], {'name': 'This term'})
+        self.assertEqual(items['ou']['items']['FORM1'], {'name': 'Form 1'})
 
     def test_one_aggregated_query_per_fact_source(self, _):
         with CaptureQueriesContext(connection) as ctx:
@@ -166,7 +166,15 @@ class QueryEndpointTests(MarksFixture, TestCase):
         self.assertEqual(_values(resp), {('exam.marks_count', '2026T1', 'F'): 4,
                                          ('exam.marks_count', '2026T1', 'M'): 1})
         self.assertEqual(resp.data['metaData']['dimensions']['gender'], ['F', 'M'])
-        self.assertEqual(resp.data['metaData']['items']['F'], {'name': 'Female'})
+        self.assertEqual(resp.data['metaData']['items']['gender']['items']['F'], {'name': 'Female'})
+
+    def test_item_names_are_keyed_by_dimension(self, _):
+        """Grade F and gender F share an id; each keeps its own name."""
+        resp = _get(self.client, 'dx:exam.marks_count', 'pe:2026T1', 'gender:F', 'grade:F')
+        self.assertEqual(resp.status_code, 200)
+        items = resp.data['metaData']['items']
+        self.assertEqual(items['gender']['items']['F'], {'name': 'Female'})
+        self.assertEqual(items['grade']['items']['F'], {'name': 'F'})
 
     def test_overlapping_periods_and_org_units(self, _):
         """A fact in both 2026 and 2026T1, or both OLEVEL and FORM1, counts in each."""

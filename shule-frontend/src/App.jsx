@@ -53,6 +53,7 @@ const AcademicYearPage = lazy(() => import('./pages/sysadmin/AcademicYearPage'))
 const SchoolSettingsPage = lazy(() => import('./pages/sysadmin/SchoolSettingsPage'))
 const AuditLogPage = lazy(() => import('./pages/sysadmin/AuditLogPage'))
 const SystemHealthPage = lazy(() => import('./pages/sysadmin/SystemHealthPage'))
+const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'))
 const ManualPage = lazy(() => import('./pages/ManualPage'))
 
 const queryClient = new QueryClient()
@@ -236,6 +237,15 @@ export default function App() {
                   element={
                     <ProtectedRoute allowedRoles={FEATURE_ROLES.EXAM_REPORTS} requiredModule="reports">
                       <ExamReportsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/analytics"
+                  element={
+                    <ProtectedRoute allowedRoles={FEATURE_ROLES.ANALYTICS} requiredModule="analytics">
+                      <AnalyticsPage />
                     </ProtectedRoute>
                   }
                 />
