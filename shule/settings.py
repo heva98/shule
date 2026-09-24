@@ -40,6 +40,13 @@ ENABLED_MODULES = config(
     cast=lambda s: [m.strip().lower() for m in s.split(',') if m.strip()]
 )
 
+# Analytics query endpoint (analytics/query.py): the most values one query may
+# return, the pupil count below which score cells are masked (D18), and the
+# duration above which a query is logged as a warning.
+ANALYTICS_MAX_CELLS = config('ANALYTICS_MAX_CELLS', default=10_000, cast=int)
+ANALYTICS_MIN_CELL_SIZE = config('ANALYTICS_MIN_CELL_SIZE', default=5, cast=int)
+ANALYTICS_SLOW_QUERY_MS = config('ANALYTICS_SLOW_QUERY_MS', default=1_000, cast=int)
+
 LOCAL_APPS = [
     'accounts',
     'students',

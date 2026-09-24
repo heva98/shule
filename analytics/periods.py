@@ -19,6 +19,7 @@ says so in `warnings` (§P2), so the UI can show why.
 """
 from __future__ import annotations
 
+import calendar
 import datetime
 import re
 from dataclasses import dataclass, field
@@ -224,3 +225,56 @@ def resolve_periods(items, today: datetime.date | None = None) -> Resolution:
         ids.extend(i for i in new_ids if i not in ids)
         warnings.extend(w for w in new_warnings if w not in warnings)
     return Resolution(ids, warnings)
+
+
+# ── labels and date ranges ─────────────────────────────────────────────────
+
+def period_label(period: Period) -> str:
+    if period.type == PeriodType.YEAR:
+        return str(period.year)
+    if period.type == PeriodType.TERM:
+        return f'Term {period.term[-1]} {period.year}'
+    if period.type == PeriodType.QUARTER:
+        return f'{period.quarter} {period.year}'
+    return f'{calendar.month_name[period.month]} {period.year}'
+
+
+def _quarter_boundaries(year: int, ay: AcademicYear | None) -> tuple[list[datetime.date], str | None]:
+    """Five dates splitting `year` into Q1..Q4 as half-open ranges.
+
+    With complete quarter dates the boundaries are the quarter *starts*, so
+    a holiday belongs to the quarter before it (as in `current_quarter`) and
+    no date-grained fact falls between two quarters. Otherwise calendar
+    quarters, plus a warning."""
+    jan1, next_jan1 = datetime.date(year, 1, 1), datetime.date(year + 1, 1, 1)
+    if ay is not None and all(all(_quarter_dates(ay, n)) for n in range(1, 5)):
+        return [
+            min(jan1, ay.q1_start), ay.q2_start, ay.q3_start, ay.q4_start,
+            max(next_jan1, ay.q4_end + datetime.timedelta(days=1)),
+        ], None
+    reason = 'has incomplete quarter dates' if ay is not None else 'is not set up'
+    return (
+        [jan1, datetime.date(year, 4, 1), datetime.date(year, 7, 1),
+         datetime.date(year, 10, 1), next_jan1],
+        f'Academic year {year} {reason}; calendar quarters were used for dated records.',
+    )
+
+
+def period_date_range(period: Period, ay: AcademicYear | None = None
+                      ) -> tuple[datetime.date, datetime.date, str | None]:
+    """The half-open [start, end) date range of `period`, for facts dated by a
+    column rather than by academic year/term/quarter. `ay` is the
+    AcademicYear for `period.year`, if one exists."""
+    if period.type == PeriodType.MONTH:
+        start = datetime.date(period.year, period.month, 1)
+        end = (datetime.date(period.year + 1, 1, 1) if period.month == 12
+               else datetime.date(period.year, period.month + 1, 1))
+        return start, end, None
+    bounds, warning = _quarter_boundaries(period.year, ay)
+    if period.type == PeriodType.YEAR:
+        return bounds[0], bounds[4], None
+    if period.type == PeriodType.TERM:
+        first = 0 if period.term == 'TERM1' else 2
+        return bounds[first], bounds[first + 2], warning
+    n = int(period.quarter[1])
+    return bounds[n - 1], bounds[n], warning

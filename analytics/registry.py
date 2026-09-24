@@ -50,7 +50,7 @@ from fees.models import (
 )
 from fees.reports import FEE_KINDS, _outstanding_lines
 from students.level_groups import LEVELS_BY_GROUP, LevelGroup
-from students.models import Enrolment, Level, Student, StudentStatus
+from students.models import Enrolment, Level, Stream, Student, StudentStatus
 
 from .periods import PERIOD_TYPES, RELATIVE_PERIODS, PeriodType
 from .permissions import GROUP_LABELS, GROUP_MODULES, MetricGroup, groups_for_role, modules_enabled
@@ -498,6 +498,7 @@ def _enrolment_value(field_name: str, student: str, year_filter: dict):
     return Subquery(
         Enrolment.objects
         .filter(student_id=OuterRef(student), **year_filter)
+        .order_by()  # unique per (student, year); Meta.ordering would sort per row
         .values(field_name)[:1],
         output_field=CharField(),
     )
@@ -702,11 +703,28 @@ def _org_unit_items() -> list[dict]:
     }]
 
 
+def org_unit_lookup() -> dict[str, dict]:
+    """Every org-unit id a query may name → its tree level and label. Wider
+    than `_org_unit_items`: any class × managed stream is accepted, so past
+    years' classes stay queryable."""
+    school = SchoolSettings.objects.filter(pk=1).first()
+    units = {'SCHOOL': {'level': 'school', 'label': school.school_name if school else 'School'}}
+    for group in LEVELS_BY_GROUP:
+        units[str(group)] = {'level': 'level_group', 'label': LevelGroup(group).label}
+    for level, label in Level.choices:
+        units[level] = {'level': 'level', 'label': str(label)}
+    for stream in Stream.objects.values_list('name', flat=True):
+        for level, label in Level.choices:
+            units[f'{level}/{stream}'] = {'level': 'stream', 'label': f'{label} {stream}'}
+    return units
+
+
 def _subject_items() -> list[dict]:
+    # Subject codes are unique, so they are the item ids (`subject:MATH`).
     return [
-        {'id': str(pk), 'label': f'{code} — {name}', 'level_group': group}
-        for pk, code, name, group in Subject.objects.filter(is_active=True)
-        .values_list('pk', 'code', 'name', 'level_group')
+        {'id': code, 'label': f'{code} — {name}', 'level_group': group}
+        for code, name, group in Subject.objects.filter(is_active=True)
+        .values_list('code', 'name', 'level_group')
     ]
 
 
@@ -739,7 +757,7 @@ _DIMENSIONS = [
 
     # academics
     Dimension('subject', 'Subject', DimensionKind.DYNAMIC,
-              group_by={'marks': 'subject_id'}, items=_subject_items, modules=('exams',)),
+              group_by={'marks': 'subject__code'}, items=_subject_items, modules=('exams',)),
     Dimension('subject_level_group', 'Subject level group', DimensionKind.DYNAMIC,
               group_by={'marks': 'subject__level_group'},
               items=_choices_items(LevelGroup.choices), modules=('exams',)),
