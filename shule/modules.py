@@ -32,6 +32,7 @@ OPTIONAL_MODULES = frozenset({
     "homepackages",
     "documents",
     "school_calendar",
+    "analytics",
 })
 
 

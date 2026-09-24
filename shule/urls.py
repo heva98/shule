@@ -26,6 +26,7 @@ def api_root(request):
             "transport":      "/api/transport/",
             "documents":      "/api/documents/",
             "library":        "/api/library/",
+            "analytics":      "/api/analytics/",
             "admin":          "/api/admin/",
         },
     })
@@ -53,6 +54,7 @@ urlpatterns = [
     path('api/transport/',      include('transport.urls')),
     path('api/documents/',      include('documents.urls')),
     path('api/library/',        include('library.urls')),
+    path('api/analytics/',      include('analytics.urls')),
     path('api/admin/',          include('accounts.admin_urls')),
 ]
 
