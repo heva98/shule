@@ -1,19 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ChartColumn, PanelLeft, RefreshCw, SlidersHorizontal, Table2, X } from 'lucide-react'
-import { useCallback, useMemo, useReducer, useState } from 'react'
+import {
+  AlertTriangle, ChartColumn, Download, PanelLeft, RefreshCw, SlidersHorizontal, Table2, Wand2, X,
+} from 'lucide-react'
+import { useCallback, useMemo, useReducer, useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 import { getAnalyticsDimensions, runAnalyticsQuery } from '../../api/analytics'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import { selectCls } from '../../lib/formStyles'
+import { buildChartModel } from './charts'
+import ChartView from './components/ChartView'
 import DimensionModal from './components/DimensionModal'
 import DimensionPanel from './components/DimensionPanel'
 import LayoutArea from './components/LayoutArea'
 import OptionsModal from './components/OptionsModal'
 import PivotTable from './components/PivotTable'
+import { downloadChartPng, downloadCsv, downloadFilename, downloadXlsx, pivotGrid } from './download'
 import { buildPivot } from './pivot'
 import {
-  FIXED_DIMENSION_LABELS, VISUALIZATION_TYPES, buildQuery, configReducer, flattenTree,
-  initialConfig, periodLabel, placementError,
+  FIXED_DIMENSION_LABELS, VISUALIZATION_TYPES, axisLabels, buildQuery, configReducer, flattenTree,
+  initialConfig, isChart, layoutProblem, periodLabel, placementError,
 } from './visualizationConfig'
 
 function errorMessage(err) {
@@ -36,6 +42,8 @@ export default function AnalyticsPage() {
   const [modalDimId, setModalDimId] = useState(null)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [downloadOpen, setDownloadOpen] = useState(false)
+  const chartRef = useRef(null)
 
   const catalogue = useQuery({
     queryKey: ['analytics', 'dimensions'],
@@ -74,7 +82,7 @@ export default function AnalyticsPage() {
     // grade F, gender F).
     const name = result.data?.metaData?.items?.[dimId]?.items?.[itemId]?.name
     if (name) return name
-    if (dimId === 'pe') return periodLabel(itemId)
+    if (dimId === 'pe') return itemLabels.pe?.[itemId] ?? periodLabel(itemId)
     return itemLabels[dimId]?.[itemId] ?? (itemId || '(blank)')
   }, [itemLabels, result.data])
 
@@ -96,7 +104,15 @@ export default function AnalyticsPage() {
     return missing.length ? `Does not apply to: ${missing.map((m) => m.label).join(', ')}` : null
   }, [config.items.dx, metricsById])
 
+  const appliedType = applied?.config.type
+  const chartModel = useMemo(() => {
+    if (!pivot || pivot.isEmpty || !isChart(appliedType)) return null
+    return buildChartModel(pivot, appliedType, config.options)
+  }, [pivot, appliedType, config.options])
+
   function run(cfg) {
+    // The layout banner already explains what's wrong and offers the fix.
+    if (layoutProblem(cfg, dimensionLabel)) return
     const { params, error } = buildQuery(cfg, dimensionsById)
     if (error) {
       setValidationError(error)
@@ -106,6 +122,22 @@ export default function AnalyticsPage() {
     const paramString = params.toString()
     if (applied?.params === paramString) result.refetch()
     setApplied({ config: cfg, params: paramString })
+  }
+
+  function load(cfg) {
+    dispatch({ type: 'LOAD', config: cfg })
+    run(cfg)
+  }
+
+  // Switching type redraws the current result straight away when the new type
+  // can draw it from the same query.
+  function changeType(visType) {
+    const next = configReducer(config, { type: 'SET_TYPE', visType })
+    dispatch({ type: 'SET_TYPE', visType })
+    if (applied && !layoutProblem(next, dimensionLabel)
+      && buildQuery(next, dimensionsById).params?.toString() === applied.params) {
+      setApplied({ config: next, params: applied.params })
+    }
   }
 
   function place(dimId, axis, index) {
@@ -123,7 +155,9 @@ export default function AnalyticsPage() {
   }
 
   const current = buildQuery(config, dimensionsById)
-  const stale = applied && current.params && current.params.toString() !== applied.params
+  const stale = applied && current.params
+    && (current.params.toString() !== applied.params || config.type !== applied.config.type)
+  const problem = layoutProblem(config, dimensionLabel)
 
   const modalDim = modalDimId && dimensionsById[modalDimId]
   const modalAxis = modalDim && ['columns', 'rows', 'filters'].find((a) => config[a].includes(modalDimId))
@@ -140,12 +174,42 @@ export default function AnalyticsPage() {
   const filterSummary = applied?.config.filters
     .filter((id) => applied.config.items[id]?.length)
     .map((id) => `${dimensionLabel(id)}: ${applied.config.items[id].map((i) => labelFor(id, i)).join(', ')}`)
+  const subtitle = filterSummary?.join(' · ')
+
+  const canDownload = Boolean(pivot && !pivot.isEmpty && !result.isError)
+  const canDownloadPng = Boolean(canDownload && chartModel && !chartModel.tooMany)
+
+  async function download(format) {
+    setDownloadOpen(false)
+    const filename = downloadFilename()
+    if (format === 'png') {
+      const svg = chartRef.current?.querySelector('svg')
+      if (!svg) return
+      const single = appliedType === 'SINGLE_VALUE'
+      const series = chartModel.series ?? []
+      try {
+        await downloadChartPng(svg, {
+          // A single value's SVG carries its own heading.
+          title: single ? null : applied.config.items.dx.map((i) => labelFor('dx', i)).join(', '),
+          subtitle: single ? null : subtitle,
+          legend: series.length >= 2 || appliedType === 'PIE' ? series.filter((s) => s.name) : [],
+          filename,
+        })
+      } catch (err) {
+        toast.error(err.message)
+      }
+      return
+    }
+    const grid = pivotGrid(pivot, dimensionLabel)
+    if (format === 'csv') downloadCsv(grid, filename)
+    else downloadXlsx(grid, filename)
+  }
 
   let body
   if (!applied) {
     body = (
-      <EmptyState icon={Table2} title="Build a pivot table"
-        message="Choose data, periods and classes from the dimensions panel, arrange them in Columns, Rows and Filter, then click Update." />
+      <EmptyState icon={Table2} title="Build a visualization"
+        message="Choose data, periods and classes from the dimensions panel, arrange them on the layout, then click Update." />
     )
   } else if (result.isFetching && !pivot) {
     body = <div className="flex justify-center py-16"><Spinner /></div>
@@ -155,7 +219,7 @@ export default function AnalyticsPage() {
         <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
           <AlertTriangle size={24} className="text-danger" />
         </div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-1">The table could not be built</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-1">The visualization could not be built</h3>
         <p className="text-sm text-gray-500 max-w-md">{errorMessage(result.error)}</p>
         <Button variant="outline" size="sm" icon={RefreshCw} className="mt-4" onClick={() => result.refetch()}>
           Try again
@@ -167,10 +231,17 @@ export default function AnalyticsPage() {
   } else if (pivot) {
     body = (
       <div className={`space-y-3 transition-opacity ${result.isFetching ? 'opacity-50' : ''}`}>
-        {filterSummary?.length > 0 && (
-          <p className="text-xs text-gray-500">{filterSummary.join(' · ')}</p>
+        {subtitle && appliedType !== 'SINGLE_VALUE' && <p className="text-xs text-gray-500">{subtitle}</p>}
+        {chartModel ? (
+          <ChartView ref={chartRef} model={chartModel} options={config.options} subtitle={subtitle}
+            // Only needed (and only passed) when the chart isn't drawn, so the
+            // memoised chart otherwise keeps stable props.
+            onSwapAxes={chartModel.tooMany
+              ? () => load({ ...applied.config, columns: applied.config.rows, rows: applied.config.columns })
+              : undefined} />
+        ) : (
+          <PivotTable pivot={pivot} options={config.options} dimensionLabel={dimensionLabel} />
         )}
-        <PivotTable pivot={pivot} options={config.options} dimensionLabel={dimensionLabel} />
         {pivot.hasSuppressed && (
           <p className="text-xs text-gray-400">* Hidden to protect privacy: too few pupils in the cell.</p>
         )}
@@ -190,13 +261,9 @@ export default function AnalyticsPage() {
         <label className="flex items-center gap-2 text-sm text-gray-600">
           <ChartColumn size={16} className="text-gray-400" />
           <span className="sr-only">Visualization type</span>
-          <select value={config.type} onChange={(e) => dispatch({ type: 'SET_TYPE', visType: e.target.value })}
+          <select value={config.type} onChange={(e) => changeType(e.target.value)}
             className={`${selectCls} py-1.5`}>
-            {VISUALIZATION_TYPES.map((t) => (
-              <option key={t.id} value={t.id} disabled={!t.available}>
-                {t.label}{t.available ? '' : ' (coming soon)'}
-              </option>
-            ))}
+            {VISUALIZATION_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
         </label>
         <div className="flex-1" />
@@ -204,6 +271,30 @@ export default function AnalyticsPage() {
         <Button variant="outline" size="sm" icon={SlidersHorizontal} onClick={() => setOptionsOpen(true)}>
           Options
         </Button>
+        <div className="relative">
+          <Button variant="outline" size="sm" icon={Download} disabled={!canDownload}
+            aria-haspopup="menu" aria-expanded={downloadOpen} onClick={() => setDownloadOpen((o) => !o)}>
+            Download
+          </Button>
+          {downloadOpen && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setDownloadOpen(false)} />
+              <div role="menu" className="absolute right-0 top-full mt-1 z-30 w-48 rounded-lg border border-gray-200 bg-white shadow-card py-1 text-sm text-gray-700">
+                <p className="px-3 pt-1 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Table</p>
+                <button type="button" role="menuitem" onClick={() => download('csv')}
+                  className="block w-full text-left px-3 py-1.5 hover:bg-gray-50">CSV (.csv)</button>
+                <button type="button" role="menuitem" onClick={() => download('xlsx')}
+                  className="block w-full text-left px-3 py-1.5 hover:bg-gray-50">Excel (.xlsx)</button>
+                <p className="px-3 pt-2 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Chart</p>
+                <button type="button" role="menuitem" onClick={() => download('png')} disabled={!canDownloadPng}
+                  title={canDownloadPng ? undefined : 'Switch to a chart type to download an image'}
+                  className="block w-full text-left px-3 py-1.5 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-transparent">
+                  Image (.png)
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <Button size="sm" icon={RefreshCw} onClick={() => run(config)} disabled={catalogue.isLoading || catalogue.isError}>
           Update
         </Button>
@@ -220,6 +311,17 @@ export default function AnalyticsPage() {
             onOpen={openDimension} onPlace={place}
             onRemove={(dimId) => dispatch({ type: 'REMOVE_DIMENSION', dimId })} />
 
+          {problem && (
+            <div className="flex flex-wrap items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <span className="flex-1 min-w-[12rem]">
+                {problem.message} <span className="text-amber-700">Auto-fix will {problem.fixDescription}.</span>
+              </span>
+              <Button variant="outline" size="sm" icon={Wand2} className="bg-white" onClick={() => load(problem.fixed)}>
+                Fix layout
+              </Button>
+            </div>
+          )}
           {validationError && (
             <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
@@ -264,6 +366,7 @@ export default function AnalyticsPage() {
           groups={catalogue.data?.groups ?? []}
           selected={config.items[modalDim.id] ?? []}
           axis={modalAxis}
+          axisNames={axisLabels(config.type)}
           onClose={() => setModalDimId(null)}
           onApply={(items, andRun) => {
             const action = { type: 'SET_ITEMS', dimId: modalDim.id, items }
@@ -281,6 +384,7 @@ export default function AnalyticsPage() {
 
       {optionsOpen && (
         <OptionsModal
+          type={config.type}
           options={config.options}
           onClose={() => setOptionsOpen(false)}
           onApply={(options) => {

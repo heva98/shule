@@ -70,7 +70,9 @@ function PeriodSelector({ dim, draft, setDraft }) {
   )
 }
 
-export default function DimensionModal({ dim, title, groups, selected, axis, onApply, onAddTo, onClose }) {
+export default function DimensionModal({
+  dim, title, groups, selected, axis, axisNames = AXIS_LABELS, onApply, onAddTo, onClose,
+}) {
   const [draft, setDraft] = useState(selected)
   const [group, setGroup] = useState('')
 
@@ -135,7 +137,7 @@ export default function DimensionModal({ dim, title, groups, selected, axis, onA
         ) : (
           AXES.filter((a) => !placementError(dim, a)).map((a) => (
             <Button key={a} variant={a === 'filters' ? 'outline' : 'primary'} onClick={() => onAddTo(a, draft)}>
-              Add to {AXIS_LABELS[a]}
+              Add to {axisNames[a]}
             </Button>
           ))
         )}

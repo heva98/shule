@@ -11,4 +11,10 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    // Unit tests run in Node; component tests opt into jsdom with a
+    // `// @vitest-environment jsdom` comment at the top of the file.
+    environment: 'node',
+    include: ['src/**/*.test.{js,jsx}'],
+  },
 })

@@ -28,9 +28,11 @@ Frontend (`shule-frontend/`, React 19 + Vite + Tailwind 3 + TanStack Query):
 npm run dev      # :5173, proxies /api → localhost:8000
 npm run lint
 npm run build
+npm test         # Vitest unit tests (src/**/*.test.{js,jsx}); npm run test:watch to watch
+npm run test:e2e # Playwright browser tests (e2e/), API mocked; starts Vite on :5174
 ```
 
-CI (`.github/workflows/ci.yml`) runs: `check`, the migrations check, the test suite on Postgres, then frontend `lint` and `build`.
+CI (`.github/workflows/ci.yml`) runs: `check`, the migrations check, the test suite on Postgres, then frontend `lint`, `test`, `test:e2e` and `build`.
 
 User manual: `docs/manuals/*.md` is the source; `python docs/build_manual.py` builds `docs/Shule_SMS_User_Manual.html`. A `UnicodeEncodeError` on the final print (cp1252 console) is harmless, because the HTML is already written by then.
 

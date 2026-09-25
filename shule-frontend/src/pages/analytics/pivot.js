@@ -37,10 +37,12 @@ export function buildPivot(response, layout, options, labelFor) {
 
   const cells = new Map()
   let hasSuppressed = false
+  // Keyed on the layout's dimensions only: a single-item Data filter is sent
+  // as a dimension (the API requires one) but isn't on either axis.
+  const layoutDims = [...layout.columns, ...layout.rows]
   for (const row of rows) {
-    const parts = headers
-      .filter((h) => h.meta)
-      .map((h) => `${h.name}=${row[index[h.name]]}`)
+    const parts = layoutDims
+      .map((d) => `${d}=${row[index[d]]}`)
       .sort()
     const suppressed = Boolean(row[suppressedIdx])
     hasSuppressed ||= suppressed

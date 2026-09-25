@@ -1,6 +1,6 @@
 import { MoreVertical } from 'lucide-react'
 import { useState } from 'react'
-import { AXES, AXIS_LABELS, DIM_MIME, placementError } from '../visualizationConfig'
+import { AXES, DIM_MIME, axisLabels, placementError } from '../visualizationConfig'
 
 const CHIP_CLS = {
   columns: 'bg-blue-50 border-blue-200 text-blue-800',
@@ -8,7 +8,7 @@ const CHIP_CLS = {
   filters: 'bg-amber-50 border-amber-200 text-amber-800',
 }
 
-function Chip({ dimId, axis, index, label, count, emptyWarning, menuOpen, onMenu, onOpen, onDropAt, onMove, onRemove, canMoveTo }) {
+function Chip({ dimId, axis, axisNames, index, label, count, emptyWarning, menuOpen, onMenu, onOpen, onDropAt, onMove, onRemove, canMoveTo }) {
   return (
     <div
       draggable
@@ -41,7 +41,7 @@ function Chip({ dimId, axis, index, label, count, emptyWarning, menuOpen, onMenu
             {AXES.filter((a) => a !== axis && canMoveTo(a)).map((a) => (
               <button key={a} type="button" onClick={() => onMove(dimId, a)}
                 className="block w-full text-left px-3 py-1.5 hover:bg-gray-50">
-                Move to {AXIS_LABELS[a]}
+                Move to {axisNames[a]}
               </button>
             ))}
             <button type="button" onClick={() => onRemove(dimId)}
@@ -63,6 +63,7 @@ function Chip({ dimId, axis, index, label, count, emptyWarning, menuOpen, onMenu
 export default function LayoutArea({ config, dimensionsById, dimensionLabel, onOpen, onPlace, onRemove }) {
   const [menu, setMenu] = useState(null)
   const [over, setOver] = useState(null)
+  const axisNames = axisLabels(config.type)
 
   const drop = (dimId, axis, index) => {
     setOver(null)
@@ -90,7 +91,7 @@ export default function LayoutArea({ config, dimensionsById, dimensionLabel, onO
           } ${over === axis ? 'border-primary bg-blue-50/60' : 'border-gray-300 bg-white'}`}
         >
           <span className="w-14 shrink-0 pt-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-            {AXIS_LABELS[axis]}
+            {axisNames[axis]}
           </span>
           <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
             {config[axis].length === 0 && (
@@ -104,6 +105,7 @@ export default function LayoutArea({ config, dimensionsById, dimensionLabel, onO
                   key={dimId}
                   dimId={dimId}
                   axis={axis}
+                  axisNames={axisNames}
                   index={index}
                   label={dimensionLabel(dimId)}
                   count={count}

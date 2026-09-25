@@ -21,17 +21,37 @@ export const AXIS_LABELS = {
   filters: 'Filter',
 }
 
+// Charts read Columns as the series and Rows as the category (DHIS2's names).
+const CHART_AXIS_LABELS = { columns: 'Series', rows: 'Category', filters: 'Filter' }
+
+// `series` / `category`: the most dimensions each axis takes.
 export const VISUALIZATION_TYPES = [
-  { id: 'PIVOT_TABLE', label: 'Pivot table', available: true },
-  { id: 'COLUMN', label: 'Column chart', available: false },
-  { id: 'LINE', label: 'Line chart', available: false },
+  { id: 'PIVOT_TABLE', label: 'Pivot table' },
+  { id: 'COLUMN', label: 'Column chart', chart: true, series: 1, category: 1 },
+  { id: 'STACKED_COLUMN', label: 'Stacked column chart', chart: true, series: 1, category: 1 },
+  { id: 'BAR', label: 'Bar chart', chart: true, series: 1, category: 1 },
+  { id: 'LINE', label: 'Line chart', chart: true, series: 1, category: 1 },
+  { id: 'PIE', label: 'Pie chart', chart: true, series: 1, category: 0 },
+  { id: 'SINGLE_VALUE', label: 'Single value', chart: true, series: 1, category: 0 },
 ]
+const TYPES_BY_ID = Object.fromEntries(VISUALIZATION_TYPES.map((t) => [t.id, t]))
+
+export const isChart = (type) => Boolean(TYPES_BY_ID[type]?.chart)
+
+export function axisLabels(type) {
+  return isChart(type) ? CHART_AXIS_LABELS : AXIS_LABELS
+}
 
 export const DEFAULT_OPTIONS = {
   showDimensionLabels: true,
   hideEmptyRows: false,
   hideEmptyColumns: false,
   decimals: 'auto', // 'auto' | 0 | 1 | 2
+  // Charts only.
+  showDataLabels: false,
+  sortOrder: 'none', // 'none' | 'asc' | 'desc'
+  targetValue: null, // number, e.g. 50 for the pass mark
+  targetLabel: 'Target',
 }
 
 // The frontend's names for the three fixed dimensions (the API calls `ou`
@@ -52,10 +72,10 @@ export function axisOf(config, dimId) {
   return AXES.find((axis) => config[axis].includes(dimId)) ?? null
 }
 
-// Why `dimId` can't go on `axis`, or null if it can.
+// Why `dimId` can't go on `axis`, or null if it can. (Data may go in Filter
+// with a single item; `buildQuery` checks the item count.)
 export function placementError(dim, axis) {
   if (!dim) return null
-  if (dim.id === 'dx' && axis === 'filters') return 'Data must be in Columns or Rows.'
   if (dim.filter_only && axis !== 'filters') return `${dim.label} can only be used as a filter.`
   return null
 }
@@ -123,7 +143,9 @@ export function buildQuery(config, dimensionsById) {
   if (!axisOf(config, 'dx') || items('dx').length === 0) {
     return { error: 'Choose at least one data item.' }
   }
-  if (config.filters.includes('dx')) return { error: 'Data must be in Columns or Rows.' }
+  if (config.filters.includes('dx') && items('dx').length > 1) {
+    return { error: 'Data in Filter can hold only one item. Choose one, or move Data to another axis.' }
+  }
   if (!axisOf(config, 'pe') || items('pe').length === 0) {
     return { error: 'Choose at least one period.' }
   }
@@ -140,11 +162,89 @@ export function buildQuery(config, dimensionsById) {
     params.append('dimension', `${id}:${items(id).join(';')}`)
   }
   for (const id of config.filters) {
+    // The API only takes Data as a dimension; with its single item it adds
+    // no breakdown, and the pivot ignores dimensions off the layout.
+    if (id === 'dx') {
+      params.append('dimension', `dx:${items('dx').join(';')}`)
+      continue
+    }
     // An empty filter restricts nothing, so it is left out of the query.
     if (items(id).length === 0) continue
     params.append('filter', `${id}:${items(id).join(';')}`)
   }
   return { params }
+}
+
+// ── chart layout rules ──────────────────────────────────────────────────────
+
+/**
+ * What stops `config.type` drawing the current layout, or null if nothing:
+ * { message, fixed, fixDescription }. `fixed` is the config rearranged to fit
+ * (extra dimensions moved to Filter), which the page offers as an auto-fix.
+ */
+export function layoutProblem(config, dimensionLabel) {
+  const type = TYPES_BY_ID[config.type]
+  if (!type?.chart) return null
+  const { columns, rows } = config
+  const dxCount = config.items.dx?.length ?? 0
+
+  let message = null
+  if (config.type === 'SINGLE_VALUE') {
+    const ok = columns.length === 1 && columns[0] === 'dx' && rows.length === 0 && dxCount <= 1
+    if (!ok) {
+      message = 'A single value shows one number: Series takes only Data, with one data item, and every other dimension goes in Filter.'
+    }
+  } else if (type.category === 0) {
+    if (columns.length !== 1 || rows.length > 0) {
+      message = `A ${type.label.toLowerCase()} takes exactly one dimension in Series and none in Category.`
+    }
+  } else if (columns.length > type.series || rows.length > type.category || columns.length + rows.length === 0) {
+    message = `A ${type.label.toLowerCase()} takes one dimension in Series and at most one in Category; other dimensions go in Filter.`
+  }
+  if (!message && config.filters.includes('dx') && dxCount > 1) {
+    message = 'Data in Filter can hold only one item.'
+  }
+  if (!message) return null
+
+  const fixed = fixLayout(config)
+  const moved = [...config.columns, ...config.rows].filter((d) => fixed.filters.includes(d))
+  const parts = []
+  if (moved.length) parts.push(`move ${moved.map(dimensionLabel).join(', ')} to Filter`)
+  if (fixed.items.dx.length < dxCount) parts.push(`keep only the first data item`)
+  if (fixed.columns[0] !== config.columns[0] && !moved.length) parts.push(`put ${dimensionLabel(fixed.columns[0])} in Series`)
+  return { message, fixed, fixDescription: parts.join(' and ') || 'rearrange the layout' }
+}
+
+function fixLayout(config) {
+  const type = TYPES_BY_ID[config.type]
+  const dxItems = config.items.dx ?? []
+  let onAxes = [...config.columns, ...config.rows]
+  let items = config.items
+
+  let kept
+  if (config.type === 'SINGLE_VALUE') {
+    kept = ['dx']
+    if (dxItems.length > 1) items = { ...items, dx: dxItems.slice(0, 1) }
+  } else {
+    const slots = type.series + type.category
+    // Data with several items can't be a filter, so it keeps an axis.
+    if (dxItems.length > 1 && !onAxes.slice(0, slots).includes('dx')) {
+      onAxes = ['dx', ...onAxes.filter((d) => d !== 'dx')]
+    }
+    if (onAxes.length === 0) onAxes = ['dx']
+    kept = onAxes.slice(0, slots)
+  }
+
+  return {
+    ...config,
+    items,
+    columns: kept.slice(0, 1),
+    rows: kept.slice(1),
+    filters: [
+      ...onAxes.filter((d) => !kept.includes(d)),
+      ...config.filters.filter((d) => !kept.includes(d)),
+    ],
+  }
 }
 
 // ── periods ──────────────────────────────────────────────────────────────────

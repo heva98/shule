@@ -1,7 +1,7 @@
 import { Calendar, Database, GripVertical, Layers, School, Search } from 'lucide-react'
 import { useState } from 'react'
 import { inputCls } from '../../../lib/formStyles'
-import { AXIS_LABELS, DIM_MIME, axisOf } from '../visualizationConfig'
+import { DIM_MIME, axisLabels, axisOf } from '../visualizationConfig'
 
 const FIXED_ICONS = { dx: Database, pe: Calendar, ou: School }
 
@@ -33,7 +33,7 @@ function DimensionRow({ dim, label, config, notApplicable, onOpen }) {
         <span className="flex-1 min-w-0 truncate">{label}</span>
         {count > 0 && <span className="text-xs text-gray-400 tabular-nums">{count}</span>}
         {axis && (
-          <span className={`w-2 h-2 rounded-full shrink-0 ${AXIS_DOT[axis]}`} title={`In ${AXIS_LABELS[axis]}`} />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${AXIS_DOT[axis]}`} title={`In ${axisLabels(config.type)[axis]}`} />
         )}
       </button>
     </li>

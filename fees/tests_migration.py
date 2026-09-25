@@ -80,11 +80,10 @@ class BackfillLegacyLedgerTests(TransactionTestCase):
             self.assertEqual(pay.student_id, student.id)
 
     def tearDown(self):
-        # Leave the schema at the latest fees migration for the rest of the suite.
+        # Restore every app to its latest migration for the rest of the suite.
+        # Rolling fees back also unapplies other apps' migrations that depend
+        # on later fees migrations (e.g. students.0007_enrolment), so
+        # re-applying only the fees leaf would leave those tables missing.
         from django.db.migrations.loader import MigrationLoader
 
-        leaves = [
-            node for node in MigrationLoader(connection).graph.leaf_nodes()
-            if node[0] == 'fees'
-        ]
-        self._migrate(leaves)
+        self._migrate(MigrationLoader(connection).graph.leaf_nodes())
