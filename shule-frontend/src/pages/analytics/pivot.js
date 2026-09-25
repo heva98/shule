@@ -70,6 +70,13 @@ export function buildPivot(response, layout, options, labelFor) {
     hasSuppressed,
     isEmpty: rows.length === 0,
     cell: (colCombo, rowCombo) => cells.get(keyOf(colCombo, rowCombo)) ?? null,
+    // { dimId: itemId } naming a cell, for drill-down.
+    cellItems: (colCombo, rowCombo) => {
+      const items = {}
+      colDims.forEach((d, i) => { if (d !== NONE) items[d] = colCombo[i] })
+      rowDims.forEach((d, i) => { if (d !== NONE) items[d] = rowCombo[i] })
+      return items
+    },
     label,
     isPlaceholder: (dim) => dim === NONE,
   }

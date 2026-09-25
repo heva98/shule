@@ -49,6 +49,7 @@ from fees.models import AcademicYear
 from staff.models import ClassTeacherAssignment
 
 from .engine import evaluate_many
+from .permissions import UNMASKED_ROLES
 from .periods import (
     RELATIVE_PERIODS, Period, PeriodType, parse_period, period_date_range, period_label,
     resolve_periods,
@@ -59,11 +60,6 @@ from .registry import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Roles that always see real values in small cells (D18). A class teacher
-# only ever sees their own class, which they may see in full.
-UNMASKED_ROLES = frozenset({Role.OWNER, Role.HEADTEACHER, Role.SYSTEM_ADMIN, Role.CLASS_TEACHER})
-
 
 def _max_cells() -> int:
     return getattr(settings, 'ANALYTICS_MAX_CELLS', 10_000)
@@ -316,6 +312,25 @@ class OrgUnitAxis(Axis):
             cond = Q(**{f'{self.alias}_level__in': classes}) & cond
         return cond
 
+    def _group_condition(self, source, level: str, ids: list[str]) -> Q:
+        """The facts a grouped variant keeps, in SQL, using plain columns only.
+
+        Postgres evaluates an expression in WHERE and again in GROUP BY. For
+        an org-unit expression (the pre-P1 stream fallback, the SMS class
+        lookup) that is a correlated subquery run twice per fact. So a
+        grouped variant filters only on plain columns, and `AnalyticsQuery.run`
+        drops the groups nobody asked for. That is exact: each group is
+        aggregated on its own (docs/analytics/QUERY_PERF.md)."""
+        refs = self._refs(source.id)
+        level_is_column = isinstance(refs.get('level'), str)
+        if level == 'stream':
+            classes = sorted({i.split('/')[0] for i in ids})
+            cond = Q(**{f'{self.alias}_level__in': classes}) if level_is_column else Q()
+            if level_is_column and isinstance(refs.get('stream'), str):
+                cond &= Q(**{f'{self.alias}_stream__in': ids})
+            return cond
+        return Q(**{f'{self.alias}_{level}__in': ids}) if level_is_column else Q()
+
     def variants(self, source):
         by_level = self._by_level()
         if self.is_filter:
@@ -332,7 +347,8 @@ class OrgUnitAxis(Axis):
                                    {'SCHOOL': ['SCHOOL']}))
             else:
                 alias = f'{self.alias}_{level}'
-                out.append(Variant(self._condition(level, ids), F(alias), {i: [i] for i in ids}))
+                out.append(Variant(self._group_condition(source, level, ids), F(alias),
+                                   {i: [i] for i in ids}))
         return out
 
 
@@ -510,6 +526,8 @@ class AnalyticsQuery:
                                      pupils=pupils)
                 self.queries += 1
                 for row in rows:
+                    if any(v.items and key not in v.items for (_, v), key in zip(grouped, row.keys)):
+                        continue  # an org unit that wasn't asked for (_group_condition)
                     fans = [
                         [(a.dim_id, item) for item in (v.items.get(key) if v.items else [_item_id(key)])]
                         for (a, v), key in zip(grouped, row.keys)

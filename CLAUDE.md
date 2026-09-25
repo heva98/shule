@@ -63,3 +63,4 @@ User manual: `docs/manuals/*.md` is the source; `python docs/build_manual.py` bu
 - Registry is module-aware: fee metrics are hidden when `fees` is not enabled (e.g. Msewe).
 - Query optimization (annotate/aggregate, select_related) before any Redis caching.
 - Never return individual pupil rows to the aggregate endpoint; drill-down is a separate, permissioned endpoint.
+- Nothing in analytics may require Celery (Msewe runs no worker): no tasks, no `.delay()`, all work inside the request. `analytics/tests_celery_free.py` enforces this.

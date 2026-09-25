@@ -151,6 +151,7 @@ class AuditLog(models.Model):
         LOGOUT            = 'LOGOUT',             'Logout'
         BULK_IMPORT       = 'BULK_IMPORT',        'Bulk Import'
         ACCOUNT_LOCKED    = 'ACCOUNT_LOCKED',     'Account Locked'
+        ANALYTICS_DRILLDOWN = 'ANALYTICS_DRILLDOWN', 'Analytics Pupil List Viewed'
 
     performed_by = models.ForeignKey(
         User,

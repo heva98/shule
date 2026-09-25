@@ -5,9 +5,11 @@ from unittest import mock
 from django.db import connection
 from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from accounts.models import Role
+from communications.models import SmsBatch, SmsMessage
 from exams.models import Exam, ExamType, MarkEntry
 from fees.models import AcademicYear
 from shule.factories import make_staff, make_stream, make_student, make_subject, make_user
@@ -190,6 +192,33 @@ class QueryEndpointTests(MarksFixture, TestCase):
         resp = _get(self.client, 'dx:exam.marks_count', 'pe:2026T1', 'ou:SCHOOL;FORM1/A')
         self.assertEqual(_values(resp), {('exam.marks_count', '2026T1', 'SCHOOL'): 5,
                                          ('exam.marks_count', '2026T1', 'FORM1/A'): 4})
+
+    def test_unrequested_streams_are_left_out(self, _):
+        # The stream is an expression (pre-P1 fallback), so it isn't filtered
+        # in SQL; the FORM1/B group is computed and dropped.
+        make_stream('B')
+        boy_b = make_student(gender='M', level='FORM1', stream='B')
+        exam = Exam.objects.get(level='FORM1', quarter='Q1')
+        self._marks(exam, boy_b, [(self.math, 10)])
+        resp = _get(self.client, 'dx:exam.marks_count;exam.mean_score', 'pe:2026T1', 'ou:FORM1/A')
+        self.assertEqual(_values(resp), {('exam.marks_count', '2026T1', 'FORM1/A'): 4,
+                                         ('exam.mean_score', '2026T1', 'FORM1/A'): 62.5})
+        self.assertEqual(resp.data['metaData']['dimensions']['ou'], ['FORM1/A'])
+
+    def test_unrequested_classes_are_left_out_for_expression_classes(self, _):
+        # An SMS's class is looked up per message, so it isn't filtered in
+        # SQL; FORM2's group is computed and dropped.
+        batch = SmsBatch.objects.create(kind=SmsBatch.Kind.ANNOUNCEMENT, created_by=self.teacher)
+        for pupil in (self.girl1, self.boy1, self.girl2):
+            SmsMessage.objects.create(batch=batch, student=pupil, status=SmsMessage.Status.SENT)
+        SmsMessage.objects.create(batch=batch, status=SmsMessage.Status.SENT)  # no pupil
+        SmsMessage.objects.update(created_at=timezone.make_aware(datetime.datetime(2026, 5, 4, 9)))
+        year = '2026'
+        resp = _get(self.client, 'dx:sms.messages', f'pe:{year}', 'ou:FORM1')
+        self.assertEqual(_values(resp), {('sms.messages', year, 'FORM1'): 2})
+        resp = _get(self.client, 'dx:sms.messages', f'pe:{year}', 'ou:SCHOOL;FORM2')
+        self.assertEqual(_values(resp), {('sms.messages', year, 'SCHOOL'): 4,
+                                         ('sms.messages', year, 'FORM2'): 1})
 
     def test_empty_result(self, _):
         resp = _get(self.client, 'dx:exam.mean_score;exam.marks_count', 'pe:2025',

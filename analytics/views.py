@@ -6,8 +6,11 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthentic
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import AuditLog
 from accounts.permissions import ModuleEnabled
+from accounts.utils import log_action
 
+from .drilldown import run_drilldown
 from .models import SavedVisualization
 from .permissions import IsAnalyticsStaff
 from .query import QueryError, run_query
@@ -37,6 +40,32 @@ class AnalyticsQueryView(APIView):
             return Response(run_query(request.query_params, request.user))
         except QueryError as exc:
             return Response(exc.body, status=exc.status)
+
+
+class DrilldownView(APIView):
+    """GET /api/analytics/drilldown/: the pupils behind one cell of a query,
+    with each pupil's own value. See `analytics.drilldown`. Every successful
+    call is audited, since it reads pupil-level data."""
+    module = 'analytics'
+    permission_classes = [IsAuthenticated, ModuleEnabled, IsAnalyticsStaff]
+
+    def get(self, request):
+        try:
+            data = run_drilldown(request.query_params, request.user)
+        except QueryError as exc:
+            return Response(exc.body, status=exc.status)
+        log_action(
+            user=request.user,
+            action=AuditLog.Action.ANALYTICS_DRILLDOWN,
+            description=f"Listed {data['total']} pupils behind {data['metric']['id']}",
+            target_model='analytics',
+            request=request,
+            extra_data={
+                'dimension': request.query_params.getlist('dimension'),
+                'filter': request.query_params.getlist('filter'),
+            },
+        )
+        return Response(data)
 
 
 class IsCreatorOrReadOnly(BasePermission):

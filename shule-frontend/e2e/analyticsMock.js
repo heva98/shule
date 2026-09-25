@@ -3,8 +3,9 @@
 import { test as base, expect } from '@playwright/test'
 
 export const METRICS = [
-  { id: 'exam.mean_score', label: 'Mean score', unit: 'percent', source: 'exam' },
-  { id: 'exam.pass_rate', label: 'Pass rate', unit: 'percent', source: 'exam' },
+  // `drilldown`: whether the signed-in role may list a cell's pupils.
+  { id: 'exam.mean_score', label: 'Mean score', unit: 'percent', source: 'exam', drilldown: true },
+  { id: 'exam.pass_rate', label: 'Pass rate', unit: 'percent', source: 'exam', drilldown: false },
 ]
 export const PERIODS = [
   { id: 'THIS_TERM', label: 'This term', type: 'relative' },
@@ -118,14 +119,29 @@ function visualizationsRoute(route, url, vizzes) {
   return route.fulfill({ json: viz })
 }
 
+export const DRILLDOWN = {
+  metric: { id: 'exam.mean_score', name: 'Mean score', unit: 'percent' },
+  total: 2,
+  truncated: false,
+  pupils: [
+    { public_id: '6f1c0000-0000-4000-8000-000000000001', name: 'Asha Juma', admission_no: 'ADM-001',
+      gender: 'F', level: 'FORM1', stream: 'A', value: 72.5 },
+    { public_id: '6f1c0000-0000-4000-8000-000000000002', name: 'Baraka Said', admission_no: 'ADM-002',
+      gender: 'M', level: 'FORM1', stream: 'B', value: 48 },
+  ],
+  warnings: [],
+}
+
 /**
  * Routes the API to the mock and signs in a headteacher. Returns `queries`,
  * the URLSearchParams of every query the page sends, and `errors`, every page
  * error and console error (checked by `expectNoErrors`), and `vizzes`, the
- * saved-visualization store.
+ * saved-visualization store. `drilldowns` holds the URLSearchParams of every
+ * drill-down request.
  */
 export async function mockBackend(page) {
   const queries = []
+  const drilldowns = []
   const errors = []
   const vizzes = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -151,10 +167,14 @@ export async function mockBackend(page) {
       queries.push(url.searchParams)
       return route.fulfill({ json: queryResponse(url) })
     }
+    if (url.pathname === '/api/analytics/drilldown/') {
+      drilldowns.push(url.searchParams)
+      return route.fulfill({ json: DRILLDOWN })
+    }
     return route.fulfill({ json: [] })
   })
   await page.addInitScript(() => localStorage.setItem('shule_access', 'test-token'))
-  return { queries, errors, vizzes }
+  return { queries, drilldowns, errors, vizzes }
 }
 
 export function expectNoErrors(errors) {

@@ -53,7 +53,9 @@ from students.level_groups import LEVELS_BY_GROUP, LevelGroup
 from students.models import Enrolment, Level, Stream, Student, StudentStatus
 
 from .periods import PERIOD_TYPES, RELATIVE_PERIODS, PeriodType
-from .permissions import GROUP_LABELS, GROUP_MODULES, MetricGroup, groups_for_role, modules_enabled
+from .permissions import (
+    GROUP_LABELS, GROUP_MODULES, MetricGroup, can_drill_down, groups_for_role, modules_enabled,
+)
 
 _DEC = DecimalField(max_digits=14, decimal_places=2)
 _ZERO = Value(Decimal('0'), output_field=_DEC)
@@ -636,12 +638,14 @@ def _student_paths(attr: str) -> dict[str, str]:
     }
 
 
-def _metric_items(metrics) -> list[dict]:
+def _metric_items(metrics, role=None) -> list[dict]:
     return [
         {
             'id': m.id, 'label': m.label, 'description': m.description,
             'group': m.group, 'source': m.source, 'aggregation': m.aggregation,
             'unit': m.unit, 'modules': list(m.modules), 'masked': m.masked,
+            # Whether `role` may list the pupils behind a cell (drill-down).
+            'drilldown': role is not None and can_drill_down(m, role),
         }
         for m in metrics
     ]
@@ -865,7 +869,7 @@ def catalogue(role=None) -> dict:
             'applies_to': applies, 'filter_only': dim.filter_only,
         }
         if dim.kind == DimensionKind.DATA:
-            entry['items'] = _metric_items(metrics)
+            entry['items'] = _metric_items(metrics, role)
         else:
             entry['items'] = dim.items() if dim.items else []
         if dim.kind == DimensionKind.PERIOD:

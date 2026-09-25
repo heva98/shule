@@ -3,7 +3,9 @@ import { formatValue, headerSpans } from '../pivot'
 
 const TH = 'border border-gray-200 px-3 py-1.5 font-semibold text-gray-700 whitespace-nowrap'
 
-export default function PivotTable({ pivot, options, dimensionLabel }) {
+// `canDrill(colCombo, rowCombo)` says whether a cell lists its pupils when
+// clicked; `onDrill(colCombo, rowCombo)` opens that list.
+export default function PivotTable({ pivot, options, dimensionLabel, canDrill, onDrill }) {
   const { colDims, rowDims, colCombos, rowCombos, cell, label, isPlaceholder } = pivot
   const showLabels = options.showDimensionLabels
 
@@ -55,11 +57,18 @@ export default function PivotTable({ pivot, options, dimensionLabel }) {
               })}
               {colCombos.map((colCombo) => {
                 const c = cell(colCombo, rowCombo)
+                const drillable = Boolean(c && !c.suppressed && canDrill?.(colCombo, rowCombo))
                 return (
                   <td key={colCombo.join('|')}
                     className="border border-gray-200 px-3 py-1.5 text-right tabular-nums whitespace-nowrap text-gray-800">
                     {c?.suppressed ? (
                       <span className="text-gray-400 cursor-help" title="Hidden: too few pupils in this cell">*</span>
+                    ) : drillable ? (
+                      <button type="button" onClick={() => onDrill(colCombo, rowCombo)}
+                        title="Show the pupils in this cell"
+                        className="tabular-nums hover:text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded">
+                        {formatValue(c.value, c.unit, options.decimals)}
+                      </button>
                     ) : c ? formatValue(c.value, c.unit, options.decimals) : ''}
                   </td>
                 )

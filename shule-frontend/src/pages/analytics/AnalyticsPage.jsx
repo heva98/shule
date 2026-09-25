@@ -17,12 +17,14 @@ import { buildChartModel } from './charts'
 import ChartView from './components/ChartView'
 import DimensionModal from './components/DimensionModal'
 import DimensionPanel from './components/DimensionPanel'
+import DrilldownPanel from './components/DrilldownPanel'
 import FileMenu from './components/FileMenu'
 import LayoutArea from './components/LayoutArea'
 import OpenVisualizationModal from './components/OpenVisualizationModal'
 import OptionsModal from './components/OptionsModal'
 import PivotTable from './components/PivotTable'
 import SaveVisualizationModal from './components/SaveVisualizationModal'
+import { buildDrilldownQuery, cellMetric } from './drilldown'
 import { downloadChartPng, downloadCsv, downloadFilename, downloadXlsx, pivotGrid } from './download'
 import { buildPivot } from './pivot'
 import {
@@ -54,6 +56,8 @@ export default function AnalyticsPage() {
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [downloadOpen, setDownloadOpen] = useState(false)
+  // The pivot cell whose pupils are listed: { params, cellSummary }.
+  const [drilldown, setDrilldown] = useState(null)
   const chartRef = useRef(null)
   // The saved visualization on screen (API object), and its config as saved,
   // serialised, to tell whether there are unsaved changes.
@@ -108,6 +112,34 @@ export default function AnalyticsPage() {
       .filter((m) => m && !dim.applies_to.includes(m.source))
     return missing.length ? `Does not apply to: ${missing.map((m) => m.label).join(', ')}` : null
   }, [config.items.dx, metricsById])
+
+  // A cell lists its pupils when the server allows it for the cell's metric
+  // (the catalogue's per-role `drilldown` flag) and every item can be named.
+  const canDrill = useCallback((colCombo, rowCombo) => {
+    if (!pivot || !applied) return false
+    const items = pivot.cellItems(colCombo, rowCombo)
+    return Boolean(metricsById[cellMetric(applied.params, items)]?.drilldown)
+      && buildDrilldownQuery(applied.params, items) !== null
+  }, [pivot, applied, metricsById])
+
+  function openDrilldown(colCombo, rowCombo) {
+    const items = pivot.cellItems(colCombo, rowCombo)
+    const metric = cellMetric(applied.params, items)
+    const cellSummary = [
+      { label: dimensionLabel('dx'), value: labelFor('dx', metric) },
+      ...Object.entries(items)
+        .filter(([dim]) => dim !== 'dx')
+        .map(([dim, item]) => ({ label: dimensionLabel(dim), value: labelFor(dim, item) })),
+      ...applied.config.filters
+        .filter((id) => id !== 'dx' && applied.config.items[id]?.length)
+        .map((id) => ({
+          label: dimensionLabel(id),
+          value: applied.config.items[id].map((i) => labelFor(id, i)).join(', '),
+        })),
+    ]
+    setDrilldown({ params: buildDrilldownQuery(applied.params, items), cellSummary })
+  }
+  const closeDrilldown = useCallback(() => setDrilldown(null), [])
 
   const appliedType = applied?.config.type
   const chartModel = useMemo(() => {
@@ -367,7 +399,8 @@ export default function AnalyticsPage() {
               ? () => load({ ...applied.config, columns: applied.config.rows, rows: applied.config.columns })
               : undefined} />
         ) : (
-          <PivotTable pivot={pivot} options={config.options} dimensionLabel={dimensionLabel} />
+          <PivotTable pivot={pivot} options={config.options} dimensionLabel={dimensionLabel}
+            canDrill={canDrill} onDrill={openDrilldown} />
         )}
         {pivot.hasSuppressed && (
           <p className="text-xs text-gray-400">* Hidden to protect privacy: too few pupils in the cell.</p>
@@ -550,6 +583,11 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {drilldown && (
+        <DrilldownPanel params={drilldown.params} cellSummary={drilldown.cellSummary}
+          decimals={config.options.decimals} onClose={closeDrilldown} />
       )}
 
       {optionsOpen && (

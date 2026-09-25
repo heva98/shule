@@ -76,3 +76,20 @@ class IsAnalyticsStaff(BasePermission):
             request.user.is_authenticated
             and request.user.role in ANALYTICS_ROLES
         )
+
+
+# ── drill-down (pupil lists) ───────────────────────────────────────────────
+
+# Roles that see a score cell's real value, however few pupils it holds
+# (D18). A class teacher only ever reaches their own class.
+UNMASKED_ROLES = frozenset({Role.OWNER, Role.HEADTEACHER, Role.SYSTEM_ADMIN, Role.CLASS_TEACHER})
+
+
+def can_drill_down(metric, role) -> bool:
+    """Whether `role` may list the pupils behind a cell of `metric`. A pupil
+    list shows each pupil's own value, so a role that sees masked score cells
+    (D18) may not list pupils for a masked metric: that would bypass the mask.
+    The class teacher's class scope applies on top."""
+    if role not in ROLE_GROUPS[metric.group]:
+        return False
+    return role in UNMASKED_ROLES or not metric.masked

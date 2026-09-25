@@ -49,3 +49,9 @@ export const deleteVisualization = (id) => api.delete(`${VIZ}${id}/`)
 export const pinVisualization = (id) => api.post(`${VIZ}${id}/pin/`)
 
 export const unpinVisualization = (id) => api.delete(`${VIZ}${id}/pin/`)
+
+// ── drill-down ───────────────────────────────────────────────────────────────
+
+// The pupils behind one cell; `params` from pages/analytics/drilldown.js.
+export const getAnalyticsDrilldown = (params) =>
+  api.get('/analytics/drilldown/', { params }).then((r) => r.data)

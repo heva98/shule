@@ -161,6 +161,16 @@ class SavedVisualizationApiTests(TestCase):
         self.client.patch(f'{URL}{viz.id}/', {'shared_with_staff': False}, format='json')
         self.assertEqual(list(viz.pinned_by.all()), [self.owner])
 
+    def test_owner_and_system_admin_have_full_access(self):
+        for role in (Role.OWNER, Role.SYSTEM_ADMIN):
+            with self.subTest(role=role):
+                client = client_for(make_user(role=role))
+                resp = client.post(URL, {'name': 'Fees', 'config': fee_config()}, format='json')
+                self.assertEqual(resp.status_code, 201, resp.data)
+                self.assertEqual(resp.data['unavailable'], [])
+                self.assertEqual(client.post(f"{URL}{resp.data['id']}/pin/").status_code, 204)
+                self.assertEqual(len(client.get(URL, {'pinned': 'true'}).data), 1)
+
     def test_non_analytics_roles_are_forbidden(self):
         for role in (Role.PARENT, Role.STUDENT, Role.TEACHER):
             with self.subTest(role=role):

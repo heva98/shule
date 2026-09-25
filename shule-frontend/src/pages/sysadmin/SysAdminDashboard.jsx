@@ -9,7 +9,9 @@ import { useNavigate } from 'react-router-dom'
 import { getAuditLogs, getSettings, getSystemHealth, getUsers } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
 import AddUserModal from './components/AddUserModal'
+import PinnedVisualizations from '../../components/dashboard/PinnedVisualizations'
 import Card from '../../components/ui/Card'
+import { useAuth } from '../../context/AuthContext'
 import StatCard from '../../components/ui/StatCard'
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -125,6 +127,7 @@ function RoleDonut({ users }) {
 // ── Main dashboard ─────────────────────────────────────────────────────────────
 
 export default function SysAdminDashboard() {
+  const { user, enabledModules } = useAuth()
   const navigate = useNavigate()
   const [showAddUser, setShowAddUser] = useState(false)
 
@@ -186,6 +189,9 @@ export default function SysAdminDashboard() {
           )}
         </Card>
       </div>
+
+      {/* The admin's pinned analytics visualizations */}
+      <PinnedVisualizations role={user?.role} enabledModules={enabledModules ?? []} />
 
       {/* Row 2 — Quick actions */}
       <div>
