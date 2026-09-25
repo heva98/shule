@@ -61,6 +61,7 @@ Edit `.env` and fill in:
 - `DEMO_REQUEST_NOTIFY_EMAIL` — where "Request a demo" landing-page submissions get emailed; defaults to `henrymkama@gmail.com` if left blank
 - `SMS_BACKEND` + the SMS credentials — set `SMS_BACKEND` to the live backend and fill the token / sender ID to send real SMS; leave `SMS_BACKEND=noop` to record messages without sending
 - `MPESA_*` — fill in when you're ready to wire that up; safe to leave blank for now
+- `LICENSED_MODULES` — the modules this school has bought (see the list in the template). The school's admin switches modules on and off in **Admin Panel → Modules**, but only within this list. Leave it commented out to license everything. `ENABLED_MODULES` only sets which modules start switched on, before an admin first saves on that page.
 
 `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, and `FRONTEND_URL` are already set correctly for `shule.ac.tz` in the template — leave them as-is unless your domain changes.
 

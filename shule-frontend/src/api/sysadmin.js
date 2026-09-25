@@ -26,6 +26,14 @@ export const bulkImport = (file) => {
   }).then(r => r.data)
 }
 
+// { source: 'env' | 'admin', modules: [{ key, label, description, licensed, enabled, requires }] }
+export const getModules = () =>
+  api.get('/admin/modules/').then(r => r.data)
+
+// `enabled`: the complete list of module keys to switch on.
+export const updateModules = (enabled) =>
+  api.put('/admin/modules/', { enabled }).then(r => r.data)
+
 export const getSettings = () =>
   api.get('/admin/settings/').then(r => r.data)
 

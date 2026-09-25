@@ -6,7 +6,7 @@ import {
 import { useState } from 'react'
 import { Cell, Pie, PieChart, Tooltip } from 'recharts'
 import { useNavigate } from 'react-router-dom'
-import { getAuditLogs, getSettings, getSystemHealth, getUsers } from '../../api/sysadmin'
+import { getAcademicYears, getAuditLogs, getSettings, getSystemHealth, getUsers } from '../../api/sysadmin'
 import { getStudents } from '../../api/students'
 import AddUserModal from './components/AddUserModal'
 import PinnedVisualizations from '../../components/dashboard/PinnedVisualizations'
@@ -124,6 +124,17 @@ function RoleDonut({ users }) {
   )
 }
 
+// Quarter label (e.g. "Q3 · Term 2") whose configured date range contains today, if any.
+function currentQuarterOf(year) {
+  if (!year) return null
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Dar_es_Salaam' })
+  for (const [n, term] of [[1, 1], [2, 1], [3, 2], [4, 2]]) {
+    const start = year[`q${n}_start`], end = year[`q${n}_end`]
+    if (start && end && start <= today && today <= end) return `Q${n} · Term ${term}`
+  }
+  return null
+}
+
 // ── Main dashboard ─────────────────────────────────────────────────────────────
 
 export default function SysAdminDashboard() {
@@ -136,6 +147,8 @@ export default function SysAdminDashboard() {
   const studentsQ = useQuery({ queryKey: ['admin-students'], queryFn: () => getStudents({ status: 'ACTIVE' }) })
   const healthQ = useQuery({ queryKey: ['admin-health'], queryFn: getSystemHealth })
   const logsQ = useQuery({ queryKey: ['admin-logs-recent'], queryFn: () => getAuditLogs({ page_size: 10 }) })
+  // Same key as the Academic Year Setup page, so creating/setting a year refreshes this card.
+  const yearsQ = useQuery({ queryKey: ['admin-academic-years'], queryFn: getAcademicYears })
 
   const schoolName = settingsQ.data?.school_name ?? 'Shule SMS'
   const totalUsers = usersQ.data?.count ?? '—'
@@ -143,6 +156,8 @@ export default function SysAdminDashboard() {
   const totalStudents = studentsQ.data?.count ?? '—'
   const dbOk = healthQ.data?.database?.ok
   const healthLabel = healthQ.isLoading ? '…' : dbOk ? 'All Systems OK' : 'Issues Detected'
+  const currentYear = (yearsQ.data ?? []).find(y => y.is_current)
+  const currentQuarter = currentQuarterOf(currentYear)
 
   return (
     <div className="space-y-6">
@@ -171,9 +186,17 @@ export default function SysAdminDashboard() {
         <Card>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Year</p>
           <p className="text-2xl font-bold text-gray-900 mt-1.5">
-            {healthQ.data ? (healthQ.data.active_users ? '—' : '—') : '—'}
+            {yearsQ.isLoading ? '…' : currentYear ? currentYear.year : '—'}
           </p>
-          <p className="text-xs text-gray-400 mt-1.5">Configure in Academic Years</p>
+          <p className="text-xs text-gray-400 mt-1.5">
+            {yearsQ.isLoading
+              ? ''
+              : !currentYear
+                ? 'No current year set: configure in Academic Years'
+                : currentQuarter
+                  ? `${currentQuarter} in progress`
+                  : 'Current academic year'}
+          </p>
         </Card>
 
         <Card>

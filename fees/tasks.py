@@ -35,9 +35,9 @@ def sync_student_charges(student_id):
     academic year: annual charges, plus every quarterly period already opened
     for that year. Fired (debounced via on_commit) whenever a student, their
     boarding placement or their transport route changes."""
-    from django.conf import settings
+    from shule.modules import module_enabled
 
-    if 'fees' not in settings.ENABLED_MODULES:
+    if not module_enabled('fees'):
         return {'skipped': 'fees module disabled'}
 
     from students.models import Student, StudentStatus
@@ -74,9 +74,9 @@ def sync_student_charges(student_id):
 def resync_current_charges():
     """Nightly safety net: re-sync every active student so configuration
     changes that missed a signal still land."""
-    from django.conf import settings
+    from shule.modules import module_enabled
 
-    if 'fees' not in settings.ENABLED_MODULES:
+    if not module_enabled('fees'):
         return {'skipped': 'fees module disabled'}
 
     from students.models import Student, StudentStatus

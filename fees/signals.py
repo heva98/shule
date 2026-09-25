@@ -5,7 +5,6 @@ so a replayed signal is harmless."""
 
 import logging
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -14,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def _enqueue(student_id):
-    if not student_id or 'fees' not in settings.ENABLED_MODULES:
+    from shule.modules import module_enabled
+
+    if not student_id or not module_enabled('fees'):
         return
     from .tasks import sync_student_charges
 

@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -151,6 +151,7 @@ class AuditLog(models.Model):
         LOGOUT            = 'LOGOUT',             'Logout'
         BULK_IMPORT       = 'BULK_IMPORT',        'Bulk Import'
         ACCOUNT_LOCKED    = 'ACCOUNT_LOCKED',     'Account Locked'
+        MODULES_UPDATED   = 'MODULES_UPDATED',    'Modules Updated'
         ANALYTICS_DRILLDOWN = 'ANALYTICS_DRILLDOWN', 'Analytics Pupil List Viewed'
 
     performed_by = models.ForeignKey(
@@ -202,12 +203,25 @@ class SchoolSettings(models.Model):
         help_text='Level groups the school runs: NURSERY, PRIMARY, OLEVEL, ALEVEL',
     )
     established_year    = models.IntegerField(null=True, blank=True)
+    # Optional modules the admin switched on (Admin Panel → Modules), always
+    # narrowed to the deployment's LICENSED_MODULES. Null until an admin
+    # first saves, and until then the ENABLED_MODULES env value applies.
+    # Read it through shule.modules, never directly.
+    enabled_modules     = models.JSONField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'School Settings'
 
     def __str__(self):
         return self.school_name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from shule.modules import clear_module_cache
+        # Now, and again after commit so no worker caches the old value in
+        # between.
+        clear_module_cache()
+        transaction.on_commit(clear_module_cache)
 
     @classmethod
     def get_settings(cls):

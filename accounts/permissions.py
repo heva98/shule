@@ -1,5 +1,6 @@
-from django.conf import settings
 from rest_framework.permissions import BasePermission
+
+from shule.modules import module_enabled
 
 from .models import Role
 
@@ -125,11 +126,11 @@ class IsCalendarManagerOrReadOnly(BasePermission):
 
 class ModuleEnabled(BasePermission):
     """
-    Blocks a view whose `module` isn't in settings.ENABLED_MODULES — the
+    Blocks a view whose `module` isn't enabled (shule.modules) — the
     server-side half of module visibility, so hiding a module from the nav
     isn't the only thing standing between a disabled module and its data.
     Views with no `module` attribute (core, always-on modules) are unaffected.
     """
     def has_permission(self, request, view):
         module = getattr(view, 'module', None)
-        return module is None or module in settings.ENABLED_MODULES
+        return module is None or module_enabled(module)

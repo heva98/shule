@@ -30,6 +30,7 @@ const PATH_TITLES = {
   '/admin-panel/subjects': 'Subjects & Classes',
   '/admin-panel/academic-years': 'Academic Year Setup',
   '/admin-panel/settings': 'School Settings',
+  '/admin-panel/modules': 'Modules',
   '/admin-panel/audit-logs': 'Audit Logs',
   '/admin-panel/system-health': 'System Health',
 }

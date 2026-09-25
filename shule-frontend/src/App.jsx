@@ -51,6 +51,7 @@ const RoleAssignmentPage = lazy(() => import('./pages/sysadmin/RoleAssignmentPag
 const SubjectsPage = lazy(() => import('./pages/sysadmin/SubjectsPage'))
 const AcademicYearPage = lazy(() => import('./pages/sysadmin/AcademicYearPage'))
 const SchoolSettingsPage = lazy(() => import('./pages/sysadmin/SchoolSettingsPage'))
+const ModulesPage = lazy(() => import('./pages/sysadmin/ModulesPage'))
 const AuditLogPage = lazy(() => import('./pages/sysadmin/AuditLogPage'))
 const SystemHealthPage = lazy(() => import('./pages/sysadmin/SystemHealthPage'))
 const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'))
@@ -321,6 +322,14 @@ export default function App() {
                   element={
                     <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                       <AcademicYearPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin-panel/modules"
+                  element={
+                    <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                      <ModulesPage />
                     </ProtectedRoute>
                   }
                 />

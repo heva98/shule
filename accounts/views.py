@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
@@ -9,6 +8,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from shule.modules import enabled_modules
 
 from .models import Role, SchoolSettings, UserNotification
 from .serializers import LoginSerializer, UserSerializer
@@ -136,7 +137,7 @@ class ModuleConfigView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({'enabled_modules': settings.ENABLED_MODULES})
+        return Response({'enabled_modules': sorted(enabled_modules())})
 
 
 class DashboardSummaryView(APIView):
@@ -170,7 +171,7 @@ class DashboardSummaryView(APIView):
         from staff.models import StaffProfile
         from students.models import Student, StudentStatus
 
-        enabled = settings.ENABLED_MODULES
+        enabled = enabled_modules()
 
         data = {
             'students': {

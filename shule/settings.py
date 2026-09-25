@@ -39,6 +39,15 @@ ENABLED_MODULES = config(
     ),
     cast=lambda s: [m.strip().lower() for m in s.split(',') if m.strip()]
 )
+# The modules this school may use at all, set in .env at setup. The Admin
+# Panel's Modules page can switch modules on and off only within this list,
+# and once an admin saves there, ENABLED_MODULES above no longer applies.
+# Unset means every optional module is licensed.
+LICENSED_MODULES = config(
+    'LICENSED_MODULES',
+    default=None,
+    cast=lambda s: None if s is None else [m.strip().lower() for m in s.split(',') if m.strip()],
+)
 
 # Analytics query endpoint (analytics/query.py): the most values one query may
 # return, the pupil count below which score cells are masked (D18), and the

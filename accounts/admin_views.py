@@ -381,6 +381,89 @@ class AdminSettingsView(APIView):
         return Response(serializer.data)
 
 
+
+# ── Modules ───────────────────────────────────────────────────────────────────
+
+def _modules_payload():
+    from shule.modules import (
+        MODULE_INFO, MODULE_REQUIRES, admin_choice, enabled_modules, licensed_modules,
+    )
+    licensed, enabled = licensed_modules(), enabled_modules()
+    return {
+        # 'admin' once an admin has saved here; before that, the .env value.
+        'source': 'env' if admin_choice() is None else 'admin',
+        'modules': [
+            {
+                'key': key, 'label': label, 'description': description,
+                'licensed': key in licensed, 'enabled': key in enabled,
+                'requires': list(MODULE_REQUIRES.get(key, ())),
+            }
+            for key, (label, description) in MODULE_INFO.items()
+        ],
+    }
+
+
+class AdminModulesView(APIView):
+    """GET/PUT /api/admin/modules/: which optional modules are switched on.
+    PUT takes `{"enabled": ["fees", ...]}`, the complete list; it must be a
+    subset of the deployment's LICENSED_MODULES (.env). Switching a module
+    off hides it everywhere but deletes nothing."""
+    permission_classes = [IsAuthenticated, IsSystemAdmin]
+
+    def get(self, request):
+        return Response(_modules_payload())
+
+    def put(self, request):
+        from shule.modules import (
+            MODULE_INFO, MODULE_REQUIRES, OPTIONAL_MODULES, enabled_modules, licensed_modules,
+        )
+        chosen = request.data.get('enabled') if isinstance(request.data, dict) else None
+        if not isinstance(chosen, list) or not all(isinstance(m, str) for m in chosen):
+            return Response({'enabled': 'Send the list of modules to switch on.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        chosen = {m.strip().lower() for m in chosen}
+        label = lambda key: MODULE_INFO.get(key, (key,))[0]  # noqa: E731
+
+        unknown = sorted(chosen - OPTIONAL_MODULES)
+        if unknown:
+            return Response({'enabled': f"Unknown module: {', '.join(unknown)}."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        unlicensed = sorted(chosen - licensed_modules())
+        if unlicensed:
+            return Response(
+                {'enabled': f"Not licensed for this school: {', '.join(map(label, unlicensed))}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        for key in sorted(chosen):
+            missing = [r for r in MODULE_REQUIRES.get(key, ()) if r not in chosen]
+            if missing:
+                return Response(
+                    {'enabled': f"{label(key)} needs {', '.join(map(label, missing))} switched on."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        before = enabled_modules()
+        settings_obj = SchoolSettings.get_settings()
+        settings_obj.enabled_modules = sorted(chosen)
+        settings_obj.save(update_fields=['enabled_modules'])
+
+        turned_on, turned_off = sorted(chosen - before), sorted(before - chosen)
+        changes = []
+        if turned_on:
+            changes.append('on: ' + ', '.join(map(label, turned_on)))
+        if turned_off:
+            changes.append('off: ' + ', '.join(map(label, turned_off)))
+        log_action(
+            user=request.user,
+            action=AuditLog.Action.MODULES_UPDATED,
+            target_model='SchoolSettings',
+            target_id=1,
+            description='Modules switched ' + ('; '.join(changes) if changes else 'unchanged'),
+            request=request,
+            extra_data={'enabled': sorted(chosen), 'on': turned_on, 'off': turned_off},
+        )
+        return Response(_modules_payload())
+
 # ── Subject management ────────────────────────────────────────────────────────
 
 class AdminSubjectListView(APIView):

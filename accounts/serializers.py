@@ -27,10 +27,10 @@ def validate_tz_phone(value: str) -> str:
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # Piggybacks settings.ENABLED_MODULES onto the user payload so the
+    # Piggybacks the enabled modules (shule.modules) onto the user payload so the
     # frontend gets it for free on login/me instead of waiting on a separate
     # /api/config/ round trip before it can fire any module-gated queries —
-    # see useEnabledModules.js. Static per-deployment list, no extra query.
+    # see useEnabledModules.js. Cached, so no extra query per request.
     enabled_modules = serializers.SerializerMethodField()
 
     class Meta:
@@ -43,9 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_enabled_modules(self, obj):
-        # Resolved list: the explicit ENABLED_MODULES when set, otherwise every
-        # optional module (matches shule.modules — unset means "all on", so the
-        # SPA and the server-side gates agree).
+        # The same resolved set the server-side gates use, so the SPA agrees.
         from shule.modules import enabled_modules
         return sorted(enabled_modules())
 

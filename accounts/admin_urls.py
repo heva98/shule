@@ -6,6 +6,7 @@ from .admin_views import (
     AdminAcademicYearSetCurrentView,
     AdminAuditLogView,
     AdminBulkImportView,
+    AdminModulesView,
     AdminSettingsView,
     AdminStreamDetailView,
     AdminStreamListView,
@@ -35,6 +36,7 @@ urlpatterns = [
 
     # School settings
     path('settings/',                      AdminSettingsView.as_view(),           name='admin-settings'),
+    path('modules/',                       AdminModulesView.as_view(),            name='admin-modules'),
 
     # Subjects
     path('subjects/',                      AdminSubjectListView.as_view(),        name='admin-subjects'),

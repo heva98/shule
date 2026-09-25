@@ -24,6 +24,7 @@ import {
   ScrollText,
   Settings,
   Shield,
+  ToggleRight,
   UserCog,
   Users,
 } from 'lucide-react'
@@ -76,6 +77,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Subjects & Classes',  path: '/admin-panel/subjects',       icon: BookOpen },
   { label: 'Academic Year Setup', path: '/admin-panel/academic-years', icon: CalendarDays },
   { label: 'School Settings',     path: '/admin-panel/settings',       icon: Settings },
+  { label: 'Modules',             path: '/admin-panel/modules',        icon: ToggleRight },
   { label: 'Audit Logs',          path: '/admin-panel/audit-logs',     icon: ScrollText },
   { label: 'System Health',       path: '/admin-panel/system-health',  icon: Activity },
 ]

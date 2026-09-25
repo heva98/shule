@@ -64,6 +64,14 @@ export function AuthProvider({ children }) {
     return profile
   }, [])
 
+  // Re-reads the signed-in user, e.g. after an admin changes which modules
+  // are on, so the sidebar and route guards follow without a reload.
+  const refreshUser = useCallback(async () => {
+    const { data } = await api.get('/auth/me/')
+    setUser(data)
+    return data
+  }, [])
+
   // `user.enabled_modules` rides along on /auth/login/ and /auth/me/ (see
   // UserSerializer) so module-gated dashboard queries don't have to wait on
   // a separate /api/config/ round trip before they can even start.
@@ -85,13 +93,13 @@ export function AuthProvider({ children }) {
     window.location.href = '/login'
   }, [])
 
-  // login/logout are already stable (useCallback with no deps), so this only
+  // login/logout/refreshUser are already stable (useCallback with no deps), so this only
   // changes reference when user/accessToken/loading actually change —
   // without it, every consumer of useAuth() re-renders on every AuthProvider
   // render since the object literal would be a new reference each time.
   const value = useMemo(
-    () => ({ user, accessToken, loading, login, logout, enabledModules }),
-    [user, accessToken, loading, login, logout, enabledModules]
+    () => ({ user, accessToken, loading, login, logout, refreshUser, enabledModules }),
+    [user, accessToken, loading, login, logout, refreshUser, enabledModules]
   )
 
   return (
