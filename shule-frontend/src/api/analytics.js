@@ -25,3 +25,27 @@ export async function getExamItems(maxPages = 10) {
   }
   return items
 }
+
+// ── saved visualizations ─────────────────────────────────────────────────────
+
+const VIZ = '/analytics/visualizations/'
+
+// params: { search, pinned: 'true' }
+export const listVisualizations = (params) =>
+  api.get(VIZ, { params }).then((r) => r.data)
+
+export const getVisualization = (id) =>
+  api.get(`${VIZ}${id}/`).then((r) => r.data)
+
+// data: { name, description, config, shared_with_staff }
+export const createVisualization = (data) =>
+  api.post(VIZ, data).then((r) => r.data)
+
+export const updateVisualization = (id, data) =>
+  api.patch(`${VIZ}${id}/`, data).then((r) => r.data)
+
+export const deleteVisualization = (id) => api.delete(`${VIZ}${id}/`)
+
+export const pinVisualization = (id) => api.post(`${VIZ}${id}/pin/`)
+
+export const unpinVisualization = (id) => api.delete(`${VIZ}${id}/pin/`)

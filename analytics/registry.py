@@ -887,3 +887,64 @@ def catalogue(role=None) -> dict:
         'dimensions': dimensions,
     }
 
+
+
+# ── saved visualizations ───────────────────────────────────────────────────
+
+class Unavailable:
+    MODULE_DISABLED = 'module_disabled'
+    NO_ACCESS = 'no_access'
+    UNKNOWN = 'unknown'
+
+
+_FIXED_DIMENSIONS = ('dx', 'pe', 'ou')
+
+
+def unavailable_references(config, role) -> list[dict]:
+    """The metrics and dimensions a saved visualization config uses that
+    `role` can't query in this deployment: a module is switched off, the
+    role's groups don't cover it, or the registry no longer has it. Labels
+    come from the full registry, so the viewer can be told what is missing
+    even when the catalogue they see omits it."""
+    config = config if isinstance(config, dict) else {}
+    items = config.get('items') if isinstance(config.get('items'), dict) else {}
+    groups = set(groups_for_role(role))
+    out = []
+
+    def missing(kind, ref_id, label, reason, modules=()):
+        out.append({
+            'kind': kind, 'id': ref_id, 'label': label, 'reason': reason,
+            'modules': [m for m in modules if not modules_enabled((m,))],
+        })
+
+    metric_ids = items.get('dx') if isinstance(items.get('dx'), list) else []
+    for metric_id in metric_ids:
+        metric = METRICS.get(metric_id)
+        if metric is None:
+            missing('metric', str(metric_id), str(metric_id), Unavailable.UNKNOWN)
+        elif not metric.enabled:
+            missing('metric', metric.id, metric.label, Unavailable.MODULE_DISABLED, metric.modules)
+        elif metric.group not in groups:
+            missing('metric', metric.id, metric.label, Unavailable.NO_ACCESS)
+
+    visible = {dim.id for dim, _ in visible_dimensions(role)}
+    placed = []
+    for axis in ('columns', 'rows', 'filters'):
+        ids = config.get(axis) if isinstance(config.get(axis), list) else []
+        placed += [d for d in ids if d not in placed and d not in _FIXED_DIMENSIONS]
+    for dim_id in placed:
+        dim = DIMENSIONS.get(dim_id)
+        if dim is None:
+            missing('dimension', str(dim_id), str(dim_id), Unavailable.UNKNOWN)
+        elif not dim.enabled:
+            missing('dimension', dim.id, dim.label, Unavailable.MODULE_DISABLED, dim.modules)
+        elif dim.id not in visible:
+            sources = [SOURCES[s] for s in dim.source_ids]
+            if not any(s.enabled for s in sources):
+                # e.g. `subject`: no module of its own, but every source it
+                # applies to needs exams.
+                modules = dict.fromkeys(m for s in sources for m in s.modules)
+                missing('dimension', dim.id, dim.label, Unavailable.MODULE_DISABLED, modules)
+            else:
+                missing('dimension', dim.id, dim.label, Unavailable.NO_ACCESS)
+    return out

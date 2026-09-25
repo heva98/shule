@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import MySubjectPerformancePanels from '../../components/dashboard/MySubjectPerformancePanels'
 import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
+import PinnedVisualizations from '../../components/dashboard/PinnedVisualizations'
 import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformancePanels'
 import StatCard from '../../components/ui/StatCard'
 import Card from '../../components/ui/Card'
@@ -226,6 +227,9 @@ export default function TeacherDashboard() {
           />
         ))}
       </div>
+
+      {/* ── The user's pinned analytics visualizations ── */}
+      <PinnedVisualizations role={role} enabledModules={enabledModules} />
 
       {/* ── Today's timetable + upcoming exams ── */}
       {(showTimetablePanel || showExamsPanel) && (

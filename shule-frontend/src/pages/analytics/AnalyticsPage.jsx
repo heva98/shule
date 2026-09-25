@@ -1,25 +1,36 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AlertTriangle, ChartColumn, Download, PanelLeft, RefreshCw, SlidersHorizontal, Table2, Wand2, X,
+  AlertTriangle, ChartColumn, Download, PanelLeft, Pin, RefreshCw, SlidersHorizontal, Table2, Users, Wand2, X,
 } from 'lucide-react'
-import { useCallback, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { getAnalyticsDimensions, runAnalyticsQuery } from '../../api/analytics'
+import { useSearchParams } from 'react-router-dom'
+import {
+  createVisualization, deleteVisualization, getAnalyticsDimensions, getVisualization, pinVisualization,
+  runAnalyticsQuery, unpinVisualization, updateVisualization,
+} from '../../api/analytics'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
+import Modal from '../../components/ui/Modal'
 import { selectCls } from '../../lib/formStyles'
 import { buildChartModel } from './charts'
 import ChartView from './components/ChartView'
 import DimensionModal from './components/DimensionModal'
 import DimensionPanel from './components/DimensionPanel'
+import FileMenu from './components/FileMenu'
 import LayoutArea from './components/LayoutArea'
+import OpenVisualizationModal from './components/OpenVisualizationModal'
 import OptionsModal from './components/OptionsModal'
 import PivotTable from './components/PivotTable'
+import SaveVisualizationModal from './components/SaveVisualizationModal'
 import { downloadChartPng, downloadCsv, downloadFilename, downloadXlsx, pivotGrid } from './download'
 import { buildPivot } from './pivot'
 import {
-  FIXED_DIMENSION_LABELS, VISUALIZATION_TYPES, axisLabels, buildQuery, configReducer, flattenTree,
-  initialConfig, isChart, layoutProblem, periodLabel, placementError,
+  VISUALIZATIONS_KEY, apiErrorMessage, catalogueItemLabels, makeLabelFor, unavailableMessage,
+} from './savedVisualizations'
+import {
+  FIXED_DIMENSION_LABELS, VISUALIZATION_TYPES, axisLabels, buildQuery, configReducer,
+  initialConfig, isChart, layoutProblem, placementError,
 } from './visualizationConfig'
 
 function errorMessage(err) {
@@ -44,6 +55,17 @@ export default function AnalyticsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [downloadOpen, setDownloadOpen] = useState(false)
   const chartRef = useRef(null)
+  // The saved visualization on screen (API object), and its config as saved,
+  // serialised, to tell whether there are unsaved changes.
+  const [saved, setSaved] = useState(null)
+  const [savedSnapshot, setSavedSnapshot] = useState(null)
+  // 'open' | 'saveAs' | 'rename' | 'delete'
+  const [fileDialog, setFileDialog] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Id of the saved visualization on screen, so the ?viz= link doesn't
+  // reopen (and reset) the one just opened or saved.
+  const openedId = useRef(null)
+  const queryClient = useQueryClient()
 
   const catalogue = useQuery({
     queryKey: ['analytics', 'dimensions'],
@@ -66,25 +88,8 @@ export default function AnalyticsPage() {
     [dimensionsById],
   )
 
-  // Catalogue item labels per dimension: the fallback for an item the
-  // response doesn't name.
-  const itemLabels = useMemo(() => {
-    const out = {}
-    for (const d of dimensions) {
-      const list = d.kind === 'org_unit' ? flattenTree(d.items) : d.items ?? []
-      out[d.id] = Object.fromEntries(list.map((i) => [i.id, i.label]))
-    }
-    return out
-  }, [dimensions])
-
-  const labelFor = useCallback((dimId, itemId) => {
-    // The response names items per dimension (ids repeat across dimensions:
-    // grade F, gender F).
-    const name = result.data?.metaData?.items?.[dimId]?.items?.[itemId]?.name
-    if (name) return name
-    if (dimId === 'pe') return itemLabels.pe?.[itemId] ?? periodLabel(itemId)
-    return itemLabels[dimId]?.[itemId] ?? (itemId || '(blank)')
-  }, [itemLabels, result.data])
+  const itemLabels = useMemo(() => catalogueItemLabels(dimensions), [dimensions])
+  const labelFor = useMemo(() => makeLabelFor(itemLabels, result.data), [itemLabels, result.data])
 
   const pivot = useMemo(() => {
     if (!result.data || !applied) return null
@@ -129,6 +134,127 @@ export default function AnalyticsPage() {
     run(cfg)
   }
 
+  // ── saved visualizations ──────────────────────────────────────────────────
+
+  function showSaved(viz, cfg) {
+    openedId.current = String(viz.id)
+    setSaved(viz)
+    setSavedSnapshot(JSON.stringify(cfg))
+    setSearchParams({ viz: String(viz.id) }, { replace: true })
+  }
+
+  function openSaved(viz) {
+    const cfg = configReducer(initialConfig, { type: 'LOAD', config: viz.config })
+    setFileDialog(null)
+    showSaved(viz, cfg)
+    dispatch({ type: 'LOAD', config: cfg })
+    const problem = unavailableMessage(viz.unavailable)
+    if (problem) {
+      setApplied(null)
+      setValidationError(`“${viz.name}” can't be drawn. ${problem}`)
+      return
+    }
+    run(cfg)
+  }
+
+  function startNew() {
+    openedId.current = null
+    setSaved(null)
+    setSavedSnapshot(null)
+    setSearchParams({}, { replace: true })
+    setApplied(null)
+    setValidationError(null)
+    dispatch({ type: 'RESET' })
+  }
+
+  const refreshSavedLists = () => queryClient.invalidateQueries({ queryKey: VISUALIZATIONS_KEY })
+
+  async function saveCurrent() {
+    try {
+      const viz = await updateVisualization(saved.id, { config })
+      showSaved(viz, config)
+      refreshSavedLists()
+      toast.success('Saved.')
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'The visualization could not be saved. Try again.'))
+    }
+  }
+
+  // Save as / Rename throw a readable message for their dialog to show.
+  async function saveAs(values) {
+    try {
+      const viz = await createVisualization({ ...values, config })
+      setFileDialog(null)
+      showSaved(viz, config)
+      refreshSavedLists()
+      toast.success(`Saved as “${viz.name}”.`)
+    } catch (err) {
+      throw new Error(apiErrorMessage(err, 'The visualization could not be saved. Try again.'), { cause: err })
+    }
+  }
+
+  async function rename(values) {
+    try {
+      const viz = await updateVisualization(saved.id, values)
+      setFileDialog(null)
+      setSaved(viz)
+      refreshSavedLists()
+    } catch (err) {
+      throw new Error(apiErrorMessage(err, 'The visualization could not be renamed. Try again.'), { cause: err })
+    }
+  }
+
+  async function removeSaved() {
+    try {
+      await deleteVisualization(saved.id)
+      setFileDialog(null)
+      toast.success(`Deleted “${saved.name}”.`)
+      startNew()
+      refreshSavedLists()
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'The visualization could not be deleted. Try again.'))
+    }
+  }
+
+  async function togglePin() {
+    const pinned = saved.is_pinned
+    try {
+      await (pinned ? unpinVisualization(saved.id) : pinVisualization(saved.id))
+      setSaved({ ...saved, is_pinned: !pinned })
+      refreshSavedLists()
+      toast.success(pinned ? 'Removed from your dashboard.' : 'Pinned to your dashboard.')
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'The dashboard could not be updated. Try again.'))
+    }
+  }
+
+  function fileAction(action) {
+    if (action === 'new') startNew()
+    else if (action === 'save') {
+      if (saved?.is_owner) saveCurrent()
+      else setFileDialog('saveAs')
+    } else if (action === 'pin') togglePin()
+    else setFileDialog(action)
+  }
+
+  // /analytics?viz=<id> (the dashboard widget's link) opens that saved
+  // visualization once the catalogue it is queried against has loaded.
+  const vizParam = searchParams.get('viz')
+  const catalogueReady = Boolean(catalogue.data)
+  useEffect(() => {
+    if (!catalogueReady || !vizParam || openedId.current === vizParam) return
+    let cancelled = false
+    getVisualization(vizParam).then(
+      (viz) => { if (!cancelled) openSaved(viz) },
+      () => {
+        if (!cancelled) setValidationError('That saved visualization could not be opened. It may have been deleted or unshared.')
+      },
+    )
+    return () => { cancelled = true }
+  // Reacts to the link only; openSaved is a fresh closure every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogueReady, vizParam])
+
   // Switching type redraws the current result straight away when the new type
   // can draw it from the same query.
   function changeType(visType) {
@@ -154,6 +280,7 @@ export default function AnalyticsPage() {
     setModalDimId(dimId)
   }
 
+  const dirty = Boolean(saved) && JSON.stringify(config) !== savedSnapshot
   const current = buildQuery(config, dimensionsById)
   const stale = applied && current.params
     && (current.params.toString() !== applied.params || config.type !== applied.config.type)
@@ -258,6 +385,7 @@ export default function AnalyticsPage() {
         <Button variant="outline" size="sm" icon={PanelLeft} className="lg:hidden" onClick={() => setDrawerOpen(true)}>
           Dimensions
         </Button>
+        <FileMenu saved={saved} canSave={!catalogue.isLoading && !catalogue.isError} onAction={fileAction} />
         <label className="flex items-center gap-2 text-sm text-gray-600">
           <ChartColumn size={16} className="text-gray-400" />
           <span className="sr-only">Visualization type</span>
@@ -266,7 +394,17 @@ export default function AnalyticsPage() {
             {VISUALIZATION_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
         </label>
-        <div className="flex-1" />
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
+          {saved && (
+            <>
+              <span className="font-medium text-gray-800 truncate" title={saved.description || undefined}>{saved.name}</span>
+              {dirty && <span className="text-xs text-gray-400 shrink-0">(unsaved changes)</span>}
+              {saved.shared_with_staff && <Users size={14} className="text-gray-400 shrink-0" aria-label="Shared with staff" />}
+              {saved.is_pinned && <Pin size={14} className="text-gray-400 shrink-0" aria-label="Pinned to dashboard" />}
+              {!saved.is_owner && <span className="hidden md:inline text-xs text-gray-400 shrink-0">by {saved.created_by_name}</span>}
+            </>
+          )}
+        </div>
         {stale && <span className="hidden sm:inline text-xs text-amber-600">Layout changed</span>}
         <Button variant="outline" size="sm" icon={SlidersHorizontal} onClick={() => setOptionsOpen(true)}>
           Options
@@ -380,6 +518,38 @@ export default function AnalyticsPage() {
             setModalDimId(null)
           }}
         />
+      )}
+
+      {fileDialog === 'open' && (
+        <OpenVisualizationModal currentId={saved?.id} onOpen={openSaved} onClose={() => setFileDialog(null)} />
+      )}
+      {fileDialog === 'saveAs' && (
+        <SaveVisualizationModal
+          title={saved ? 'Save as' : 'Save visualization'}
+          submitLabel="Save"
+          initial={saved ? { name: `${saved.name} (copy)`, description: saved.description } : null}
+          onSubmit={saveAs}
+          onClose={() => setFileDialog(null)}
+        />
+      )}
+      {fileDialog === 'rename' && saved && (
+        <SaveVisualizationModal title="Rename visualization" submitLabel="Rename" initial={saved}
+          onSubmit={rename} onClose={() => setFileDialog(null)} />
+      )}
+      {fileDialog === 'delete' && saved && (
+        <Modal isOpen onClose={() => setFileDialog(null)} title="Delete visualization" size="sm">
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-gray-700">
+              Delete “{saved.name}”?
+              {saved.shared_with_staff ? ' It is shared, so other staff lose it too, including any dashboard pins.' : ''}
+              {' '}This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setFileDialog(null)}>Cancel</Button>
+              <Button variant="danger" onClick={removeSaved}>Delete</Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {optionsOpen && (

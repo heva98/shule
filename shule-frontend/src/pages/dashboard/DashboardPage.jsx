@@ -21,6 +21,7 @@ import {
   Users,
 } from 'lucide-react'
 import QuickLinksPanel from '../../components/dashboard/QuickLinksPanel'
+import PinnedVisualizations from '../../components/dashboard/PinnedVisualizations'
 import SchoolPerformancePanels from '../../components/dashboard/SchoolPerformancePanels'
 import StatCard from '../../components/ui/StatCard'
 import KpiCard from '../../components/ui/KpiCard'
@@ -263,6 +264,9 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      {/* ── The user's pinned analytics visualizations ── */}
+      <PinnedVisualizations role={role} enabledModules={enabledModules} />
 
       <SchoolPerformancePanels role={role} enabledModules={enabledModules} />
 
